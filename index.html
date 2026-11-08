@@ -39,7 +39,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .bar{height:6px;background:var(--line);border-radius:6px;margin:6px 0;overflow:hidden}
 .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--p),var(--p2));border-radius:6px}
 .en{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:5px 10px;margin-bottom:5px}
-.en div{flex:1;min-width:0}.en b{display:block}.en small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.en div{flex:1;min-width:0}.en b{display:block;font-weight:600;overflow-wrap:anywhere}.en small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .x{background:none;border:0;color:var(--muted);font-size:20px;padding:2px 8px;cursor:pointer}
 .row{display:flex;gap:8px;margin-bottom:6px}.row>*{flex:1;min-width:0}
 label{display:block;font-size:12px;color:var(--muted);margin:0 0 2px 4px}
@@ -141,7 +141,7 @@ function render(){
     const ed=editId?entries.find(x=>String(x.id)===String(editId)):null,es=entries.filter(e=>e.date===k),secs=es.reduce((a,e)=>a+e.secs,0);total+=secs;
     html+='<section class="card'+(k===today?' today':'')+'"><div class="dh"><b>'+NAMES[i]+', '+fmt(d)+'</b><span class="tot">'+(secs?hm(secs):'—')+'</span></div>'+
       (secs?'<div class="bar"><i style="width:'+Math.min(100,secs/(goal*3600)*100)+'%"></i></div>':'<div style="height:4px"></div>')+
-      es.map(e=>'<div class="en"><div><b>'+hm(e.secs)+'</b><small>'+(e.from?esc(e.from)+'–'+esc(e.to)+' · ':'')+esc(e.note||'Ei kuvausta')+'</small></div><button class="x" type="button" data-edit="'+e.id+'" aria-label="Muokkaa">✎</button><button class="x" type="button" data-del="'+e.id+'" aria-label="Poista">✕</button></div>').join('')+
+      es.map(e=>'<div class="en"><div><b>'+esc(e.note||'Ei kuvausta')+'</b></div><button class="x" type="button" data-edit="'+e.id+'" aria-label="Muokkaa">✎</button><button class="x" type="button" data-del="'+e.id+'" aria-label="Poista">✕</button></div>').join('')+
       (openDay===k?
         '<div class="row"><div><label>Alkaa</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="07:00" class="tm" id="f_'+k+'" value="'+(ed&&ed.from||'')+'"></div><div><label>Päättyy</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="15:30" class="tm" id="t_'+k+'" value="'+(ed&&ed.to||'')+'"></div></div><div class="row"><div><label>Kuvaus (valinnainen)</label><input type="text" id="n_'+k+'" value="'+esc(ed?ed.note:'')+'"></div></div><div class="row"><button class="btn" type="button" data-save="'+k+'">'+(ed?'Tallenna muutokset':'Tallenna')+'</button><button class="btn g" type="button" data-open="">Peruuta</button></div>'
         :'<button class="btn g" type="button" data-open="'+k+'">＋ Lisää työaika</button>')+
