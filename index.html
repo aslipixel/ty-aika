@@ -41,6 +41,10 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .en{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:14px;padding:5px 10px;margin-bottom:5px}
 .en div{flex:1;min-width:0}.en b{display:block;font-weight:600;overflow-wrap:anywhere}.en small{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .x{background:none;border:0;color:var(--muted);font-size:20px;padding:2px 8px;cursor:pointer}
+.x.comment-icon{font-size:21px;padding:2px 5px;color:var(--muted)}
+.x.comment-icon.filled{color:#e34b9c}
+.note-editor{width:100%;min-height:155px;resize:vertical;padding:12px;border:2px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font:inherit;font-size:16px;line-height:1.45;outline:none}
+.note-editor:focus{border-color:var(--p)}
 .row{display:flex;gap:8px;margin-bottom:6px}.row>*{flex:1;min-width:0}
 label{display:block;font-size:12px;color:var(--muted);margin:0 0 2px 4px}
 input[type=time],input[type=text]{width:100%;padding:8px 10px;border:2px solid var(--line);border-radius:14px;background:var(--bg);color:var(--text);font:inherit;font-size:16px;outline:none}
@@ -111,7 +115,7 @@ const pad=n=>String(n).padStart(2,'0');
 const dkey=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-const hm=s=>Math.floor(s/3600)+' h '+pad(Math.floor(s%3600/60))+' min';
+const hm=s=>{const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h+' h'+(m?' '+pad(m):'')};
 let tomb=load('wt_tomb',[]),entries=load('wt_entries',[]),showWE=!!load('wt_weekend',false),goal=load('wt_goal',8),off=0,openDay=null,editId=null;
 const NAMES=['Maanantai','Tiistai','Keskiviikko','Torstai','Perjantai','Lauantai','Sunnuntai'];
 function monday(o){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)+o*7);return d}
@@ -129,7 +133,7 @@ function render(){
     const ed=editId?entries.find(x=>String(x.id)===String(editId)):null,es=entries.filter(e=>e.date===k),secs=es.reduce((a,e)=>a+e.secs,0);total+=secs;
     html+='<section class="card'+(k===today?' today':'')+'"><div class="dh"><b>'+NAMES[i]+', '+fmt(d)+'</b><span class="tot">'+(secs?hm(secs):'—')+'</span></div>'+
       (secs?'<div class="bar"><i style="width:'+Math.min(100,secs/(goal*3600)*100)+'%"></i></div>':'<div style="height:4px"></div>')+
-      es.map(e=>'<div class="en"><div><b>'+esc(e.note||'Ei kuvausta')+'</b></div><button class="x" type="button" data-edit="'+e.id+'" aria-label="Muokkaa">✎</button><button class="x" type="button" data-del="'+e.id+'" aria-label="Poista">✕</button></div>').join('')+
+      es.map(e=>'<div class="en"><div><b>'+esc(e.note||'Ei kuvausta')+'</b></div><button class="x comment-icon'+(e.comment&&e.comment.trim()?' filled':'')+'" type="button" data-comment="'+e.id+'" aria-label="Kommentti" title="Kommentti">▤</button><button class="x" type="button" data-edit="'+e.id+'" aria-label="Muokkaa">✎</button><button class="x" type="button" data-del="'+e.id+'" aria-label="Poista">✕</button></div>').join('')+
       (openDay===k?
         '<div class="row"><div><label>Alkaa</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="07:00" class="tm" id="f_'+k+'" value="'+(ed&&ed.from||'')+'"></div><div><label>Päättyy</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="15:30" class="tm" id="t_'+k+'" value="'+(ed&&ed.to||'')+'"></div></div><div class="row"><div><label>Kuvaus (valinnainen)</label><input type="text" id="n_'+k+'" value="'+esc(ed?ed.note:'')+'"></div></div><div class="row"><button class="btn" type="button" data-save="'+k+'">'+(ed?'Tallenna muutokset':'Tallenna')+'</button><button class="btn g" type="button" data-open="">Peruuta</button></div>'+(ed?'<button class="btn g" type="button" data-add="'+k+'">＋ Lisää toinen työaika</button>':'')
         :(es.length===0?'<button class="btn g" type="button" data-open="'+k+'">＋ Lisää työaika</button>':''))+
@@ -145,6 +149,7 @@ document.addEventListener('click',e=>{
   else if(t.id==='now'){off=0;openDay=null;render()}
   else if(t.dataset.open!==undefined){openDay=t.dataset.open||null;editId=null;render()}
   else if(t.dataset.add){openDay=t.dataset.add;editId=null;render()}
+  else if(t.dataset.comment){openComment(t.dataset.comment)}
   else if(t.dataset.edit){const x=entries.find(y=>String(y.id)===t.dataset.edit);if(x){openDay=x.date;editId=x.id;render();const f=$('f_'+x.date);if(f)f.scrollIntoView({block:'center'})}}
   else if(t.dataset.save){
     const k=t.dataset.save,fi=$('f_'+k),ti=$('t_'+k),f=ptime(fi.value),to=ptime(ti.value);if(!f||!to){const bad=!f?fi:ti;bad.style.borderColor='#ff5c6c';bad.focus();return}
@@ -187,6 +192,19 @@ function modalCloud(){
   '<div class="row"><button class="btn g" id="gdl" type="button">⬇ Lataa varmuuskopio</button><label class="btn g" style="text-align:center;margin:0;cursor:pointer">⬆ Palauta tiedostosta<input type="file" id="rfile" accept=".json,application/json" hidden></label></div>'+
   '<button class="btn g" id="mclose" type="button">Sulje</button>');
 }
+let commentId=null;
+function openComment(id){
+  const x=entries.find(y=>String(y.id)===String(id));if(!x)return;
+  commentId=x.id;
+  openModal('<h2>💬 Kommentti</h2><div class="st">Kirjoita muistiinpanosi. Teksti näkyy vain tässä ikkunassa.</div><textarea class="note-editor" id="commentText" aria-label="Kommentti" placeholder="Kirjoita kommentti...">'+esc(x.comment||'')+'</textarea><div class="row" style="margin-top:12px"><button class="btn" type="button" id="commentSave">Tallenna</button><button class="btn g" type="button" id="commentCancel">Peruuta</button></div>');
+}
+function saveComment(){
+  const x=entries.find(y=>String(y.id)===String(commentId));
+  if(!x)return;
+  const field=$('commentText');if(!field)return;
+  x.comment=field.value;x.u=Date.now();
+  saveAll();commentId=null;closeModal();render();
+}
 let delId=null;
 function askDel(id){
   const x=entries.find(y=>String(y.id)===String(id));if(!x)return;delId=x.id;
@@ -207,6 +225,8 @@ document.addEventListener('change',e=>{
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const id=b.id;
   if(id==='mclose')closeModal();
+  else if(id==='commentSave')saveComment();
+  else if(id==='commentCancel'){commentId=null;closeModal()}
   else if(id==='delno'){closeModal();delId=null}
   else if(id==='delok')doDel();
   else if(id==='gdl')dl();
