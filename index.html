@@ -168,7 +168,7 @@ let pal=load('wt_pal','violet'),mode=load('wt_mode','light');
 if(!['violet','cyber'].includes(pal)){pal='violet';save('wt_pal',pal)}
 if(!['light','dark'].includes(mode)){mode='light';save('wt_mode',mode)}
 function applyTheme(){const r=document.documentElement;r.dataset.pal=pal;r.dataset.theme=mode}
-function drawPal(){$('pal').innerHTML=PALS.map(x=>'<button type="button" data-pal="'+x[0]+'" class="'+(x[0]===pal?'on':'')+'"><i style="background:'+x[2]+'"></i>'+x[1]+'</button>').join('')+'<hr>'+[['light','☀ Vaalea'],['dark','☾ Tumma']].map(x=>'<button type="button" data-mode="'+x[0]+'" class="'+(x[0]===mode?'on':'')+'">'+x[1]+'</button>').join('')+'<hr><button type="button" data-m="feedback">📝 Palaute</button><button type="button" data-m="admin">🔐 Admin</button><button type="button" data-m="cloud">💾 Varmuuskopio</button>'}
+function drawPal(){$('pal').innerHTML=PALS.map(x=>'<button type="button" data-pal="'+x[0]+'" class="'+(x[0]===pal?'on':'')+'"><i style="background:'+x[2]+'"></i>'+x[1]+'</button>').join('')+'<hr>'+[['light','☀ Vaalea'],['dark','☾ Tumma']].map(x=>'<button type="button" data-mode="'+x[0]+'" class="'+(x[0]===mode?'on':'')+'">'+x[1]+'</button>').join('')+'<hr><button type="button" data-m="feedback">📝 Palaute</button><button type="button" data-m="cloud">💾 Varmuuskopio</button>'}
 $('theme').onclick=()=>{const o=$('pal').hidden;$('pal').hidden=!o;if(o)drawPal()};
 $('pal').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.m){$('pal').hidden=true;if(b.dataset.m==='feedback')modalFeedback();else if(b.dataset.m==='admin')modalAdmin();else modalCloud();return}if(b.dataset.pal){pal=b.dataset.pal;save('wt_pal',pal)}if(b.dataset.mode){mode=b.dataset.mode;save('wt_mode',mode)}applyTheme();drawPal()};
 document.addEventListener('click',e=>{if(!e.target.closest('.tw'))$('pal').hidden=true});
@@ -337,7 +337,7 @@ document.addEventListener('click',e=>{
   else if(id==='gdl')dl();
 });
 applyTheme();render();
-if(location.hash.includes('access_token=')||new URLSearchParams(location.search).has('code')){
+if(new URLSearchParams(location.search).has('admin')||location.hash.includes('access_token=')||new URLSearchParams(location.search).has('code')){
   getFeedbackApi().then(async api=>{await api.auth.getSession();modalAdmin()}).catch(()=>{});
 }
 </script>
