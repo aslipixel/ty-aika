@@ -28,7 +28,7 @@ as $$
   select exists(
     select 1 from public.feedback_admins a
     where a.email = lower((auth.jwt() ->> 'email')::text)
-      and (auth.jwt() ->> 'email_verified')::text = 'true'
+      and auth.uid() is not null
   )
 $$;
 revoke all on function public.is_feedback_admin() from public;
