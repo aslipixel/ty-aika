@@ -168,9 +168,9 @@ let pal=load('wt_pal','violet'),mode=load('wt_mode','light');
 if(!['violet','cyber'].includes(pal)){pal='violet';save('wt_pal',pal)}
 if(!['light','dark'].includes(mode)){mode='light';save('wt_mode',mode)}
 function applyTheme(){const r=document.documentElement;r.dataset.pal=pal;r.dataset.theme=mode}
-function drawPal(){$('pal').innerHTML=PALS.map(x=>'<button type="button" data-pal="'+x[0]+'" class="'+(x[0]===pal?'on':'')+'"><i style="background:'+x[2]+'"></i>'+x[1]+'</button>').join('')+'<hr>'+[['light','☀ Vaalea'],['dark','☾ Tumma']].map(x=>'<button type="button" data-mode="'+x[0]+'" class="'+(x[0]===mode?'on':'')+'">'+x[1]+'</button>').join('')+'<hr><button type="button" data-m="cloud">💾 Varmuuskopio</button>'}
+function drawPal(){$('pal').innerHTML=PALS.map(x=>'<button type="button" data-pal="'+x[0]+'" class="'+(x[0]===pal?'on':'')+'"><i style="background:'+x[2]+'"></i>'+x[1]+'</button>').join('')+'<hr>'+[['light','☀ Vaalea'],['dark','☾ Tumma']].map(x=>'<button type="button" data-mode="'+x[0]+'" class="'+(x[0]===mode?'on':'')+'">'+x[1]+'</button>').join('')+'<hr><button type="button" data-m="feedback">📝 Palaute</button><button type="button" data-m="admin">🔐 Admin</button><button type="button" data-m="cloud">💾 Varmuuskopio</button>'}
 $('theme').onclick=()=>{const o=$('pal').hidden;$('pal').hidden=!o;if(o)drawPal()};
-$('pal').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.m){$('pal').hidden=true;modalCloud();return}if(b.dataset.pal){pal=b.dataset.pal;save('wt_pal',pal)}if(b.dataset.mode){mode=b.dataset.mode;save('wt_mode',mode)}applyTheme();drawPal()};
+$('pal').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.m){$('pal').hidden=true;if(b.dataset.m==='feedback')modalFeedback();else if(b.dataset.m==='admin')modalAdmin();else modalCloud();return}if(b.dataset.pal){pal=b.dataset.pal;save('wt_pal',pal)}if(b.dataset.mode){mode=b.dataset.mode;save('wt_mode',mode)}applyTheme();drawPal()};
 document.addEventListener('click',e=>{if(!e.target.closest('.tw'))$('pal').hidden=true});
 let sx=null;
 document.addEventListener('touchstart',e=>{sx=e.target.closest('input')?null:e.touches[0].clientX},{passive:true});
@@ -183,6 +183,120 @@ function mergeData(a,b){
   const ents=[...em.values()].filter(e=>{const t=tm.get(e.id);return !(t&&t.u>=(e.u||0))});
   return {entries:ents,tomb:[...tm.values()].sort((x,y)=>y.u-x.u).slice(0,1000)};
 }
+/* ---------- palaute / admin: Supabase integration ---------- */
+/* Public project URL and publishable key go here after Supabase is configured.
+   Never put a service_role key or database password in this source. */
+const FEEDBACK_BACKEND={url:'',key:''};
+let feedbackApi=null,adminEmail='';
+const feedbackReady=()=>/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(FEEDBACK_BACKEND.url)&&!!FEEDBACK_BACKEND.key;
+async function getFeedbackApi(){
+  if(!feedbackReady())throw Error('Palaute-palvelua ei ole vielä yhdistetty.');
+  if(!feedbackApi){
+    const mod=await import('https://esm.sh/@supabase/supabase-js@2');
+    feedbackApi=mod.createClient(FEEDBACK_BACKEND.url,FEEDBACK_BACKEND.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  }
+  return feedbackApi;
+}
+function feedbackStatus(msg,isError=false){
+  const el=$('feedbackStatus');if(el){el.textContent=msg;el.style.color=isError?'#e5384f':'var(--muted)'}
+}
+function modalFeedback(){
+  openModal('<h2>📝 Palaute</h2><div class="st">Lähetä ehdotus, palaute tai ilmoitus ongelmasta.</div>'+
+  '<label for="feedbackEmail">Sähköposti (valinnainen)</label><input type="text" id="feedbackEmail" autocomplete="email" placeholder="Sähköpostiosoite">'+
+  '<label for="feedbackMessage" style="margin-top:10px">Viesti</label><textarea class="note-editor" id="feedbackMessage" maxlength="3000" placeholder="Kirjoita palautteesi..." style="margin-top:4px"></textarea>'+
+  '<div class="st" id="feedbackStatus">'+(feedbackReady()?'':'Palautepalvelun käyttöönotto on kesken.')+'</div>'+
+  '<button class="btn" id="feedbackSend" type="button" '+(feedbackReady()?'':'disabled')+'>Lähetä palaute</button><button class="btn g" id="mclose" type="button">Sulje</button>');
+}
+async function sendFeedback(){
+  const msg=$('feedbackMessage')?.value.trim(),email=$('feedbackEmail')?.value.trim();
+  if(!msg){feedbackStatus('Kirjoita viesti.',true);return}
+  if(msg.length>3000){feedbackStatus('Viesti on liian pitkä.',true);return}
+  if(email&&(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)){feedbackStatus('Tarkista sähköpostiosoite.',true);return}
+  const btn=$('feedbackSend');if(btn)btn.disabled=true;
+  feedbackStatus('Lähetetään...');
+  try{
+    const api=await getFeedbackApi();
+    const {error}=await api.from('feedback_messages').insert({message:msg,contact_email:email||null});
+    if(error)throw error;
+    feedbackStatus('Kiitos! Palaute lähetetty.');
+    if($('feedbackMessage'))$('feedbackMessage').value='';
+  }catch(e){feedbackStatus('Lähetys epäonnistui: '+(e.message||'virhe'),true)}
+  finally{if(btn)btn.disabled=false}
+}
+function modalAdmin(){
+  openModal('<h2>🔐 Admin</h2><div id="adminContent"></div><div class="st" id="feedbackStatus"></div><button class="btn g" id="mclose" type="button">Sulje</button>');
+  drawAdmin();
+}
+async function drawAdmin(){
+  const box=$('adminContent');if(!box)return;
+  if(!feedbackReady()){box.innerHTML='<div class="st">Ylläpito ei ole vielä käytössä. Supabase-yhteys tarvitaan.</div>';return}
+  try{
+    const api=await getFeedbackApi(),{data:{session}}=await api.auth.getSession();
+    if(!$('adminContent'))return;
+    if(session){await loadAdminFeedback();return}
+    box.innerHTML='<label for="adminEmail">Sähköposti</label><input id="adminEmail" type="text" autocomplete="email" placeholder="Sähköpostiosoite" value="'+esc(adminEmail)+'">'+
+     '<button class="btn" style="margin-top:10px" id="adminRequest" type="button">Lähetä kertakäyttökoodi</button>'+
+     '<label for="adminOtp" style="margin-top:10px">Koodi sähköpostista</label><input id="adminOtp" type="text" inputmode="numeric" maxlength="6" placeholder="6-numeroinen koodi">'+
+     '<button class="btn" style="margin-top:10px" id="adminVerify" type="button">Kirjaudu sisään</button>';
+  }catch(e){feedbackStatus('Yhteysvirhe: '+e.message,true)}
+}
+async function adminRequest(){
+  const email=$('adminEmail')?.value.trim().toLowerCase();
+  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){feedbackStatus('Anna sähköpostiosoite.',true);return}
+  adminEmail=email;feedbackStatus('Lähetetään koodi...');
+  try{
+    const api=await getFeedbackApi();
+    const {error}=await api.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+    if(error)throw error;
+    feedbackStatus('Tarkista sähköpostisi ja syötä koodi.');
+  }catch(e){feedbackStatus('Koodia ei voitu lähettää: '+e.message,true)}
+}
+async function adminVerify(){
+  const token=$('adminOtp')?.value.trim(),email=adminEmail||$('adminEmail')?.value.trim();
+  if(!/^\d{6}$/.test(token||'')){feedbackStatus('Anna kuusinumeroinen koodi.',true);return}
+  feedbackStatus('Tarkistetaan...');
+  try{
+    const api=await getFeedbackApi(),{error}=await api.auth.verifyOtp({email,token,type:'email'});
+    if(error)throw error;
+    await loadAdminFeedback();
+  }catch(e){feedbackStatus('Kirjautuminen epäonnistui: '+e.message,true)}
+}
+async function loadAdminFeedback(){
+  const box=$('adminContent');if(!box)return;
+  feedbackStatus('Ladataan palautteita...');
+  try{
+    const api=await getFeedbackApi();
+    const {data,error}=await api.from('feedback_messages').select('id,message,contact_email,created_at,is_read').order('created_at',{ascending:false}).limit(100);
+    if(error)throw error;
+    if(!$('adminContent'))return;
+    const unread=data.filter(x=>!x.is_read).length;
+    box.innerHTML='<div class="st">Uusia viestejä: '+unread+' · Näytetään '+data.length+' viimeisintä</div>'+
+      '<div class="row"><button type="button" class="btn g" id="adminRefresh">Päivitä</button><button type="button" class="btn g" id="adminLogout">Kirjaudu ulos</button></div>'+
+      (data.length?data.map(x=>'<div class="card" style="border:1px solid var(--line);margin:8px 0"><div class="st">'+esc(new Date(x.created_at).toLocaleString('fi-FI'))+(x.is_read?'':' · Uusi')+'</div><div style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(x.message)+'</div>'+(x.contact_email?'<div class="st">'+esc(x.contact_email)+'</div>':'')+(x.is_read?'':'<button type="button" class="btn g" data-feedback-read="'+x.id+'">Merkitse luetuksi</button>')+'</div>').join(''):'<div class="st">Ei palautteita.</div>');
+    feedbackStatus('');
+  }catch(e){
+    box.innerHTML='<div class="st">Vain ylläpitäjä voi lukea palautteita.</div><button type="button" class="btn g" id="adminLogout">Kirjaudu ulos</button>';
+    feedbackStatus('Pääsy estetty tai yhteysvirhe. Tarkista ylläpitäjän oikeudet.',true)
+  }
+}
+async function adminMarkRead(id){
+  try{
+    const api=await getFeedbackApi();
+    const {error}=await api.from('feedback_messages').update({is_read:true}).eq('id',id);
+    if(error)throw error;
+    await loadAdminFeedback();
+  }catch(e){feedbackStatus('Merkintä epäonnistui.',true)}
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.id==='feedbackSend')await sendFeedback();
+  else if(b.id==='adminRequest')await adminRequest();
+  else if(b.id==='adminVerify')await adminVerify();
+  else if(b.id==='adminRefresh')await loadAdminFeedback();
+  else if(b.id==='adminLogout'){const api=await getFeedbackApi();await api.auth.signOut();drawAdmin()}
+  else if(b.dataset.feedbackRead)await adminMarkRead(b.dataset.feedbackRead);
+});
+
 /* ---------- modaalit ---------- */
 function openModal(h){$('sheet').innerHTML=h;$('ov').classList.add('show')}
 function closeModal(){$('ov').classList.remove('show')}
