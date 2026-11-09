@@ -49,21 +49,14 @@ input:focus{border-color:var(--p)}
 .btn.g{background:var(--bg);color:var(--text);border:2px solid var(--line)}
 .themeb{background:rgba(255,255,255,.25);color:#fff;border:0;border-radius:12px;padding:6px 10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;flex:none}
 
-html:root[data-pal="red"]{--p:#e11d48;--p2:#ff6b35;--hg:linear-gradient(120deg,#be123c,#ef4444 55%,#ff9a3c)}
-html:root[data-pal="green"]{--p:#059669;--p2:#65a30d;--hg:linear-gradient(120deg,#047857,#10b981 55%,#a3e635)}
-html:root[data-pal="ocean"]{--p:#0284c7;--p2:#6366f1;--hg:linear-gradient(120deg,#0369a1,#38bdf8 55%,#818cf8)}
-html:root[data-pal="sunset"]{--p:#f97316;--p2:#ec4899;--hg:linear-gradient(120deg,#f59e0b,#f97316 45%,#ec4899)}
 html:root[data-pal="cyber"]{--bg:#0a0612;--card:#150b27;--text:#e6fbff;--muted:#8fa8c8;--line:#2b1b4d;--p:#00f0ff;--p2:#ff2bd6;--hg:linear-gradient(120deg,#ff2bd6,#6d28d9 55%,#00d5ff);--shadow:0 0 16px rgba(0,240,255,.16)}
-html:root[data-pal="matrix"]{--bg:#020b05;--card:#06150b;--text:#c9ffd9;--muted:#5fb07a;--line:#0f3a1d;--p:#00ff6a;--p2:#00c2a8;--hg:linear-gradient(120deg,#022c14,#00a84a 60%,#00ff6a);--shadow:0 0 16px rgba(0,255,106,.14)}
-html:root[data-pal="cyber"],html:root[data-pal="matrix"]{color-scheme:dark}
-html:root[data-pal="cyber"] body,html:root[data-pal="matrix"] body{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+html:root[data-pal="cyber"]{color-scheme:dark}
+html:root[data-pal="cyber"] body{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 html:root[data-pal="cyber"] .card{border:1px solid rgba(0,240,255,.4);box-shadow:0 0 14px rgba(0,240,255,.18),inset 0 0 14px rgba(255,43,214,.08)}
-html:root[data-pal="matrix"] .card{border:1px solid rgba(0,255,106,.35);box-shadow:0 0 14px rgba(0,255,106,.15)}
 html:root[data-pal="cyber"] .hero{box-shadow:0 6px 26px rgba(255,43,214,.5)}
-html:root[data-pal="matrix"] .hero{box-shadow:0 6px 26px rgba(0,255,106,.35)}
-html:root[data-pal="cyber"] .hero h1,html:root[data-pal="matrix"] .hero h1{text-transform:uppercase;letter-spacing:2px;text-shadow:0 0 10px currentColor}
-html:root[data-pal="cyber"] .btn,html:root[data-pal="matrix"] .btn{color:#05060a}
-html:root[data-pal="cyber"] .btn.g,html:root[data-pal="matrix"] .btn.g{color:var(--text)}
+html:root[data-pal="cyber"] .hero h1{text-transform:uppercase;letter-spacing:2px;text-shadow:0 0 10px currentColor}
+html:root[data-pal="cyber"] .btn{color:#05060a}
+html:root[data-pal="cyber"] .btn.g{color:var(--text)}
 .tw{position:relative;flex:none}
 #pal{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:190px;background:var(--card);color:var(--text);border-radius:14px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.35);border:1px solid var(--line)}
 #pal[hidden]{display:none}
@@ -78,14 +71,8 @@ html:root[data-pal="cyber"] .btn.g,html:root[data-pal="matrix"] .btn.g{color:var
 .sheet h2{margin:0 0 10px;font-size:18px}
 .sheet .btn{margin-bottom:6px}
 .btn.r{background:#e5384f;color:#fff}
-html:root[data-pal="cyber"] .btn.r,html:root[data-pal="matrix"] .btn.r{color:#fff}
+html:root[data-pal="cyber"] .btn.r{color:#fff}
 .st{font-size:12px;color:var(--muted);margin:6px 2px 10px}
-.lock{position:fixed;inset:0;z-index:60;background:var(--hg);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:20px}
-.lock.show{display:flex}
-.dots{display:flex;gap:14px;height:18px}.dots i{width:16px;height:16px;border-radius:50%;border:2px solid #fff}.dots i.f{background:#fff}
-.keys{display:grid;grid-template-columns:repeat(3,72px);gap:12px}
-.keys button{height:72px;border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:28px;font-weight:700;cursor:pointer}
-.lockx{background:none;border:0;color:#fff;font:inherit;display:none;cursor:pointer;padding:8px}
 </style>
 <meta name="theme-color" content="#7c5cff">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -117,7 +104,6 @@ html:root[data-pal="cyber"] .btn.r,html:root[data-pal="matrix"] .btn.r{color:#ff
   <div id="days"></div>
 </main>
 <div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
-<div class="lock" id="lock"><div style="font-size:42px">🔒</div><div id="lt" style="font-weight:700;font-size:18px;text-align:center"></div><div class="dots" id="dots"></div><div class="keys" id="keys"></div><button class="lockx" id="lx" type="button">Peruuta</button></div>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -171,12 +157,14 @@ document.addEventListener('click',e=>{
 function ptime(v){const d=String(v).replace(/\D/g,'');if(!d)return null;let h,m;if(d.length<=2){h=+d;m=0}else if(d.length===3){h=+d[0];m=+d.slice(1)}else{h=+d.slice(0,2);m=+d.slice(2,4)}return h<=23&&m<=59?pad(h)+':'+pad(m):null}
 document.addEventListener('input',e=>{const el=e.target;if(!el.classList||!el.classList.contains('tm'))return;el.style.borderColor='';const d=el.value.replace(/\D/g,'').slice(0,4);el.value=d.length===3?d[0]+':'+d.slice(1):d.length===4?d.slice(0,2)+':'+d.slice(2):d});
 $('we').onchange=e=>{showWE=e.target.checked;save('wt_weekend',showWE);render()};
-const PALS=[['violet','Violetti','#7c5cff'],['red','Punainen','#e11d48'],['green','Vihreä','#059669'],['ocean','Meri','#0ea5e9'],['sunset','Aurinko','#f97316'],['cyber','Cyberpunk','#00f0ff'],['matrix','Matrix','#00ff6a']];
-let pal=load('wt_pal','violet'),mode=load('wt_mode','auto');
-function applyTheme(){const r=document.documentElement;r.dataset.pal=pal;if(mode==='auto')delete r.dataset.theme;else r.dataset.theme=mode}
-function drawPal(){$('pal').innerHTML=PALS.map(x=>'<button type="button" data-pal="'+x[0]+'" class="'+(x[0]===pal?'on':'')+'"><i style="background:'+x[2]+'"></i>'+x[1]+'</button>').join('')+'<hr>'+[['light','☀ Vaalea'],['dark','☾ Tumma'],['auto','◐ Auto']].map(x=>'<button type="button" data-mode="'+x[0]+'" class="'+(x[0]===mode?'on':'')+'">'+x[1]+'</button>').join('')+'<hr><button type="button" data-m="pin">🔒 PIN-koodi</button><button type="button" data-m="cloud">💾 Varmuuskopio</button>'}
+const PALS=[['violet','Violetti','#7c5cff'],['cyber','Neon','#00f0ff']];
+let pal=load('wt_pal','violet'),mode=load('wt_mode','light');
+if(!['violet','cyber'].includes(pal)){pal='violet';save('wt_pal',pal)}
+if(!['light','dark'].includes(mode)){mode='light';save('wt_mode',mode)}
+function applyTheme(){const r=document.documentElement;r.dataset.pal=pal;r.dataset.theme=mode}
+function drawPal(){$('pal').innerHTML=PALS.map(x=>'<button type="button" data-pal="'+x[0]+'" class="'+(x[0]===pal?'on':'')+'"><i style="background:'+x[2]+'"></i>'+x[1]+'</button>').join('')+'<hr>'+[['light','☀ Vaalea'],['dark','☾ Tumma']].map(x=>'<button type="button" data-mode="'+x[0]+'" class="'+(x[0]===mode?'on':'')+'">'+x[1]+'</button>').join('')+'<hr><button type="button" data-m="cloud">💾 Varmuuskopio</button>'}
 $('theme').onclick=()=>{const o=$('pal').hidden;$('pal').hidden=!o;if(o)drawPal()};
-$('pal').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.m){$('pal').hidden=true;b.dataset.m==='pin'?modalPin():modalCloud();return}if(b.dataset.pal){pal=b.dataset.pal;save('wt_pal',pal)}if(b.dataset.mode){mode=b.dataset.mode;save('wt_mode',mode)}applyTheme();drawPal()};
+$('pal').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.m){$('pal').hidden=true;modalCloud();return}if(b.dataset.pal){pal=b.dataset.pal;save('wt_pal',pal)}if(b.dataset.mode){mode=b.dataset.mode;save('wt_mode',mode)}applyTheme();drawPal()};
 document.addEventListener('click',e=>{if(!e.target.closest('.tw'))$('pal').hidden=true});
 let sx=null;
 document.addEventListener('touchstart',e=>{sx=e.target.closest('input')?null:e.touches[0].clientX},{passive:true});
@@ -197,9 +185,6 @@ function modalCloud(){
   openModal('<h2>💾 Varmuuskopio</h2><div class="st">Lataa varmuuskopio tiedostona ja tallenna se haluamaasi paikkaan, esimerkiksi iCloud Driveen tai Google Driveen. Palauta tiedot valitsemalla aiemmin tallennettu tiedosto.</div>'+
   '<div class="row"><button class="btn g" id="gdl" type="button">⬇ Lataa varmuuskopio</button><label class="btn g" style="text-align:center;margin:0;cursor:pointer">⬆ Palauta tiedostosta<input type="file" id="rfile" accept=".json,application/json" hidden></label></div>'+
   '<button class="btn g" id="mclose" type="button">Sulje</button>');
-}
-function modalPin(){
-  openModal('<h2>🔒 PIN-koodi</h2><div class="st">'+(pinHash?'PIN on käytössä tällä laitteella.':'PIN ei ole käytössä.')+'</div>'+(pinHash?'<div class="row"><button class="btn g" id="pinchg" type="button">Vaihda PIN</button><button class="btn g" id="pinoff" type="button">Poista PIN</button></div>':'<button class="btn" id="pinset" type="button">Aseta PIN</button>')+'<div class="st">PIN lukitsee sovelluksen tällä laitteella. Se ei salaa tietoja, ja jokaisella laitteella on oma PIN.</div><button class="btn g" id="mclose" type="button">Sulje</button>');
 }
 let delId=null;
 function askDel(id){
@@ -224,34 +209,8 @@ document.addEventListener('click',e=>{
   else if(id==='delno'){closeModal();delId=null}
   else if(id==='delok')doDel();
   else if(id==='gdl')dl();
-  else if(id==='pinset'){closeModal();showLock('set1')}
-  else if(id==='pinchg'){closeModal();showLock('chg')}
-  else if(id==='pinoff'){closeModal();showLock('off')}
 });
-/* ---------- PIN ---------- */
-let pinHash=load('wt_pin',null),pbuf='',pmode='unlock',ptmp='',pfail=0,pwait=0,hiddenAt=0;
-async function hashPin(p){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('wt3|'+p));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return 'x'+p.split('').reduce((a,c)=>(a*31+c.charCodeAt(0))|0,7)}}
-const PT={unlock:'Syötä PIN',chg:'Syötä nykyinen PIN',off:'Syötä nykyinen PIN',set1:'Valitse nelinumeroinen PIN',set2:'Toista PIN'};
-function drawDots(){$('dots').innerHTML=[0,1,2,3].map(i=>'<i class="'+(i<pbuf.length?'f':'')+'"></i>').join('')}
-function showLock(m){pmode=m;pbuf='';ptmp='';$('lt').textContent=PT[m];$('lx').style.display=m==='unlock'?'none':'block';$('lock').classList.add('show');drawDots()}
-$('keys').innerHTML=[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>k===''?'<span></span>':'<button type="button" data-k="'+k+'">'+k+'</button>').join('');
-$('lx').onclick=()=>$('lock').classList.remove('show');
-$('keys').addEventListener('click',async e=>{
-  const k=e.target.dataset&&e.target.dataset.k;if(k===undefined)return;
-  if(Date.now()<pwait){$('lt').textContent='Odota hetki ja yritä uudelleen';return}
-  if(k==='⌫')pbuf=pbuf.slice(0,-1);else if(pbuf.length<4)pbuf+=k;
-  drawDots();if(pbuf.length<4)return;
-  const cur=pbuf,h=await hashPin(cur);pbuf='';
-  if(pmode==='unlock'||pmode==='chg'||pmode==='off'){
-    if(h===pinHash){pfail=0;if(pmode==='unlock')$('lock').classList.remove('show');else if(pmode==='chg'){pmode='set1';$('lt').textContent=PT.set1}else{pinHash=null;try{localStorage.removeItem('wt_pin')}catch(x){}$('lock').classList.remove('show')}}
-    else{pfail++;if(pfail>=5){pwait=Date.now()+30000;pfail=0;$('lt').textContent='Liian monta yritystä, odota 30 s'}else{$('lt').textContent='Väärä PIN';setTimeout(()=>{if($('lt').textContent==='Väärä PIN')$('lt').textContent=PT[pmode]},1200)}}
-  }else if(pmode==='set1'){ptmp=cur;pmode='set2';$('lt').textContent=PT.set2}
-  else if(pmode==='set2'){if(cur===ptmp){pinHash=h;save('wt_pin',h);$('lock').classList.remove('show')}else{pmode='set1';ptmp='';$('lt').textContent='PIN ei täsmännyt, yritä uudelleen'}}
-  drawDots();
-});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(pinHash&&hiddenAt&&Date.now()-hiddenAt>60000)showLock('unlock')});
-
-applyTheme();render();if(pinHash)showLock('unlock');
+applyTheme();render();
 </script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 </body>
