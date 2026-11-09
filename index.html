@@ -186,14 +186,14 @@ function mergeData(a,b){
 /* ---------- palaute / admin: Supabase integration ---------- */
 /* Public project URL and publishable key go here after Supabase is configured.
    Never put a service_role key or database password in this source. */
-const FEEDBACK_BACKEND={url:'',key:''};
+const FEEDBACK_BACKEND={url:'https://jpbmazmksljohbpvlyaa.supabase.co',key:'sb_publishable_kjf5kZ-XpzW5Q6EAA3Kkpg_MTUqog6U'};
 let feedbackApi=null,adminEmail='';
 const feedbackReady=()=>/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(FEEDBACK_BACKEND.url)&&!!FEEDBACK_BACKEND.key;
 async function getFeedbackApi(){
   if(!feedbackReady())throw Error('Palaute-palvelua ei ole vielä yhdistetty.');
   if(!feedbackApi){
     const mod=await import('https://esm.sh/@supabase/supabase-js@2');
-    feedbackApi=mod.createClient(FEEDBACK_BACKEND.url,FEEDBACK_BACKEND.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+    feedbackApi=mod.createClient(FEEDBACK_BACKEND.url,FEEDBACK_BACKEND.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   }
   return feedbackApi;
 }
@@ -234,32 +234,24 @@ async function drawAdmin(){
     const api=await getFeedbackApi(),{data:{session}}=await api.auth.getSession();
     if(!$('adminContent'))return;
     if(session){await loadAdminFeedback();return}
-    box.innerHTML='<label for="adminEmail">Sähköposti</label><input id="adminEmail" type="text" autocomplete="email" placeholder="Sähköpostiosoite" value="'+esc(adminEmail)+'">'+
-     '<button class="btn" style="margin-top:10px" id="adminRequest" type="button">Lähetä kertakäyttökoodi</button>'+
-     '<label for="adminOtp" style="margin-top:10px">Koodi sähköpostista</label><input id="adminOtp" type="text" inputmode="numeric" maxlength="6" placeholder="6-numeroinen koodi">'+
-     '<button class="btn" style="margin-top:10px" id="adminVerify" type="button">Kirjaudu sisään</button>';
+    box.innerHTML='<div class="st">Kirjaudu sisään sähköpostiisi lähetettävällä linkillä.</div>'+
+     '<label for="adminEmail">Sähköposti</label><input id="adminEmail" type="text" autocomplete="email" placeholder="Sähköpostiosoite" value="'+esc(adminEmail)+'">'+
+     '<button class="btn" style="margin-top:10px" id="adminRequest" type="button">Lähetä kirjautumislinkki</button>';
   }catch(e){feedbackStatus('Yhteysvirhe: '+e.message,true)}
 }
 async function adminRequest(){
   const email=$('adminEmail')?.value.trim().toLowerCase();
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){feedbackStatus('Anna sähköpostiosoite.',true);return}
-  adminEmail=email;feedbackStatus('Lähetetään koodi...');
+  if(!email||!email.includes('@')){feedbackStatus('Anna sähköpostiosoite.',true);return}
+  adminEmail=email;
+  const btn=$('adminRequest');if(btn)btn.disabled=true;
+  feedbackStatus('Lähetetään kirjautumislinkkiä...');
   try{
     const api=await getFeedbackApi();
-    const {error}=await api.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+    const {error}=await api.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
     if(error)throw error;
-    feedbackStatus('Tarkista sähköpostisi ja syötä koodi.');
-  }catch(e){feedbackStatus('Koodia ei voitu lähettää: '+e.message,true)}
-}
-async function adminVerify(){
-  const token=$('adminOtp')?.value.trim(),email=adminEmail||$('adminEmail')?.value.trim();
-  if(!/^\d{6}$/.test(token||'')){feedbackStatus('Anna kuusinumeroinen koodi.',true);return}
-  feedbackStatus('Tarkistetaan...');
-  try{
-    const api=await getFeedbackApi(),{error}=await api.auth.verifyOtp({email,token,type:'email'});
-    if(error)throw error;
-    await loadAdminFeedback();
-  }catch(e){feedbackStatus('Kirjautuminen epäonnistui: '+e.message,true)}
+    feedbackStatus('Avaa sähköpostiisi saapunut kirjautumislinkki tällä laitteella.');
+  }catch(e){feedbackStatus('Linkkiä ei voitu lähettää: '+e.message,true)}
+  finally{if(btn)btn.disabled=false}
 }
 async function loadAdminFeedback(){
   const box=$('adminContent');if(!box)return;
@@ -291,7 +283,6 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   if(b.id==='feedbackSend')await sendFeedback();
   else if(b.id==='adminRequest')await adminRequest();
-  else if(b.id==='adminVerify')await adminVerify();
   else if(b.id==='adminRefresh')await loadAdminFeedback();
   else if(b.id==='adminLogout'){const api=await getFeedbackApi();await api.auth.signOut();drawAdmin()}
   else if(b.dataset.feedbackRead)await adminMarkRead(b.dataset.feedbackRead);
@@ -346,6 +337,9 @@ document.addEventListener('click',e=>{
   else if(id==='gdl')dl();
 });
 applyTheme();render();
+if(location.hash.includes('access_token=')||new URLSearchParams(location.search).has('code')){
+  getFeedbackApi().then(async api=>{await api.auth.getSession();modalAdmin()}).catch(()=>{});
+}
 </script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 </body>
