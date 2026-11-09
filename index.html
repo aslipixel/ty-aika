@@ -247,7 +247,7 @@ async function adminRequest(){
   feedbackStatus('Lähetetään kirjautumislinkkiä...');
   try{
     const api=await getFeedbackApi();
-    const {error}=await api.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});
+    const {error}=await api.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname+'?admin'}});
     if(error)throw error;
     feedbackStatus('Avaa sähköpostiisi saapunut kirjautumislinkki tällä laitteella.');
   }catch(e){feedbackStatus('Linkkiä ei voitu lähettää: '+e.message,true)}
