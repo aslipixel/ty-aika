@@ -131,8 +131,8 @@ function render(){
       (secs?'<div class="bar"><i style="width:'+Math.min(100,secs/(goal*3600)*100)+'%"></i></div>':'<div style="height:4px"></div>')+
       es.map(e=>'<div class="en"><div><b>'+esc(e.note||'Ei kuvausta')+'</b></div><button class="x" type="button" data-edit="'+e.id+'" aria-label="Muokkaa">✎</button><button class="x" type="button" data-del="'+e.id+'" aria-label="Poista">✕</button></div>').join('')+
       (openDay===k?
-        '<div class="row"><div><label>Alkaa</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="07:00" class="tm" id="f_'+k+'" value="'+(ed&&ed.from||'')+'"></div><div><label>Päättyy</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="15:30" class="tm" id="t_'+k+'" value="'+(ed&&ed.to||'')+'"></div></div><div class="row"><div><label>Kuvaus (valinnainen)</label><input type="text" id="n_'+k+'" value="'+esc(ed?ed.note:'')+'"></div></div><div class="row"><button class="btn" type="button" data-save="'+k+'">'+(ed?'Tallenna muutokset':'Tallenna')+'</button><button class="btn g" type="button" data-open="">Peruuta</button></div>'
-        :'<button class="btn g" type="button" data-open="'+k+'">＋ Lisää työaika</button>')+
+        '<div class="row"><div><label>Alkaa</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="07:00" class="tm" id="f_'+k+'" value="'+(ed&&ed.from||'')+'"></div><div><label>Päättyy</label><input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="15:30" class="tm" id="t_'+k+'" value="'+(ed&&ed.to||'')+'"></div></div><div class="row"><div><label>Kuvaus (valinnainen)</label><input type="text" id="n_'+k+'" value="'+esc(ed?ed.note:'')+'"></div></div><div class="row"><button class="btn" type="button" data-save="'+k+'">'+(ed?'Tallenna muutokset':'Tallenna')+'</button><button class="btn g" type="button" data-open="">Peruuta</button></div>'+(ed?'<button class="btn g" type="button" data-add="'+k+'">＋ Lisää toinen työaika</button>':'')
+        :(es.length===0?'<button class="btn g" type="button" data-open="'+k+'">＋ Lisää työaika</button>':''))+
       '</section>';
   }
   $('days').innerHTML=html;
@@ -144,6 +144,7 @@ document.addEventListener('click',e=>{
   else if(t.id==='next'){off++;openDay=null;render()}
   else if(t.id==='now'){off=0;openDay=null;render()}
   else if(t.dataset.open!==undefined){openDay=t.dataset.open||null;editId=null;render()}
+  else if(t.dataset.add){openDay=t.dataset.add;editId=null;render()}
   else if(t.dataset.edit){const x=entries.find(y=>String(y.id)===t.dataset.edit);if(x){openDay=x.date;editId=x.id;render();const f=$('f_'+x.date);if(f)f.scrollIntoView({block:'center'})}}
   else if(t.dataset.save){
     const k=t.dataset.save,fi=$('f_'+k),ti=$('t_'+k),f=ptime(fi.value),to=ptime(ti.value);if(!f||!to){const bad=!f?fi:ti;bad.style.borderColor='#ff5c6c';bad.focus();return}
