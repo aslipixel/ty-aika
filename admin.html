@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Työaika · Ylläpito</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;padding:24px 15px;background:#f4f1ff;color:#1d1b3a}
+main{max-width:580px;margin:auto}
+header{background:linear-gradient(110deg,#7c5cff,#ff6fb1);color:white;padding:22px;border-radius:18px;margin-bottom:16px}
+h1{margin:0;font-size:24px}p{line-height:1.5}
+.panel,.msg{background:#fff;border-radius:16px;padding:18px;margin-bottom:12px}
+input,button{font:inherit;border-radius:10px;padding:12px;width:100%;margin:5px 0}
+input{border:1px solid #bbb}
+button{border:0;background:#7c5cff;color:white;cursor:pointer;font-weight:700}
+button.secondary{background:#eeebff;color:#1d1b3a}
+button:disabled{opacity:.6}
+small{color:#5d587b}
+#error{white-space:pre-wrap;overflow-wrap:anywhere}
+.msg{overflow-wrap:anywhere;white-space:pre-wrap}
+.meta{color:#625c79;font-size:13px}
+@media(prefers-color-scheme:dark){body{background:#14122b;color:#f1efff}.panel,.msg{background:#242042}input{background:#18152e;color:white;border-color:#625c79}button.secondary{background:#38315c;color:white}small,.meta{color:#c1bce0}}
+</style>
+</head>
+<body><main><header><h1>🔐 Työaika · Ylläpito</h1><p>Hallintapaneeli · Palaute</p></header>
+<section class="panel" id="content"><p>Yhdistetään...</p></section><p id="error" role="status"></p>
+</main>
+<script type="module">
+const backend={url:'https://jpbmazmksljohbpvlyaa.supabase.co',key:'sb_publishable_kjf5kZ-XpzW5Q6EAA3Kkpg_MTUqog6U'};
+const box=document.getElementById('content'),status=document.getElementById('error');
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tell=(message='',bad=false)=>{status.textContent=message;status.style.color=bad?'#c02749':'inherit'};
+let api;
+try{
+const mod=await import('https://esm.sh/@supabase/supabase-js@2');
+api=mod.createClient(backend.url,backend.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+api.auth.onAuthStateChange((event)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT')setTimeout(show,0)});
+await show();
+}catch(e){box.textContent='Yhteys epäonnistui.';tell(e.message||String(e),true)}
+async function show(){
+try{
+const {data:{session},error}=await api.auth.getSession();if(error)throw error;
+if(!session){box.innerHTML='<h2>Kirjaudu sisään</h2><p>Syötä ylläpitäjän sähköpostiosoite. Saat kirjautumislinkin sähköpostiisi.</p><label for="email">Sähköposti</label><input id="email" type="email" autocomplete="email" placeholder="Sähköpostiosoite"><button id="send">Lähetä kirjautumislinkki</button><small>Vain valtuutettu ylläpitäjä saa lukea palautteita.</small>';return}
+box.innerHTML='<h2>Palauteviestit</h2><button id="refresh" class="secondary">Päivitä</button><button id="logout" class="secondary">Kirjaudu ulos</button><div id="messages">Ladataan...</div>';
+await loadMessages();
+}catch(e){tell('Kirjautuminen epäonnistui: '+(e.message||String(e)),true)}
+}
+async function loadMessages(){
+const target=document.getElementById('messages');if(!target)return;
+try{
+const {data,error}=await api.from('feedback_messages').select('id,message,contact_email,created_at,is_read').order('created_at',{ascending:false}).limit(100);
+if(error)throw error;
+target.innerHTML='<p>Viestejä: '+data.length+' · Lukemattomia: '+data.filter(x=>!x.is_read).length+'</p>'+(data.length?data.map(m=>'<article class="msg"><div class="meta">'+esc(new Date(m.created_at).toLocaleString('fi-FI'))+(m.is_read?'':' · Uusi')+'</div><p>'+esc(m.message)+'</p>'+(m.contact_email?'<small>'+esc(m.contact_email)+'</small>':'')+(m.is_read?'':'<button data-read="'+esc(m.id)+'" class="secondary">Merkitse luetuksi</button>')+'</article>').join(''):'<p>Ei palautteita.</p>');
+tell('');
+}catch(e){target.textContent='Viestien avaaminen epäonnistui.';tell('Tarkista ylläpitäjän käyttöoikeudet ja Supabase RLS: '+(e.message||String(e)),true)}
+}
+document.addEventListener('click',async e=>{
+const b=e.target.closest('button');if(!b||!api)return;
+if(b.id==='send'){
+const email=document.getElementById('email')?.value.trim().toLowerCase();
+if(!email||!document.getElementById('email').checkValidity()){tell('Tarkista sähköpostiosoite.',true);return}
+b.disabled=true;tell('Lähetetään...');
+try{const {error}=await api.auth.signInWithOtp({email,options:{shouldCreateUser:false,emailRedirectTo:location.origin+location.pathname}});if(error)throw error;tell('Tarkista sähköposti ja avaa kirjautumislinkki samalla laitteella.')}catch(x){tell('Linkin lähetys epäonnistui: '+(x.message||String(x)),true)}finally{b.disabled=false}
+}else if(b.id==='logout'){await api.auth.signOut();await show()}
+else if(b.id==='refresh'){await loadMessages()}
+else if(b.dataset.read){b.disabled=true;try{const {error}=await api.from('feedback_messages').update({is_read:true}).eq('id',b.dataset.read);if(error)throw error;await loadMessages()}catch(x){tell(x.message||String(x),true);b.disabled=false}}
+});
+</script></body></html>
