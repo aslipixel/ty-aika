@@ -1,4 +1,4 @@
-const CACHE = 'tuntix-v2';
+const CACHE = 'tuntix-v3';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'tuntix-icon.svg', 'tuntix-logo.svg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
