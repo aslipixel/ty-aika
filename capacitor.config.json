@@ -1,0 +1,8 @@
+{
+  "appId": "fi.tyoaika.app",
+  "appName": "Työaika",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
