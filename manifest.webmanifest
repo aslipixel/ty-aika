@@ -1,13 +1,19 @@
 {
-  "name": "Tuntiqo — Työajan seuranta",
-  "short_name": "Tuntiqo",
+  "name": "TuntiX — Työajan seuranta",
+  "short_name": "TuntiX",
   "lang": "fi",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f1ff",
-  "theme_color": "#7c5cff",
+  "background_color": "#eef9fb",
+  "theme_color": "#12bda7",
   "icons": [
+    {
+      "src": "tuntix-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
