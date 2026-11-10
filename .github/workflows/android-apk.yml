@@ -1,0 +1,41 @@
+name: Android APK (Työaika)
+on:
+  push:
+    branches: [android-update-2026]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Copy current web app into Android bundle
+        run: |
+          mkdir -p www
+          cp index.html admin.html manifest.webmanifest sw.js icon-192.png icon-512.png apple-touch-icon.png www/
+      - name: Install Capacitor
+        run: npm install --no-audit --no-fund
+      - name: Generate Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Build installable debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tyoaika-Android-debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
