@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="TuntiX">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#08cfb1"/><stop offset=".55" stop-color="#058fe1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0a2d58"/><stop offset="1" stop-color="#173d81"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/><circle cx="256" cy="256" r="155" fill="none" stroke="url(#g)" stroke-width="34" stroke-linecap="round" stroke-dasharray="865 135" transform="rotate(-83 256 256)"/>
+<path d="M177 257l53 51 108-118" fill="none" stroke="white" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/><path d="M256 114v25M125 256h24" stroke="white" stroke-width="15" stroke-linecap="round" opacity=".85"/></svg>
