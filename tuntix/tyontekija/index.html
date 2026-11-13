@@ -78,10 +78,10 @@ if(i===9){ty='Koulutus';c='Työturvallisuuskurssi'}else if(i===12){ty='Sää';p=
 if(!S.init){S.init=1;save()}
 const toast=m=>{const t=$('#t');t.innerHTML=`<div class="toast">${esc(m)}</div>`;clearTimeout(toast.k);toast.k=setTimeout(()=>t.innerHTML='',2400)};
 const H=()=>{const h={};S.en.forEach(e=>h[e.d]=(h[e.d]||0)+e.h);return h};
-function projectSummary(entries){const groups=new Map();for(const e of entries){const key=e.p||'';if(!groups.has(key))groups.set(key,{name:pn(e.p)||(e.p?'Poistettu projekti':'Ei projektia'),hours:0});groups.get(key).hours+=e.h}return [...groups.values()].map(p=>`<div class="week-project"><span>${esc(p.name)}</span><strong>${fh(p.hours)}</strong></div>`).join('')||'<small>–</small>'}
+function projectSummary(entries){const first=entries.find(e=>e.p);return first?`<span>${esc(pn(first.p)||'Poistettu projekti')}</span>`:'<small>–</small>'}
 function kalenteri(){const n=new Date(),ws=addD(mon(n),wo*7),h=H(),g=S.set.goal*5;let tot=0,rows='';
 for(let i=0;i<7;i++){const d=addD(ws,i),k=dk(d),es=S.en.filter(e=>e.d===k);tot+=h[k]||0;if(i>4&&!es.length&&k!==dk(n))continue;
-rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'today':''}"><b>${DN[i]}</b><span>${fd(d)}</span></div><div class="g">${projectSummary(es)}</div><b>${h[k]?fh(h[k]):''}</b><span class="plus">+</span></div>`}
+rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'today':''}"><b>${DN[i]}</b><span>${fd(d)}</span></div><div class="g">${projectSummary(es)}</div><b>${h[k]?(Math.round(h[k]*10)/10).toString().replace('.',','):''}</b><span class="plus">+</span></div>`}
 const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
 for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b>${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
 return `<div class="hero"><div class="clk" id="clk">${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}</div><b>${DL[wd(n)]} ${fd(n)}${n.getFullYear()}</b></div>
