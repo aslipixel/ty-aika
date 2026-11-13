@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14C8B5"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>TuntiX – Työajan seuranta</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;--ink:#0F1F4D;--mut:#6B7694;--card:#fff;--bg1:#f2fbff;--bg2:#efeaff;--line:#e8eaf5;--sh:0 8px 30px rgba(80,70,200,.10);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#eef0ff;--mut:#a3accb;--card:#18203f;--bg1:#0b1230;--bg2:#1a1340;--lil:#2a2563;--line:#2a3360}}
+:root[data-theme="dark"]{--ink:#eef0ff;--mut:#a3accb;--card:#18203f;--bg1:#0b1230;--bg2:#1a1340;--lil:#2a2563;--line:#2a3360}
+html,body{margin:0;height:100%}html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{font-family:Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:radial-gradient(600px 400px at 90% 0,rgba(20,200,181,.18),transparent 70%),radial-gradient(500px 400px at 0 45%,rgba(139,92,246,.14),transparent 70%),linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg1)}
+#app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.top{padding:14px 18px 4px}.brand{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:24px;letter-spacing:-.5px;color:var(--ink);text-decoration:none}.brand svg{width:40px;height:40px}
+.x{background:linear-gradient(135deg,var(--teal),var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
+main{flex:1;padding:6px 16px 24px}h2{margin:6px 0 12px;font-size:21px}h3{margin:0 0 8px;font-size:16px}p{margin:4px 0;color:var(--mut);font-size:14px}
+.card{background:var(--card);border-radius:22px;padding:16px;box-shadow:var(--sh);margin-bottom:14px}
+.hero{text-align:center;padding:12px 0 18px}.clk{font-size:52px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;background:linear-gradient(135deg,var(--teal),var(--blue) 55%,var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}.hero b{font-size:17px}
+.btn{width:100%;border:0;border-radius:16px;padding:14px;font:600 16px Poppins,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--ink);background:var(--lil);margin-top:10px;text-decoration:none}
+.btn.pri{background:linear-gradient(90deg,var(--teal),#0aa5b5);color:#fff;box-shadow:0 8px 20px rgba(20,200,181,.3)}.btn.sm{width:auto;padding:8px 14px;font-size:14px;margin:0}.btn.del{background:none;color:#e0405a}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+input,select{width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:16px Poppins,system-ui,sans-serif}
+.wk{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.prog{height:8px;border-radius:6px;background:var(--lil);overflow:hidden;margin:6px 0 8px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--vio));border-radius:6px}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer}.row:first-of-type{border-top:0}.row .g{flex:1;min-width:0}.row small{display:block;color:var(--mut)}
+.d{width:62px;flex:none}.d b{display:block}.d span{color:var(--mut);font-size:12px}.today b{color:var(--teal)}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:10px;margin:1px 4px 1px 0}
+.plus{width:30px;height:30px;border-radius:50%;background:var(--lil);color:var(--blue);display:grid;place-items:center;font-size:20px;flex:none}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.dh{text-align:center;font-size:12px;color:var(--mut)}
+.cd{border:0;border-radius:12px;background:var(--lil);aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;font:500 13px Poppins,system-ui,sans-serif;color:var(--ink);cursor:pointer;padding:0}.cd b{font-size:11px;color:var(--teal);height:13px}.cd.out{opacity:.35}.cd.today{outline:2px solid var(--blue)}.cd.has{background:rgba(20,200,181,.18)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border:1.5px solid var(--c);color:var(--c);background:none;border-radius:20px;padding:7px 12px;font:600 13px Poppins,system-ui,sans-serif;cursor:pointer}.chip.on{background:var(--c);color:#fff}
+.nums{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px}.num{border:0;border-radius:12px;padding:11px 0;font:600 16px Poppins,system-ui,sans-serif;background:var(--lil);color:var(--ink);cursor:pointer}.num.on{background:linear-gradient(135deg,var(--teal),var(--vio));color:#fff}
+.lnk{border:0;background:none;color:var(--blue);font:600 13px Poppins,system-ui,sans-serif;cursor:pointer;padding:6px 0}
+.nav{position:sticky;bottom:0;display:flex;background:var(--card);border-radius:24px 24px 0 0;box-shadow:0 -6px 24px rgba(80,70,200,.12);padding:10px 4px 12px}.nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:500;color:var(--mut);text-decoration:none}.nav a.on{color:var(--teal);font-weight:600}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ov{position:fixed;inset:0;background:rgba(10,15,45,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50}.sheet{background:var(--card);width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));max-height:92%;overflow:auto}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:10px 16px;border-radius:14px;font-size:14px;z-index:60}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:var(--lil);border-radius:16px;padding:12px}.stat b{font-size:20px;display:block}.stat span{font-size:12px;color:var(--mut)}
+.big{width:84px;height:84px;border-radius:50%;margin:4px auto 10px;display:grid;place-items:center;font-size:36px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--teal),var(--vio))}
+
+.top{display:flex;align-items:center;justify-content:space-between}.top::after{content:"TYÖAJAN SEURANTA";font-size:10px;letter-spacing:1.3px;color:var(--mut)}
+.quick{margin-bottom:16px}.weektools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}.weektools label{margin:0}.weektools input{width:auto;flex:1;min-width:140px;padding:8px;font-size:14px}.weektools .lnk{margin-left:auto}
+button,a,input,select{touch-action:manipulation}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--teal);outline-offset:3px}.nav{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}.nav a{min-height:44px;justify-content:center}.btn.sm{min-height:42px}.row .g,.card p{overflow-wrap:anywhere}.sheet{overscroll-behavior:contain}.ov{backdrop-filter:blur(4px)}body:has(.ov){overflow:hidden}.nums{grid-template-columns:repeat(6,minmax(0,1fr))}.status-note{font-size:12px;margin-bottom:10px}.empty{padding:10px 0}.row[data-a]{border-radius:8px}.row[data-a]:hover{background:var(--lil)}
+@media(max-width:370px){main{padding:6px 10px 18px}.card{padding:12px}.d{width:44px}.row{gap:6px}.tag{padding:3px 5px;font-size:11px}.top::after{font-size:8px}.clk{font-size:44px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14C8B5"/><stop offset=".55" stop-color="#2a8ad8"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
+<symbol id="logo" viewBox="0 0 64 64"><circle cx="32" cy="34" r="24" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-dasharray="118 33" transform="rotate(-4 32 34)"/><path d="M32 17v5M14 36h5" stroke="#0B5BD3" stroke-width="3" stroke-linecap="round"/><path d="M22 36l8 8 15-17" fill="none" stroke="#0B5BD3" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M45 7l2 5M52 11l-3 4M56 18l-5 1" stroke="#14C8B5" stroke-width="2.5" stroke-linecap="round"/></symbol></defs></svg>
+<div id="app"><header class="top"><a class="brand" href="#kalenteri"><svg><use href="#logo"/></svg><span>Tunti<span class="x">X</span></span></a></header><main id="v"></main><nav class="nav" id="nav"></nav></div>
+<div id="m"></div><div id="t"></div>
+<script>
+const $=s=>document.querySelector(s),K='tuntix.tt1';
+const TY=[['Laskutyö','#0B5BD3'],['Sovittu','#14C8B5'],['Urakka','#8B5CF6'],['Koulutus','#d98a00'],['Etumies','#0ea5e9'],['Sää','#64748b'],['Pekkanen','#ec4899'],['Sairasloma','#ef4444'],['Loma','#22a55a']],ABS=['Sää','Pekkanen','Sairasloma','Loma'];
+const TD={'Laskutyö':'Tuntityö, joka laskutetaan','Sovittu':'Erikseen sovittu työ tai hinta','Urakka':'Urakkatyö','Koulutus':'Koulutus tai perehdytys','Etumies':'Etumiehen tehtävät','Sää':'Sääpäivä, työ estynyt sään takia','Pekkanen':'Pekkaspäivä (työajan lyhennys)','Sairasloma':'Sairauspoissaolo','Loma':'Vuosiloma'};
+let S={init:0,pr:[],en:[],set:{goal:7.5},pf:{name:'',emp:'',role:''},last:{t:'Laskutyö',p:''}},wo=0,mo=0,ed=null,ret=0;
+try{const r=localStorage.getItem(K);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S));return true}catch(e){alert('Tallennus epäonnistui. Lataa varmuuskopio ennen sivun sulkemista.');return false}};
+const pad=n=>String(n).padStart(2,'0'),wd=d=>(new Date(d).getDay()+6)%7,dk=d=>{d=new Date(d);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const pd=s=>new Date(s+'T00:00'),addD=(d,n)=>{d=new Date(d);d.setDate(d.getDate()+n);return d},mon=d=>{d=new Date(d);d.setHours(0,0,0,0);return addD(d,-wd(d))};
+const fh=h=>(Math.round(h*10)/10).toString().replace('.',',')+' h',fd=d=>{d=new Date(d);return d.getDate()+'.'+(d.getMonth()+1)+'.'};
+const wk=d=>{d=new Date(d);d.setHours(0,0,0,0);d.setDate(d.getDate()+3-wd(d));const w=new Date(d.getFullYear(),0,4);return 1+Math.round(((d-w)/864e5-3+wd(w))/7)};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DN=['Ma','Ti','Ke','To','Pe','La','Su'],DL=['Maanantai','Tiistai','Keskiviikko','Torstai','Perjantai','Lauantai','Sunnuntai'],MO=['Tammikuu','Helmikuu','Maaliskuu','Huhtikuu','Toukokuu','Kesäkuu','Heinäkuu','Elokuu','Syyskuu','Lokakuu','Marraskuu','Joulukuu'];
+const col=t=>(TY.find(x=>x[0]===t)||[0,'#888'])[1],pn=id=>(S.pr.find(p=>p.id===id)||{n:''}).n;
+const P={cal:'M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM8 3v4M16 3v4M3 10h18',site:'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6',user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-2-4-2 1-2-1-1-2h-4l-1 2-2 1-2-1-2 4 2 1v2l-2 1 2 4 2-1 2 1 1 2h4l1-2 2-1 2 1 2-4-2-1z'};
+const ic=n=>`<svg class="i" viewBox="0 0 24 24"><path d="${P[n]}"/></svg>`;
+function seed(){if(S.init)return;S.init=1;S.pr=[{id:'p1',n:'Kerrostalo Koivukuja 4',a:'Koivukuja 4, 00100 Helsinki'},{id:'p2',n:'Toimitila Pitkäsilta',a:'Pitkäsillanranta 3, 33100 Tampere'}];S.last.p='p1';
+const t=new Date();t.setHours(0,0,0,0);for(let i=20;i>=1;i--){const d=addD(t,-i);if(wd(d)>4)continue;let ty='Laskutyö',p=i%7<3?'p2':'p1',h=7.5+(i%3?0:1),c='';
+if(i===9){ty='Koulutus';c='Työturvallisuuskurssi'}else if(i===12){ty='Sää';p='';c='Sadepäivä'}else if(i===16){ty='Loma';p=''}else if(i%5===0)ty='Urakka';S.en.push({id:'d'+i,d:dk(d),p,t:ty,h,c})}save()}
+if(!S.init){S.init=1;save()}
+const toast=m=>{const t=$('#t');t.innerHTML=`<div class="toast">${esc(m)}</div>`;clearTimeout(toast.k);toast.k=setTimeout(()=>t.innerHTML='',2400)};
+const H=()=>{const h={};S.en.forEach(e=>h[e.d]=(h[e.d]||0)+e.h);return h};
+function kalenteri(){const n=new Date(),ws=addD(mon(n),wo*7),h=H(),g=S.set.goal*5;let tot=0,rows='';
+for(let i=0;i<7;i++){const d=addD(ws,i),k=dk(d),es=S.en.filter(e=>e.d===k);tot+=h[k]||0;if(i>4&&!es.length&&k!==dk(n))continue;
+rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'today':''}"><b>${DN[i]}</b><span>${fd(d)}</span></div><div class="g">${es.map(e=>`<span class="tag" style="background:${col(e.t)}22;color:${col(e.t)}">${esc(e.t)} ${fh(e.h)}</span>`).join('')||'<small>–</small>'}</div><b>${h[k]?fh(h[k]):''}</b><span class="plus">+</span></div>`}
+const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
+for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b>${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
+return `<div class="hero"><div class="clk" id="clk">${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}</div><b>${DL[wd(n)]} ${fd(n)}${n.getFullYear()}</b></div>
+<div class="quick"><button class="btn pri" data-a="day" data-d="${dk(n)}">+ Lisää tunnit tänään</button></div><div class="card"><div class="weektools"><label for="weekdate">Valitse viikko</label><input id="weekdate" type="date" value="${dk(ws)}"><button class="lnk" data-a="now">Tämä viikko</button></div><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))} · ${fh(tot)}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div><div class="prog"><i style="width:${Math.min(100,tot/g*100)}%"></i></div><p style="font-size:12px;margin:0 0 4px">Tavoite ${fh(g)}</p>${rows}<button class="lnk" data-a="weekcsv">↓ Vie viikon tunnit (CSV)</button></div>
+<div class="card"><div class="wk"><button class="btn sm" data-a="pm">‹</button><b>${MO[m0.getMonth()]} ${m0.getFullYear()}</b><button class="btn sm" data-a="nm">›</button></div><div class="cal">${c}</div></div>`}
+function projektit(){const mm=dk(new Date()).slice(0,7),by={};S.en.filter(e=>e.d.startsWith(mm)).forEach(e=>by[e.p]=(by[e.p]||0)+e.h);
+return `<h2>Projektit</h2><button class="btn pri" style="margin:0 0 14px" data-a="np">+ Lisää projekti ja osoite</button>${S.pr.map(p=>`<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div><b>${esc(p.n)}</b><p style="margin:2px 0">📍 ${esc(p.a||'Ei osoitetta')}</p><p style="margin:2px 0">Tässä kuussa: <b>${fh(by[p.id]||0)}</b></p></div><button class="btn sm" data-a="ep" data-id="${p.id}">Muokkaa</button></div>${p.a?`<a class="lnk" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.a)}">Avaa kartalla</a>`:''}</div>`).join('')||'<div class="card"><p>Ei projekteja vielä.</p></div>'}`}
+function asetukset(){return `<h2>Asetukset</h2>${settingsExtra()}<div class="card"><label>Päivätavoite (h)</label><input data-s="goal" type="number" step="0.5" min="1" max="24" value="${S.set.goal}"><p>Viikkotavoite: ${fh(S.set.goal*5)}. Poissaolopäivät (Sää, Pekkanen, Sairasloma, Loma) täyttyvät tällä tuntimäärällä.</p></div>
+<div class="card"><h3>Työlajit</h3>${TY.map(t=>`<div class="row" style="cursor:default"><span class="tag" style="background:${t[1]}22;color:${t[1]};min-width:92px;text-align:center">${t[0]}</span><span class="g">${TD[t[0]]}</span></div>`).join('')}</div>
+<div class="card"><p>Tiedot tallennetaan vain tähän selaimeen.</p><button class="btn" data-a="demo">Palauta esimerkkitiedot</button><button class="btn del" data-a="clear">Poista kaikki tiedot</button></div>`}
+function profiili(){const n=new Date(),y=String(n.getFullYear()),m=dk(n).slice(0,7),mes=S.en.filter(e=>e.d.startsWith(m)),tot=mes.reduce((a,e)=>a+e.h,0),by={};mes.forEach(e=>by[e.t]=(by[e.t]||0)+e.h);
+const days=t=>new Set(S.en.filter(e=>e.t===t&&e.d.startsWith(y)).map(e=>e.d)).size;
+return `<div class="card" style="text-align:center"><div class="big">${esc((S.pf.name||'T')[0].toUpperCase())}</div><h2 style="margin:0">${esc(S.pf.name||'Oma profiili')}</h2><p>${esc([S.pf.role,S.pf.emp].filter(Boolean).join(' · '))}</p></div>
+<div class="card"><label style="margin-top:0">Nimi</label><input data-p="name" value="${esc(S.pf.name)}" placeholder="Etunimi Sukunimi"><label>Työnantaja</label><input data-p="emp" value="${esc(S.pf.emp)}" placeholder="Yrityksen nimi"><label>Ammatti / tehtävä</label><input data-p="role" value="${esc(S.pf.role)}" placeholder="Esim. kirvesmies"></div>
+<div class="card"><h3>${MO[n.getMonth()]}: ${fh(tot)}</h3>${Object.keys(by).map(t=>`<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(t)}</span><b>${fh(by[t])}</b></div><div class="prog" style="margin:3px 0"><i style="width:${by[t]/tot*100}%;background:${col(t)}"></i></div></div>`).join('')||'<p>Ei kirjauksia tässä kuussa.</p>'}</div>
+<div class="card"><h3>Poissaolot vuonna ${y}</h3><div class="g2">${ABS.map(t=>`<div class="stat"><b>${days(t)} pv</b><span>${esc(t)}</span></div>`).join('')}</div></div>`}
+const R={kalenteri,projektit,asetukset,profiili};
+function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
+$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['asetukset','gear','Asetukset'],['profiili','user','Profiili']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0)}
+addEventListener('hashchange',()=>render());
+const modal=h=>$('#m').innerHTML=`<div class="ov" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja">${h}</div></div>`;
+function sync(){const g=id=>$('#'+id);if(g('fp'))ed.p=g('fp').value;if(g('fh'))ed.h=+g('fh').value;if(g('fc'))ed.c=g('fc').value}
+function sheet(){const e=ed,es=S.en.filter(x=>x.d===e.d),ab=ABS.includes(e.t);
+modal(`<h2>${DL[wd(pd(e.d))]} ${fd(pd(e.d))}</h2>${es.map(x=>`<div class="row" data-a="ee" data-id="${x.id}"><span class="tag" style="background:${col(x.t)}22;color:${col(x.t)}">${esc(x.t)}</span><div class="g">${esc(pn(x.p))}<small>${esc(x.c||'')}</small></div><b>${fh(x.h)}</b></div>`).join('')}
+<h3 style="margin-top:14px">${e.id?'Muokkaa kirjausta':'Lisää tunnit'}</h3><label style="margin-top:0">Työlaji</label><div class="chips">${TY.map(t=>`<button class="chip ${e.t===t[0]?'on':''}" style="--c:${t[1]}" data-a="ty" data-t="${t[0]}">${t[0]}</button>`).join('')}</div>
+${ab?'':`<label>Projekti / työmaa</label><select id="fp"><option value="">Valitse projekti</option>${S.pr.map(p=>`<option value="${p.id}" ${p.id===e.p?'selected':''}>${esc(p.n)}</option>`).join('')}</select><button class="lnk" data-a="np2">+ Lisää projekti ja osoite</button>`}
+<label>Tunnit – napauta lukua</label><div class="nums">${[1,2,3,4,5,6,7,8,9,10,11,12].map(v=>`<button class="num ${e.h===v?'on':''}" data-a="hh" data-h="${v}">${v}</button>`).join('')}</div><input id="fh" type="number" step="0.25" min="0.5" max="24" value="${e.h}">
+<label>Kommentti</label><input id="fc" value="${esc(e.c)}" placeholder="Valinnainen"><div class="g2" style="margin-top:14px"><button class="btn sm" data-a="close">Peruuta</button><button class="btn sm pri" data-a="sv">Tallenna</button></div>${e.id?`<button class="btn del" data-a="de" data-id="${e.id}">Poista kirjaus</button>`:''}`)}
+function pform(id){const p=id?S.pr.find(x=>x.id===id):{n:'',a:''};modal(`<h2>${id?'Muokkaa projektia':'Uusi projekti'}</h2><label style="margin-top:0">Projektin / työmaan nimi</label><input id="pn" value="${esc(p.n)}"><label>Osoite</label><input id="pa" value="${esc(p.a)}" placeholder="Katu 1, 00100 Helsinki"><div class="g2" style="margin-top:14px"><button class="btn sm" data-a="pc">Peruuta</button><button class="btn sm pri" data-a="sp" data-id="${id||''}">Tallenna</button></div>${id?`<button class="btn del" data-a="dp" data-id="${id}">Poista projekti</button>`:''}`)}
+const mk=d=>({d,t:S.last.t,p:S.last.p||(S.pr[0]||{}).id||'',h:S.set.goal,c:''});
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
+if(a==='pw'){wo--;render(1)}else if(a==='nw'){wo++;render(1)}else if(a==='pm'){mo--;render(1)}else if(a==='nm'){mo++;render(1)}
+else if(a==='day'){ed=mk(b.dataset.d);sheet()}
+else if(a==='ee'){const x=S.en.find(z=>z.id===id);ed=Object.assign({},x,{c:x.c||''});sheet()}
+else if(a==='ty'){sync();ed.t=b.dataset.t;if(ABS.includes(ed.t))ed.h=S.set.goal;sheet()}
+else if(a==='hh'){sync();ed.h=+b.dataset.h;sheet()}
+else if(a==='sv'){sync();if(!(Number.isFinite(ed.h)&&ed.h>=0.5&&ed.h<=24))return toast('Anna tunnit (0,5–24)');if(S.en.filter(e=>e.d===ed.d&&e.id!==ed.id).reduce((a,e)=>a+e.h,0)+ed.h>24)return toast('Päivän tunnit eivät voi ylittää 24 tuntia');const ab=ABS.includes(ed.t);if(!ab&&!ed.p)return toast('Lisää ensin projekti');const o={d:ed.d,p:ab?'':ed.p,t:ed.t,h:ed.h,c:(ed.c||'').trim()};
+if(ed.id)Object.assign(S.en.find(z=>z.id===ed.id),o);else S.en.push(Object.assign({id:'e'+crypto.randomUUID()},o));S.last={t:ed.t,p:ab?S.last.p:ed.p};if(!save())return;ed=null;$('#m').innerHTML='';render(1);toast('Tallennettu')}
+else if(a==='de'){if(!confirm('Poistetaanko tämä kirjaus?'))return;S.en=S.en.filter(z=>z.id!==id);if(!save())return;ed=null;$('#m').innerHTML='';render(1);toast('Kirjaus poistettu')}
+else if(a==='close'){if(!b.classList.contains('btn')&&ev.target.closest('.sheet'))return;ed=null;$('#m').innerHTML=''}
+else if(a==='np'){ret=0;pform()}else if(a==='np2'){sync();ret=1;pform()}else if(a==='ep'){ret=0;pform(id)}
+else if(a==='pc'){if(ret&&ed)sheet();else $('#m').innerHTML=''}
+else if(a==='sp'){const n=$('#pn').value.trim();if(!n)return toast('Anna projektille nimi');const a2=$('#pa').value.trim();let pid=id;if(id){Object.assign(S.pr.find(z=>z.id===id),{n,a:a2})}else{pid='p'+crypto.randomUUID();S.pr.push({id:pid,n,a:a2})}save();if(ret&&ed){ed.p=pid;sheet()}else{$('#m').innerHTML='';render(1)}toast('Projekti tallennettu')}
+else if(a==='dp'){if(S.en.some(e=>e.p===id))return toast('Projektilla on kirjauksia. Poista kirjaukset ensin.');if(!confirm('Poistetaanko projekti?'))return;S.pr=S.pr.filter(z=>z.id!==id);save();$('#m').innerHTML='';render(1)}
+else if(a==='demo'){if(confirm('Palautetaanko esimerkkitiedot?')){localStorage.removeItem(K);S={init:0,pr:[],en:[],set:{goal:7.5},pf:{name:'',emp:'',role:''},last:{t:'Laskutyö',p:''}};seed();render(1)}}
+else if(a==='clear'){if(confirm('Poistetaanko kaikki tiedot?')){S.en=[];S.pr=[];S.init=1;save();render(1)}}});
+document.addEventListener('change',ev=>{const t=ev.target;if(t.dataset.s){const v=Number(t.value);if(!Number.isFinite(v)||v<1||v>24){t.value=S.set.goal;return toast('Anna tavoite 1–24 h')}S.set.goal=v;save();render(1)}else if(t.dataset.p){S.pf[t.dataset.p]=t.value;save()}});
+setInterval(()=>{const c=$('#clk');if(c){const d=new Date();c.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())}},1000);
+applyTheme();
+function applyTheme(){const theme=S.set.theme||'auto';if(theme==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=theme}
+function settingsExtra(){return `<div class="card"><h3>Ulkoasu</h3><label for="theme">Teema</label><select id="theme">${[['auto','Laitteen mukaan'],['light','Vaalea'],['dark','Tumma']].map(([v,n])=>`<option value="${v}" ${(S.set.theme||'auto')===v?'selected':''}>${n}</option>`).join('')}</select></div><div class="card"><h3>Varmuuskopio ja vienti</h3><p>Tiedot säilyvät tässä selaimessa. Varmuuskopion avulla voit siirtää ne toiselle laitteelle.</p><button class="btn" data-a="backup">↓ Lataa varmuuskopio (JSON)</button><button class="btn" data-a="import">↑ Palauta varmuuskopio</button><input type="file" id="restore" accept=".json,application/json" hidden><button class="btn" data-a="csv">↓ Vie kaikki tunnit (CSV)</button></div>`}
+function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}
+function backup(){download('tuntix-'+dk(new Date())+'.json',JSON.stringify({app:'TuntiX',version:2,exportedAt:new Date().toISOString(),data:S},null,2),'application/json')}
+function exportCsv(weekly){const start=dk(addD(mon(new Date()),wo*7)),end=dk(addD(pd(start),6));const entries=S.en.filter(e=>!weekly||(e.d>=start&&e.d<=end)).sort((a,b)=>a.d.localeCompare(b.d));const cell=v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';const rows=[['Päivä','Työlaji','Projekti','Tunnit','Kommentti'],...entries.map(e=>[e.d,e.t,pn(e.p),String(e.h).replace('.',','),e.c])];download('tuntix-'+(weekly?start:'kaikki')+'.csv','\ufeff'+rows.map(r=>r.map(cell).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
+function validateBackup(raw){const x=raw.data||raw;const str=v=>typeof v==='string';const ids=a=>new Set(a.map(e=>e.id)).size===a.length;if(!x||!Array.isArray(x.en)||!Array.isArray(x.pr)||!x.set||!x.pf||!x.last||!Number.isFinite(x.set.goal)||x.set.goal<1||x.set.goal>24)throw Error();if(!x.pr.every(p=>str(p.id)&&/^[a-zA-Z0-9_-]+$/.test(p.id)&&str(p.n)&&str(p.a))||!ids(x.pr)||!ids(x.en))throw Error();const totals={};for(const e of x.en){if(!str(e.id)||!/^[a-zA-Z0-9_-]+$/.test(e.id)||!str(e.d)||!/^\d{4}-\d{2}-\d{2}$/.test(e.d)||isNaN(pd(e.d))||dk(pd(e.d))!==e.d||!TY.some(t=>t[0]===e.t)||!str(e.p)||!str(e.c)||!Number.isFinite(e.h)||e.h<0.5||e.h>24)throw Error();totals[e.d]=(totals[e.d]||0)+e.h;if(totals[e.d]>24)throw Error()}if(!['name','emp','role'].every(k=>str(x.pf[k])))throw Error();return {init:1,pr:x.pr.map(p=>({id:p.id,n:p.n,a:p.a})),en:x.en.map(e=>({id:e.id,d:e.d,p:e.p,t:e.t,h:e.h,c:e.c})),set:{goal:x.set.goal,theme:['light','dark','auto'].includes(x.set.theme)?x.set.theme:'auto'},pf:{name:x.pf.name,emp:x.pf.emp,role:x.pf.role},last:{t:TY.some(t=>t[0]===x.last.t)?x.last.t:'Laskutyö',p:x.pr.some(p=>p.id===x.last.p)?x.last.p:''}}}
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b)return;switch(b.dataset.a){case 'backup':backup();break;case 'csv':exportCsv(false);break;case 'weekcsv':exportCsv(true);break;case 'import':$('#restore').click();break;case 'now':wo=0;mo=0;render();break}});
+document.addEventListener('change',async ev=>{const t=ev.target;if(t.id==='theme'){S.set.theme=t.value;save();applyTheme()}if(t.id==='weekdate'&&t.value){wo=Math.round((mon(pd(t.value))-mon(new Date()))/604800000);const d=pd(t.value),now=new Date();mo=(d.getFullYear()-now.getFullYear())*12+d.getMonth()-now.getMonth();render(1)}if(t.id==='restore'&&t.files[0]){try{if(t.files[0].size>5000000)throw Error();const next=validateBackup(JSON.parse(await t.files[0].text()));if(!confirm('Korvataanko nykyiset tiedot varmuuskopiolla? Nykyisistä tiedoista ladataan ensin kopio.'))return;backup();const previous=S;S=next;if(!save()){S=previous;return}applyTheme();render(1);toast('Varmuuskopio palautettu')}catch(e){toast('Virheellinen varmuuskopio. Tietoja ei muutettu.')}finally{t.value=''}}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'){$('#m').innerHTML='';ed=null}if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches('.row[data-a]')){ev.preventDefault();ev.target.click()}});
+const observer=new MutationObserver(()=>{document.querySelectorAll('.row[data-a]').forEach(el=>{el.tabIndex=0;el.setAttribute('role','button')});document.querySelectorAll('label').forEach(el=>{const next=el.nextElementSibling;if(next&&/^(INPUT|SELECT)$/.test(next.tagName)){if(!next.id)next.id='field-'+Math.random().toString(36).slice(2);el.htmlFor=next.id}})});observer.observe($('#app'),{childList:true,subtree:true});observer.observe($('#m'),{childList:true,subtree:true});
+render();
+</script>
+</body>
+</html>
