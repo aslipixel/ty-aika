@@ -46,6 +46,7 @@ svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke
 button,a,input,select{touch-action:manipulation}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--teal);outline-offset:3px}.nav{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}.nav a{min-height:44px;justify-content:center}.btn.sm{min-height:42px}.row .g,.card p{overflow-wrap:anywhere}.sheet{overscroll-behavior:contain}.ov{backdrop-filter:blur(4px)}body:has(.ov){overflow:hidden}.nums{grid-template-columns:repeat(6,minmax(0,1fr))}.status-note{font-size:12px;margin-bottom:10px}.empty{padding:10px 0}.row[data-a]{border-radius:8px}.row[data-a]:hover{background:var(--lil)}
 @media(max-width:370px){main{padding:6px 10px 18px}.card{padding:12px}.d{width:44px}.row{gap:6px}.tag{padding:3px 5px;font-size:11px}.top::after{font-size:8px}.clk{font-size:44px}}
 .km{display:inline-block;font-size:12px;color:var(--mut);white-space:nowrap;margin-left:6px;font-weight:500}.km button{font:inherit;color:inherit;border:0;background:none;padding:2px;cursor:pointer;text-decoration:underline}.km-line{font-size:12px;color:var(--mut);margin:5px 0}
+.week-project{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:3px 0;font-size:12px}.week-project>span{min-width:0;overflow-wrap:anywhere}.week-project>strong{white-space:nowrap;font-weight:600}.row>b{white-space:nowrap}
 .project-address{font-size:12px;line-height:1.4;margin-top:3px;overflow-wrap:anywhere}.sheet .row>div:last-child:not(.g){flex-shrink:0}button:disabled{opacity:.6;cursor:wait}
 </style>
 </head>
@@ -77,9 +78,10 @@ if(i===9){ty='Koulutus';c='Työturvallisuuskurssi'}else if(i===12){ty='Sää';p=
 if(!S.init){S.init=1;save()}
 const toast=m=>{const t=$('#t');t.innerHTML=`<div class="toast">${esc(m)}</div>`;clearTimeout(toast.k);toast.k=setTimeout(()=>t.innerHTML='',2400)};
 const H=()=>{const h={};S.en.forEach(e=>h[e.d]=(h[e.d]||0)+e.h);return h};
+function projectSummary(entries){const groups=new Map();for(const e of entries){const key=e.p||'';if(!groups.has(key))groups.set(key,{name:pn(e.p)||(e.p?'Poistettu projekti':'Ei projektia'),hours:0});groups.get(key).hours+=e.h}return [...groups.values()].map(p=>`<div class="week-project"><span>${esc(p.name)}</span><strong>${fh(p.hours)}</strong></div>`).join('')||'<small>–</small>'}
 function kalenteri(){const n=new Date(),ws=addD(mon(n),wo*7),h=H(),g=S.set.goal*5;let tot=0,rows='';
 for(let i=0;i<7;i++){const d=addD(ws,i),k=dk(d),es=S.en.filter(e=>e.d===k);tot+=h[k]||0;if(i>4&&!es.length&&k!==dk(n))continue;
-rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'today':''}"><b>${DN[i]}</b><span>${fd(d)}</span></div><div class="g">${es.map(e=>`<span class="tag" style="background:${col(e.t)}22;color:${col(e.t)}">${esc(e.t)} ${fh(e.h)}</span>${e.p?distanceBadge(e.p):''}`).join('')||'<small>–</small>'}</div><b>${h[k]?fh(h[k]):''}</b><span class="plus">+</span></div>`}
+rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'today':''}"><b>${DN[i]}</b><span>${fd(d)}</span></div><div class="g">${projectSummary(es)}</div><b>${h[k]?fh(h[k]):''}</b><span class="plus">+</span></div>`}
 const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
 for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b>${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
 return `<div class="hero"><div class="clk" id="clk">${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}</div><b>${DL[wd(n)]} ${fd(n)}${n.getFullYear()}</b></div>
