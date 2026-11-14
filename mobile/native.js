@@ -17,6 +17,19 @@ window.nativeDownload = async (name, text) => {
     throw error;
   }
 };
+// PDFs are bundled in the HTML; export binary base64 without a network request.
+window.nativeOpenPdf = async doc => {
+  try {
+    const supplement = doc === 'liite';
+    const element = document.getElementById(supplement ? 'tes-pdf-liite' : 'tes-pdf-main');
+    if (!element) throw Error('Bundled TES PDF missing');
+    const name = supplement ? 'Vedeneristys-TES-lisaliite-2026.pdf' : 'Vedeneristys-TES-2025-2028.pdf';
+    const { uri } = await Filesystem.writeFile({ path: name, data: element.textContent.trim(), directory: Directory.Cache });
+    await Share.share({ title: name, files: [uri], dialogTitle: 'Avaa tai tallenna TES' });
+  } catch (error) {
+    if (!/cancel|dismiss/i.test(String(error?.message || error))) alert('PDF:n avaaminen epäonnistui. Yritä uudelleen.');
+  }
+};
 async function start() {
   try {
     const { value } = await Preferences.get({ key });
