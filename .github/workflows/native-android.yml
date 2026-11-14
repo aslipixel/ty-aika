@@ -1,13 +1,6 @@
 name: Build TuntiX Android APK
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'mobile/**'
-      - 'tuntix/tyontekija/index.html'
-      - 'tuntix/tuntix-icon.svg'
-      - '.github/workflows/native-android.yml'
 permissions:
   contents: read
 jobs:
