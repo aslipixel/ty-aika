@@ -169,6 +169,11 @@ input,select{transition:border-color 240ms ease,box-shadow 240ms ease}
 .picker-empty{font-weight:500;color:var(--mut);width:100%}
 .picker-delete{border:0;background:transparent;color:#c53049;font:600 14px Poppins,system-ui,sans-serif;min-height:44px;padding:8px;flex-shrink:0;cursor:pointer}
 @media(prefers-reduced-motion:reduce){.project-picker[open]{animation:none}}
+
+.address-suggestions{margin-top:6px;border:1px solid var(--line);border-radius:12px;background:var(--card);max-height:210px;overflow-y:auto;overscroll-behavior:contain}
+.address-option{display:block;width:100%;padding:12px;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:500 15px Poppins,system-ui,sans-serif;min-height:46px;cursor:pointer;overflow-wrap:anywhere}
+.address-option:last-child{border-bottom:0}.address-option:hover,.address-option:focus-visible{background:var(--lil)}
+.address-hint{font-size:11px;line-height:1.4;margin-top:5px}
 </style>
 </head>
 <body>
@@ -267,7 +272,7 @@ if(!dayEditing&&es.length){dayModal(`<h2>${DL[wd(pd(e.d))]} ${fd(pd(e.d))}</h2>$
 
 dayModal(`<h2>${DL[wd(pd(e.d))]} ${fd(pd(e.d))}</h2>${es.map((x,i)=>`<div class="entry-summary"><div class="row" data-a="ee" data-id="${x.id}"><span class="tag" style="background:${col(x.t)}22;color:${col(x.t)}">${esc(x.t)}</span><div class="g">${esc(pn(x.p))}${pa(x.p)&&es.findIndex(item=>item.p===x.p)===i?`<small class="project-address">${esc(pa(x.p))}</small>`:''}<small class="entry-comment">${esc(x.c||'')}</small></div><div><b>${fh(x.h)}</b>${x.p?distanceBadge(x.p):''}</div></div></div>`).join('')}
 ${es.length?'<button class="lnk" data-a="adddayentry">+ Lisää toinen kirjaus</button>':''}<h3 style="margin-top:14px">${e.id?'Muokkaa kirjausta':'Lisää tunnit'}</h3><label for="work-type" style="margin-top:0">Työlaji</label><select id="work-type"><option value="" ${!e.t?'selected':''}>Valitse työlaji</option>${(!e.t||visibleWorkTypes().some(t=>t[0]===e.t)?visibleWorkTypes():[...visibleWorkTypes(),[e.t,col(e.t)]]).map(t=>`<option value="${esc(t[0])}" ${e.t===t[0]?'selected':''}>${esc(t[0])}</option>`).join('')}</select><button class="lnk" data-a="edittypes">✎ Muokkaa työlajeja</button>
-${ab?'':`<label>Projekti / työmaa</label><input type="hidden" id="fp" value="${esc(e.p)}"><button type="button" class="project-picker-trigger" data-a="openprojectpicker" aria-haspopup="dialog" aria-label="Valitse projekti"><span>${e.p?esc(pn(e.p)):'Valitse projekti'}</span><span aria-hidden="true">⌄</span></button>${e.p?`<label>Projektin nimi</label><input id="edit-project-name" data-project="${esc(e.p)}" value="${esc(e.projects?.[e.p]?.n??pn(e.p))}"><label>Osoite</label><input id="edit-project-address" value="${esc(e.projects?.[e.p]?.a??pa(e.p))}" placeholder="Katu, talonumero ja kaupunki"><p class="status-note">Nimi ja osoite päivittyvät kaikkiin tämän projektin kirjauksiin.</p>`:''}<button class="lnk" data-a="np2">+ Lisää projekti ja osoite</button>`}
+${ab?'':`<label>Projekti / työmaa</label><input type="hidden" id="fp" value="${esc(e.p)}"><button type="button" class="project-picker-trigger" data-a="openprojectpicker" aria-haspopup="dialog" aria-label="Valitse projekti"><span>${e.p?esc(pn(e.p)):'Valitse projekti'}</span><span aria-hidden="true">⌄</span></button>${e.p?`<label>Projektin nimi</label><input id="edit-project-name" data-project="${esc(e.p)}" value="${esc(e.projects?.[e.p]?.n??pn(e.p))}"><label>Osoite</label>${addressInput("edit-project-address",e.projects?.[e.p]?.a??pa(e.p))}<p class="status-note">Nimi ja osoite päivittyvät kaikkiin tämän projektin kirjauksiin.</p>`:''}<button class="lnk" data-a="np2">+ Lisää projekti ja osoite</button>`}
 <label>Tunnit ${!ab&&e.p?distanceBadge(e.p):''}</label><input id="fh" inputmode="decimal" type="number" step="0.25" min="0.5" max="24" value="${e.h}">
 <label>Kommentti</label><input id="fc" value="${esc(e.c)}" placeholder="Valinnainen"><div class="g2" style="margin-top:14px"><button class="btn sm" data-a="canceledit">Peruuta</button><button class="btn sm pri" data-a="sv">Tallenna</button></div>${e.id?`<button class="btn del" data-a="de" data-id="${e.id}">Poista kirjaus</button>`:''}`);refreshDistances()}
 
@@ -275,7 +280,7 @@ function projectPickerRows(){return `<button type="button" class="picker-empty" 
 function openProjectPicker(){if(!ed)return;sync();let dialog=$('#project-picker');if(!dialog){dialog=document.createElement('dialog');dialog.id='project-picker';dialog.className='project-picker';dialog.setAttribute('aria-labelledby','project-picker-title');dialog.innerHTML='<div class="picker-heading"><h2 id="project-picker-title">Valitse projekti</h2><button type="button" class="sheet-control sheet-done" data-a="closeprojectpicker" aria-label="Sulje projektivalinta">✓</button></div><div class="picker-list"></div>';document.body.append(dialog);dialog.addEventListener('cancel',ev=>{ev.preventDefault();closeProjectPicker()});dialog.addEventListener('click',ev=>{if(ev.target===dialog)closeProjectPicker()})}dialog.querySelector('.picker-list').innerHTML=projectPickerRows();if(!dialog.open)dialog.showModal()}
 function closeProjectPicker(){const dialog=$('#project-picker');if(dialog){dialog.close();dialog.remove()}$('.project-picker-trigger')?.focus({preventScroll:true})}
 
-function pform(id){const p=id?S.pr.find(x=>x.id===id):{n:'',a:''};modal(`<h2>${id?'Muokkaa projektia':'Uusi projekti'}</h2><label style="margin-top:0">Projektin / työmaan nimi</label><input id="pn" value="${esc(p.n)}"><label>Osoite</label><input id="pa" value="${esc(p.a)}" placeholder="Katu 1, 00100 Helsinki">${id?'<p class="status-note">Nimi ja osoite päivittyvät kaikkiin tämän projektin kirjauksiin. Lisää osoitteeseen myös kaupunki kilometrien laskentaa varten.</p>':''}<div class="g2" style="margin-top:14px"><button class="btn sm" data-a="pc">Peruuta</button><button class="btn sm pri" data-a="sp" data-id="${id||''}">Tallenna</button></div>${id&&!ret?`<button class="btn del" data-a="dp" data-id="${id}">Poista projekti</button>`:''}`)}
+function pform(id){const p=id?S.pr.find(x=>x.id===id):{n:'',a:''};modal(`<h2>${id?'Muokkaa projektia':'Uusi projekti'}</h2><label style="margin-top:0">Projektin / työmaan nimi</label><input id="pn" value="${esc(p.n)}"><label>Osoite</label>${addressInput("pa",p.a)}${id?'<p class="status-note">Nimi ja osoite päivittyvät kaikkiin tämän projektin kirjauksiin. Lisää osoitteeseen myös kaupunki kilometrien laskentaa varten.</p>':''}<div class="g2" style="margin-top:14px"><button class="btn sm" data-a="pc">Peruuta</button><button class="btn sm pri" data-a="sp" data-id="${id||''}">Tallenna</button></div>${id&&!ret?`<button class="btn del" data-a="dp" data-id="${id}">Poista projekti</button>`:''}`)}
 const mk=d=>({d,t:'',p:'',h:DEFAULT_HOURS,c:''});
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
 if(a==='pw'){wo--;render(1)}else if(a==='nw'){wo++;render(1)}else if(a==='pm'){mo--;render(1)}else if(a==='nm'){mo++;render(1)}
@@ -381,6 +386,68 @@ const navigationResizeObserver=typeof ResizeObserver!=='undefined'?new ResizeObs
 navigationResizeObserver?.observe(document.getElementById('nav'));
 window.addEventListener('resize',measureNavigation);
 requestAnimationFrame(measureNavigation);
+
+
+function addressInput(id,value){return `<div class="address-field"><input id="${id}" data-address-suggest autocomplete="off" value="${esc(value)}" placeholder="Katu, talonumero ja kaupunki" aria-describedby="${id}-hint" aria-controls="${id}-suggestions"><div id="${id}-suggestions" class="address-suggestions" role="group" aria-label="Osoite-ehdotukset" hidden></div><p id="${id}-hint" class="address-hint" role="status">Osoite-ehdotukset 3 merkistä · Photon / OpenStreetMap</p></div>`}
+let addressTimer=0,addressController=null,addressGeneration=0;
+const addressCache=new Map();
+function suggestionAddresses(features){
+const seen=new Set(),result=[];
+for(const feature of features||[]){
+const p=feature.properties||{};if(String(p.countrycode||'').toUpperCase()!=='FI')continue;
+const street=p.street||(p.osm_key==='highway'?p.name:'');const city=p.city||p.town||p.village||p.municipality;
+if(!street||!city)continue;
+const label=[street+(p.housenumber?' '+p.housenumber:''),[p.postcode,city].filter(Boolean).join(' ')].join(', ');
+const key=label.toLocaleLowerCase('fi');if(seen.has(key))continue;seen.add(key);
+result.push({label,hasNumber:!!p.housenumber});if(result.length===6)break;
+}
+return result;
+}
+function stopAddressSearch(){clearTimeout(addressTimer);addressController?.abort();addressController=null;addressGeneration++}
+function hideAddressSuggestions(){stopAddressSearch();document.querySelectorAll('.address-suggestions').forEach(box=>{box.hidden=true;box.innerHTML=''})}
+async function findAddressSuggestions(input,query,generation){
+if(!input.isConnected||input.value.trim()!==query||generation!==addressGeneration)return;
+const box=input.parentElement.querySelector('.address-suggestions'),hint=input.parentElement.querySelector('.address-hint');
+hint.textContent='Haetaan osoitteita…';
+let timer,controller;
+try{
+let rows=addressCache.get(query.toLocaleLowerCase('fi'));
+if(!rows){
+controller=new AbortController();addressController=controller;timer=setTimeout(()=>controller.abort(),8000);
+const response=await fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(query)+'&countrycode=FI&limit=12&layer=street&layer=house',{signal:controller.signal,credentials:'omit'});
+if(!response.ok)throw Error('Search unavailable');
+const data=await response.json();rows=suggestionAddresses(data.features);
+if(addressCache.size>=60)addressCache.delete(addressCache.keys().next().value);addressCache.set(query.toLocaleLowerCase('fi'),rows);
+}
+if(!input.isConnected||input.value.trim()!==query||generation!==addressGeneration)return;
+box.innerHTML=rows.map(row=>`<button type="button" class="address-option" data-address-value="${esc(row.label)}" data-address-number="${row.hasNumber?'yes':'no'}">${esc(row.label)}</button>`).join('');box.hidden=!rows.length;
+hint.textContent=rows.length?'Valitse osoite tai jatka kirjoittamista.':'Ei ehdotuksia. Lisää kaupunki tai kirjoita osoite itse.';
+}catch(error){
+if(input.isConnected&&generation===addressGeneration){box.hidden=true;hint.textContent='Osoitehaku ei ole käytettävissä. Voit kirjoittaa osoitteen itse.'}
+}finally{clearTimeout(timer);if(addressController===controller)addressController=null}
+}
+document.addEventListener('input',ev=>{
+const input=ev.target;if(!input.matches('[data-address-suggest]')||ev.isComposing)return;
+stopAddressSearch();const box=input.parentElement.querySelector('.address-suggestions');box.hidden=true;box.innerHTML='';
+const query=input.value.trim();if(query.length<3){input.parentElement.querySelector('.address-hint').textContent='Kirjoita vähintään 3 merkkiä.';return}
+const generation=addressGeneration;addressTimer=setTimeout(()=>findAddressSuggestions(input,query,generation),450);
+});
+document.addEventListener('click',ev=>{
+const option=ev.target.closest('[data-address-value]');if(option){
+const field=option.closest('.address-field'),input=field.querySelector('[data-address-suggest]');
+input.value=option.dataset.addressValue;hideAddressSuggestions();input.dispatchEvent(new Event('change',{bubbles:true}));
+field.querySelector('.address-hint').textContent=option.dataset.addressNumber==='yes'?'Osoite valittu.':'Lisää vielä talonumero kadun nimen jälkeen.';
+input.focus({preventScroll:true});input.setSelectionRange(input.value.length,input.value.length);
+}else if(!ev.target.closest('.address-field'))hideAddressSuggestions();
+});
+document.addEventListener('focusin',ev=>{if(!ev.target.closest('.address-field'))hideAddressSuggestions()});
+document.addEventListener('keydown',ev=>{
+const field=ev.target.closest('.address-field');if(!field)return;
+const box=field.querySelector('.address-suggestions');if(box.hidden)return;
+const input=field.querySelector('input'),options=[...box.querySelectorAll('button')],index=options.indexOf(ev.target);
+if(ev.key==='Escape'){ev.preventDefault();ev.stopImmediatePropagation();hideAddressSuggestions();input.focus({preventScroll:true})}
+else if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){ev.preventDefault();ev.stopImmediatePropagation();const next=ev.key==='ArrowDown'?Math.min(index+1,options.length-1):index-1;(next<0?input:options[next])?.focus({preventScroll:true})}
+},true);
 
 </script>
 </body>
