@@ -51,6 +51,41 @@ button,a,input,select{touch-action:manipulation}button:focus-visible,a:focus-vis
 .sheet .entry-summary .row{font-size:18px;line-height:1.5;gap:12px;flex-wrap:wrap}.sheet .entry-summary .tag{font-size:15px;padding:6px 10px}.sheet .entry-summary .g{font-weight:600;min-width:140px}.sheet .entry-summary .project-address{font-size:17px;font-weight:500;line-height:1.5;margin-top:5px}.sheet .entry-summary .entry-comment{font-size:18px;font-weight:700;color:var(--ink);line-height:1.5;margin-top:7px;white-space:pre-wrap}.sheet .entry-summary .row>div:last-child b{font-size:22px}.sheet .entry-summary .km{font-size:16px;white-space:normal}.sheet .entry-summary .row>div:last-child{max-width:100%;flex-shrink:1}.sheet:has(.entry-summary) h2{font-size:26px}
 .project-address{font-size:12px;line-height:1.4;margin-top:3px;overflow-wrap:anywhere}.sheet .row>div:last-child:not(.g){flex-shrink:0}button:disabled{opacity:.6;cursor:wait}
 .ov{top:var(--visible-top,0px);bottom:auto;height:var(--visible-height,100dvh)}.sheet{max-height:calc(100% - 12px);scroll-padding:24px 0 100px;-webkit-overflow-scrolling:touch}.sheet:has(input:focus),.sheet:has(textarea:focus){padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}.sheet input,.sheet select{scroll-margin-block:28px}
+
+/* Mobile page layout: reserve real space for the persistent navigation. */
+:root{--nav-height:calc(72px + env(safe-area-inset-bottom,0px))}
+html{height:auto;min-height:100%;padding:0;scroll-padding-bottom:calc(var(--nav-height) + 24px)}
+body{height:auto;min-height:100vh;min-height:100svh;padding-top:env(safe-area-inset-top,0px)}
+#app{width:100%;min-width:0;min-height:100vh;min-height:100svh}
+main{min-width:0;flex-shrink:0;padding-bottom:calc(var(--nav-height) + 28px)}
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:560px;z-index:20;padding:8px max(4px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px))}
+.nav a{min-width:0;min-height:48px;font-size:12px}
+#v .row[data-a="day"]{display:grid;grid-template-columns:52px minmax(0,1fr) auto 32px;gap:8px;min-height:58px;scroll-margin-block:16px calc(var(--nav-height) + 20px)}
+#v .row[data-a="day"] .d{width:auto}
+#v .row[data-a="day"]>.g{overflow-wrap:anywhere}
+#v .row[data-a="day"]>b{font-variant-numeric:tabular-nums}
+input,select{min-width:0;max-width:100%}
+.toast{bottom:calc(var(--nav-height) + 12px);max-width:calc(100% - 24px)}
+@media(max-width:560px){
+.top{padding:10px 16px 4px;gap:8px}
+.top::after{font-size:8px;letter-spacing:.8px}
+.brand{font-size:23px}.brand svg{width:36px;height:36px}
+main{padding-top:4px;padding-inline:12px}
+.hero{padding:10px 0 12px}.clk{font-size:clamp(36px,10.5vw,46px)}.hero b{font-size:15px}
+.quick{margin-bottom:12px}.quick .btn{margin-top:0;padding:12px}
+.card{padding:14px;margin-bottom:12px}
+.weektools{gap:8px;margin-bottom:12px}.weektools label{flex-basis:100%}
+.weektools input{flex:1 1 150px;min-width:0;width:0;min-height:44px}
+.weektools .lnk{flex:0 0 auto;min-height:44px;margin-left:0;padding-inline:4px}
+.wk{gap:8px}.wk>div{min-width:0}.wk p{font-size:12px}
+.sheet{padding-inline:14px}
+}
+@media(max-width:350px){
+.top::after{display:none}
+#v .row[data-a="day"]{grid-template-columns:42px minmax(0,1fr) auto 30px;gap:6px;font-size:13px}
+.nav a{font-size:11px}
+}
+
 </style>
 </head>
 <body>
@@ -196,6 +231,13 @@ document.addEventListener('focusout',()=>setTimeout(scheduleFormViewport,400));
 scheduleFormViewport();
 
 render();
+
+function measureNavigation(){const nav=document.getElementById('nav');if(nav){const height=Math.ceil(nav.getBoundingClientRect().height);if(height>0)document.documentElement.style.setProperty('--nav-height',height+'px')}}
+const navigationResizeObserver=typeof ResizeObserver!=='undefined'?new ResizeObserver(measureNavigation):null;
+navigationResizeObserver?.observe(document.getElementById('nav'));
+window.addEventListener('resize',measureNavigation);
+requestAnimationFrame(measureNavigation);
+
 </script>
 </body>
 </html>
