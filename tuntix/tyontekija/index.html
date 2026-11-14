@@ -324,70 +324,70 @@ const TES_BASE={
     },
     {
       "id": "2.1",
-      "name": "Aluskermit (pohjahuopa) · Vesitiivissaumaliimaus tai hitsaus",
+      "name": "Aluskermit · Vesitiivissaumaliimaus tai hitsaus",
       "unit": "m²",
       "price": 0.54,
-      "group": "Aluskermit (pohjahuopa)",
+      "group": "Aluskermit",
       "note": "Aluskermi. Yli 5,6 kg/m² kermit hinnoitellaan erikseen. Saneerauslisä koskee vain ensimmäistä kerrosta vanhan katteen / alle 30 mm aluslevyn päällä.",
       "source": "TES 2025–2028 · 2.1",
       "roof": true
     },
     {
       "id": "2.2",
-      "name": "Aluskermit (pohjahuopa) · Piste- ja vesitiivissaumaliimaus",
+      "name": "Aluskermit · Piste- ja vesitiivissaumaliimaus",
       "unit": "m²",
       "price": 0.64,
-      "group": "Aluskermit (pohjahuopa)",
+      "group": "Aluskermit",
       "note": "Aluskermi. Yli 5,6 kg/m² kermit hinnoitellaan erikseen. Saneerauslisä koskee vain ensimmäistä kerrosta vanhan katteen / alle 30 mm aluslevyn päällä.",
       "source": "TES 2025–2028 · 2.2",
       "roof": true
     },
     {
       "id": "2.3",
-      "name": "Aluskermit (pohjahuopa) · Kauttaaltaan liimaten",
+      "name": "Aluskermit · Kauttaaltaan liimaten",
       "unit": "m²",
       "price": 0.75,
-      "group": "Aluskermit (pohjahuopa)",
+      "group": "Aluskermit",
       "note": "Aluskermi. Yli 5,6 kg/m² kermit hinnoitellaan erikseen. Saneerauslisä koskee vain ensimmäistä kerrosta vanhan katteen / alle 30 mm aluslevyn päällä.",
       "source": "TES 2025–2028 · 2.3",
       "roof": true
     },
     {
       "id": "2.4",
-      "name": "Aluskermit (pohjahuopa) · Piste- tai raita- ja saumahitsaus",
+      "name": "Aluskermit · Piste- tai raita- ja saumahitsaus",
       "unit": "m²",
       "price": 0.75,
-      "group": "Aluskermit (pohjahuopa)",
+      "group": "Aluskermit",
       "note": "Aluskermi. Yli 5,6 kg/m² kermit hinnoitellaan erikseen. Saneerauslisä koskee vain ensimmäistä kerrosta vanhan katteen / alle 30 mm aluslevyn päällä.",
       "source": "TES 2025–2028 · 2.4",
       "roof": true
     },
     {
       "id": "2.5",
-      "name": "Aluskermit (pohjahuopa) · Kauttaaltaan hitsaus",
+      "name": "Aluskermit · Kauttaaltaan hitsaus",
       "unit": "m²",
       "price": 0.9,
-      "group": "Aluskermit (pohjahuopa)",
+      "group": "Aluskermit",
       "note": "Aluskermi. Yli 5,6 kg/m² kermit hinnoitellaan erikseen. Saneerauslisä koskee vain ensimmäistä kerrosta vanhan katteen / alle 30 mm aluslevyn päällä.",
       "source": "TES 2025–2028 · 2.5",
       "roof": true
     },
     {
       "id": "2.6",
-      "name": "Pintakermit (pintahuopa) · Puhdassaumatyö piste- tai raita- ja saumahitsaten",
+      "name": "Pintakermit · Puhdassaumatyö piste- tai raita- ja saumahitsaten",
       "unit": "m²",
       "price": 0.94,
-      "group": "Pintakermit ja yksikerroskatteet (pintahuopa)",
+      "group": "Pintakermit ja yksikerroskatteet",
       "note": "Puhdassaumatyö. Yli 5,6 kg/m² kermit hinnoitellaan erikseen.",
       "source": "TES 2025–2028 · 2.6",
       "roof": true
     },
     {
       "id": "2.7",
-      "name": "Pintakermit (pintahuopa) · Puhdas saumatyö kauttaaltaan liimaten tai hitsaten",
+      "name": "Pintakermit · Puhdas saumatyö kauttaaltaan liimaten tai hitsaten",
       "unit": "m²",
       "price": 1.06,
-      "group": "Pintakermit ja yksikerroskatteet (pintahuopa)",
+      "group": "Pintakermit ja yksikerroskatteet",
       "note": "Puhdassaumatyö. Yli 5,6 kg/m² kermit hinnoitellaan erikseen.",
       "source": "TES 2025–2028 · 2.7",
       "roof": true
@@ -1159,7 +1159,7 @@ function lisaa(){
 const cat=tesCatalog();let body='';
 if(tesTab==='home')body=`<section class="card"><h3>Urakkalaskuri</h3><p>Valitse työ tai materiaali ja syötä määrä. Hinta lasketaan TES:n työkorvauksesta.</p><button class="btn pri" data-tes="calculator">Laske hinta</button><button class="btn" data-tes="catalogue">Hinnasto · muokkaa ja lisää</button></section><section class="card"><h3>Koko TES</h3><p>Rakennusliitto · Kattoliitto<br>Vedeneristysalan TES 2025–2028</p><button class="btn" data-tes="pdf" data-doc="tes">Avaa TES 2025–2028 · PDF</button><button class="btn" data-tes="pdf" data-doc="liite">Lisäliite 2026 · PDF</button><p class="tes-note">PDF:t ja laskuri toimivat ilman verkkoyhteyttä, kun sovellus on ladattu laitteelle.</p></section>`;
 if(tesTab==='calculator')body=tesCalculator();
-if(tesTab==='catalogue')body=`<section class="card"><h3>Työt ja materiaalit</h3><p class="tes-note">${esc(cat.title)} · hinnat ${esc(cat.effective)} alkaen. Omat muutokset merkitään erikseen.</p><button class="btn pri" data-tes="newitem">+ Lisää työ / materiaali</button><label for="tes-search">Hae nimellä tai TES-numerolla</label><input type="search" id="tes-search" value="${esc(tesSearch)}" placeholder="Pintahuopa, pohjahuopa, kaivo…"><div id="tes-list">${tesCatalogueList()}</div></section><section class="card"><h3>Päivitä tai siirrä hinnasto</h3><p>Hinnasto tallentuu tälle laitteelle. Vie tiedosto ja tuo se toisella laitteella.</p><button class="btn" data-tes="export">Vie hinnasto · JSON</button><button class="btn" data-tes="import">Tuo hinnasto · JSON</button><input id="tes-import" type="file" accept="application/json,.json" hidden><button class="btn del" data-tes="resetcatalog">Palauta alkuperäiset TES-hinnat</button></section>`;
+if(tesTab==='catalogue')body=`<section class="card"><h3>Työt ja materiaalit</h3><p class="tes-note">${esc(cat.title)} · hinnat ${esc(cat.effective)} alkaen. Omat muutokset merkitään erikseen.</p><button class="btn pri" data-tes="newitem">+ Lisää työ / materiaali</button><label for="tes-search">Hae nimellä tai TES-numerolla</label><input type="search" id="tes-search" value="${esc(tesSearch)}" placeholder="Pintakermit, aluskermit, kaivot…"><div id="tes-list">${tesCatalogueList()}</div></section><section class="card"><h3>Päivitä tai siirrä hinnasto</h3><p>Hinnasto tallentuu tälle laitteelle. Vie tiedosto ja tuo se toisella laitteella.</p><button class="btn" data-tes="export">Vie hinnasto · JSON</button><button class="btn" data-tes="import">Tuo hinnasto · JSON</button><input id="tes-import" type="file" accept="application/json,.json" hidden><button class="btn del" data-tes="resetcatalog">Palauta alkuperäiset TES-hinnat</button></section>`;
 return `<h2>Lisää</h2>${tesTab!=='home'?'<button class="lnk" data-tes="home">‹ Takaisin</button>':''}<div class="tes-version">TES 2025–2028 · ${esc(cat.id===TES_BASE.id?'2026 hinnasto':cat.title)}</div><p class="tes-note">Hinnasto tarkistettu ${esc(cat.checked||'–')}. ${esc(cat.note||'')}</p>${cat.validUntil&&dk(new Date())>cat.validUntil?'<p class="card tes-warning">Tämän hinnaston voimassaolo on päättynyt. Tarkista uudet hinnat ennen laskemista.</p>':''}${body}`
 }
 function tesCatalogueList(){const q=tesSearch.toLocaleLowerCase('fi');return tesCatalog().items.filter(r=>(r.id+' '+r.name+' '+r.group).toLocaleLowerCase('fi').includes(q)).map(r=>`<div class="tes-catalogue-row"><div><strong>${esc(r.name)}</strong><small>${esc(r.id)} · ${rateText(r.price)} € / ${esc(r.unit)}${r.custom?' · Oma hinta':''}</small></div><button class="btn sm" data-tes="edititem" data-id="${esc(r.id)}" aria-label="Muokkaa ${esc(r.name)}">✎</button></div>`).join('')||'<p>Ei hakutuloksia.</p>'}
