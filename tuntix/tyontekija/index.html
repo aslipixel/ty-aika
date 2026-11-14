@@ -87,6 +87,11 @@ main{padding-top:4px;padding-inline:12px}
 }
 
 .weekend-toggle{display:flex;align-items:center;gap:10px;min-height:44px;margin:0 0 8px;color:var(--ink);font-size:14px;cursor:pointer}.weekend-toggle input{width:20px;height:20px;min-width:20px;margin:0;padding:0;accent-color:var(--teal)}
+
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%);white-space:nowrap;border:0!important}
+.weektools{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;margin-bottom:6px}
+.weektools input{width:100%;min-width:0;min-height:36px;height:36px;padding:5px 8px;border-radius:10px;font-size:14px}
+.weektools .lnk{min-height:36px;margin:0;padding:5px 4px;font-size:12px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -124,7 +129,7 @@ rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'to
 const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
 for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b>${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
 return `<div class="hero"><div class="clk" id="clk">${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}</div><b>${DL[wd(n)]} ${fd(n)}${n.getFullYear()}</b></div>
-<div class="card"><div class="weektools"><label for="weekdate">Valitse viikko</label><input id="weekdate" type="date" value="${dk(ws)}"><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))} · ${fh(tot)}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div><div class="prog"><i style="width:${Math.min(100,tot/g*100)}%"></i></div><p style="font-size:12px;margin:0 0 4px">Tavoite ${fh(g)}</p>${rows}</div>
+<div class="card"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><input id="weekdate" type="date" value="${dk(ws)}"><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))} · ${fh(tot)}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div><div class="prog"><i style="width:${Math.min(100,tot/g*100)}%"></i></div><p style="font-size:12px;margin:0 0 4px">Tavoite ${fh(g)}</p>${rows}</div>
 <div class="card"><div class="wk"><button class="btn sm" data-a="pm">‹</button><b>${MO[m0.getMonth()]} ${m0.getFullYear()}</b><button class="btn sm" data-a="nm">›</button></div><div class="cal">${c}</div></div>`}
 function projectDays(){const groups=new Map();for(const e of S.en){if(!e.p)continue;const key=e.d+'|'+e.p;if(!groups.has(key))groups.set(key,{p:e.p,d:e.d,h:0});groups.get(key).h+=e.h}const rows=[...groups.values()].sort((a,b)=>b.d.localeCompare(a.d)||pn(a.p).localeCompare(pn(b.p),'fi'));const used=new Set(rows.map(r=>r.p));for(const p of S.pr)if(!used.has(p.id))rows.push({p:p.id,d:'',h:0});return rows}
 function projektit(){const rows=projectDays();
