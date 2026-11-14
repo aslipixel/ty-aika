@@ -1,0 +1,67 @@
+name: Build TuntiX Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'tuntix/tyontekija/index.html'
+      - 'tuntix/tuntix-icon.svg'
+      - '.github/workflows/native-android.yml'
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: npm ci
+      - run: node build.mjs && node --check www/app.js
+      - run: npx cap add android
+      - run: node android-prepare.mjs
+      - name: Build installable test APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+      - name: Verify APK signature and package
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk TuntiX-Tyontekija-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose TuntiX-Tyontekija-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging TuntiX-Tyontekija-debug.apk | head -20
+          sha256sum TuntiX-Tyontekija-debug.apk > SHA256SUMS-Android.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TuntiX-Android-APK
+          path: |
+            mobile/TuntiX-Tyontekija-debug.apk
+            mobile/SHA256SUMS-Android.txt
+          if-no-files-found: error
+      - name: Prepare portable Android Studio project
+        run: |
+          find android -type d \( -name build -o -name .gradle \) -prune -exec rm -rf {} +
+          rm -f android/local.properties
+          cp ANDROID-RU.md android/README-RU.md
+          mkdir -p studio-project
+          mv android studio-project/android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TuntiX-Android-Studio
+          path: mobile/studio-project/
+          include-hidden-files: true
+          if-no-files-found: error
