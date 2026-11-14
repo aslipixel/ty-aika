@@ -98,6 +98,25 @@ main{padding-top:4px;padding-inline:12px}
 .weektools .weekdate-field input{display:block;box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:38px;min-height:38px;border:0;border-radius:0;padding:5px 8px;-webkit-appearance:none;appearance:none}
 .weekdate-field input::-webkit-date-and-time-value{min-width:0;text-align:center}
 .weektools .lnk{display:block;width:100%;min-width:0;max-width:100%;min-height:40px;padding:4px 2px;white-space:normal;overflow-wrap:anywhere;text-align:center;line-height:1.25}
+
+/* Compact weekly summary. The entire day remains a keyboard-accessible action. */
+.week-summary{padding:16px 18px 10px;border-radius:24px}
+.week-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 14px}
+.week-summary-heading h2{font-size:19px;line-height:1.25;margin:0;font-weight:700}
+.week-summary-heading strong{font-size:26px;line-height:1.2;white-space:nowrap;font-variant-numeric:tabular-nums}
+.week-entry{position:relative;display:grid;grid-template-columns:62px minmax(0,1fr) 34px;align-items:center;gap:10px;width:100%;min-height:58px;padding:9px 0 9px 20px;background:transparent;border:0;border-top:1px solid var(--line);color:var(--ink);text-align:left;font:600 21px Poppins,system-ui,sans-serif;cursor:pointer;border-radius:0;touch-action:manipulation}
+.week-entry::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:5px;border-radius:4px;background:#cfd6e8}
+.week-entry.recorded::before{background:var(--teal)}
+.week-entry.empty{color:var(--mut)}
+.week-day b{display:block;font-weight:600}.week-day small{display:block;font-size:12px;font-weight:500;line-height:1.25;color:var(--mut)}
+.week-hours{font-variant-numeric:tabular-nums}
+.week-status{display:grid;place-items:center;width:32px;height:32px;border:2px solid var(--line);border-radius:50%}
+.recorded .week-status{background:#d5f8df;border-color:#d5f8df;color:#16873b}
+.week-status svg{width:32px;height:32px}
+.week-entry:hover{background:rgba(20,200,181,.06)}
+.week-entry:focus-visible{outline:3px solid var(--teal);outline-offset:2px;border-radius:8px}
+@media(max-width:360px){.week-summary{padding:14px}.week-summary-heading h2{font-size:16px}.week-summary-heading strong{font-size:23px}.week-entry{font-size:20px;grid-template-columns:50px minmax(0,1fr) 32px}}
+
 </style>
 </head>
 <body>
@@ -131,11 +150,11 @@ const H=()=>{const h={};S.en.forEach(e=>h[e.d]=(h[e.d]||0)+e.h);return h};
 function projectSummary(entries){const first=entries.find(e=>e.p);return first?`<span>${esc(pn(first.p)||'Poistettu projekti')}</span>`:'<small>–</small>'}
 function kalenteri(){const n=new Date(),ws=addD(mon(n),wo*7),h=H(),g=S.set.goal*5;let tot=0,rows='';
 for(let i=0;i<7;i++){const d=addD(ws,i),k=dk(d),es=S.en.filter(e=>e.d===k);tot+=h[k]||0;if(i>4&&!S.set.showWeekends&&!es.length)continue;
-rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'today':''}"><b>${DN[i]}</b><span>${fd(d)}</span></div><div class="g">${projectSummary(es)}</div><b>${h[k]?(Math.round(h[k]*10)/10).toString().replace('.',','):''}</b><span class="plus">+</span></div>`}
+rows+=`<button type="button" class="week-entry ${es.length?'recorded':'empty'}" data-a="day" data-d="${k}" aria-label="${DL[i]} ${fd(d)} ${es.length?fh(h[k]):'Ei kirjauksia'}. Avaa tai lisää tunteja."${k===dk(n)?' aria-current="date"':''}><span class="week-day"><b>${DN[i]}</b><small>${fd(d)}</small></span><span class="week-hours">${es.length?(Math.round(h[k]*10)/10).toFixed(1).replace('.',',')+' h':'–'}</span><span class="week-status" aria-hidden="true">${es.length?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10" stroke="none"/></svg>':''}</span></button>`}
 const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
 for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b>${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
 return `<div class="hero"><div class="clk" id="clk">${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}</div><b>${DL[wd(n)]} ${fd(n)}${n.getFullYear()}</b></div>
-<div class="card"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><div class="weekdate-field"><input id="weekdate" type="date" value="${dk(ws)}"></div><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))} · ${fh(tot)}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div><div class="prog"><i style="width:${Math.min(100,tot/g*100)}%"></i></div><p style="font-size:12px;margin:0 0 4px">Tavoite ${fh(g)}</p>${rows}</div>
+<div class="card"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><div class="weekdate-field"><input id="weekdate" type="date" value="${dk(ws)}"></div><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div></div><section class="card week-summary" aria-labelledby="week-summary-heading"><div class="week-summary-heading"><h2 id="week-summary-heading">${wo===0?'Tämän viikon tunnit':'Viikon tunnit'}</h2><strong>${fh(tot)}</strong></div><div class="week-entries">${rows}</div></section>
 <div class="card"><div class="wk"><button class="btn sm" data-a="pm">‹</button><b>${MO[m0.getMonth()]} ${m0.getFullYear()}</b><button class="btn sm" data-a="nm">›</button></div><div class="cal">${c}</div></div>`}
 function projectDays(){const groups=new Map();for(const e of S.en){if(!e.p)continue;const key=e.d+'|'+e.p;if(!groups.has(key))groups.set(key,{p:e.p,d:e.d,h:0});groups.get(key).h+=e.h}const rows=[...groups.values()].sort((a,b)=>b.d.localeCompare(a.d)||pn(a.p).localeCompare(pn(b.p),'fi'));const used=new Set(rows.map(r=>r.p));for(const p of S.pr)if(!used.has(p.id))rows.push({p:p.id,d:'',h:0});return rows}
 function projektit(){const rows=projectDays();
