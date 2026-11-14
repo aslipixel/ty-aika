@@ -1,0 +1,51 @@
+name: Build TuntiX IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - 'tuntix/tyontekija/index.html'
+      - '.github/workflows/native-ios.yml'
+permissions:
+  contents: read
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: node build.mjs
+      - run: node --check www/app.js
+      - run: npx cap add ios --packagemanager SPM
+      - run: node icon.mjs
+      - name: Build for physical iPhone
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' build
+      - name: Package unsigned IPA for local signing
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          test -f Payload/App.app/App
+          test -f Payload/App.app/public/index.html
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' Payload/App.app/Info.plist
+          file Payload/App.app/App
+          zip -qry TuntiX-unsigned.ipa Payload
+          shasum -a 256 TuntiX-unsigned.ipa > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TuntiX-iPhone-IPA
+          path: |
+            mobile/TuntiX-unsigned.ipa
+            mobile/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
