@@ -130,6 +130,26 @@ main{padding-top:4px;padding-inline:12px}
 .sheet-content:has(input:focus),.sheet-content:has(textarea:focus){padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .sheet-content input,.sheet-content select{scroll-margin-block:28px}
 .project-remove{display:block;color:#c53049;margin:6px 0;min-height:44px;text-align:left}
+
+/* Gentle motion; content and actions remain immediately available. */
+@keyframes overlay-in{from{background-color:rgba(10,15,45,0);backdrop-filter:blur(0)}to{background-color:rgba(10,15,45,.5);backdrop-filter:blur(4px)}}
+@keyframes sheet-in{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sheet-content-in{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes overlay-out{from{opacity:1}to{opacity:0}}
+@keyframes sheet-out{from{transform:translateY(0)}to{transform:translateY(20px)}}
+.sheet-enter{animation:overlay-in 300ms ease-out both}
+.sheet-enter>.sheet{animation:sheet-in 340ms cubic-bezier(.22,1,.36,1) both}
+.sheet-swap .sheet-content{animation:sheet-content-in 220ms cubic-bezier(.22,1,.36,1) both}
+.ov.closing{animation:overlay-out 200ms ease-in both;pointer-events:none}
+.ov.closing>.sheet{animation:sheet-out 200ms ease-in both}
+.btn,.sheet-control,.lnk,.nav a,.week-entry{transition:background-color 180ms ease,color 180ms ease,box-shadow 180ms ease,transform 180ms ease}
+.btn:active,.sheet-control:active{transform:scale(.98)}
+input,select{transition:border-color 180ms ease,box-shadow 180ms ease}
+@media(prefers-reduced-motion:reduce){
+.sheet-enter,.sheet-enter>.sheet,.sheet-swap .sheet-content,.ov.closing,.ov.closing>.sheet{animation:none!important}
+.btn,.sheet-control,.lnk,.nav a,.week-entry,input,select{transition:none!important}
+.btn:active,.sheet-control:active{transform:none}
+}
 </style>
 </head>
 <body>
@@ -181,11 +201,13 @@ return `<div class="card" style="text-align:center"><div class="big">${esc((S.pf
 <div class="card"><h3>${MO[n.getMonth()]}: ${fh(tot)}</h3>${Object.keys(by).map(t=>`<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(t)}</span><b>${fh(by[t])}</b></div><div class="prog" style="margin:3px 0"><i style="width:${by[t]/tot*100}%;background:${col(t)}"></i></div></div>`).join('')||'<p>Ei kirjauksia tässä kuussa.</p>'}</div>
 <div class="card"><h3>Poissaolot vuonna ${y}</h3><div class="g2">${ABS.map(t=>`<div class="stat"><b>${days(t)} pv</b><span>${esc(t)}</span></div>`).join('')}</div></div>`}
 const R={kalenteri,projektit,asetukset,profiili};
+let lastRenderedRoute=null;
 function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
+if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:280,easing:'cubic-bezier(.22,1,.36,1)'});}lastRenderedRoute=a;
 $('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['asetukset','gear','Asetukset'],['profiili','user','Profiili']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances()}
 addEventListener('hashchange',()=>render());
-let modalInputBaseline=[];
-const modal=(h,isDay=false)=>{$('#m').innerHTML=`<div class="ov" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja"><div class="sheet-toolbar">${isDay?`<button type="button" class="sheet-control" data-a="prevday" aria-label="Edellinen päivä">‹</button><span class="sheet-date">${fd(pd(ed.d))}</span><button type="button" class="sheet-control" data-a="nextday" aria-label="Seuraava päivä">›</button>`:'<span class="sheet-date"></span>'}<button type="button" class="sheet-control sheet-done" data-a="dismisssheet" aria-label="Sulje ikkuna" title="Sulje">✓</button></div><div class="sheet-content">${h}</div></div></div>`;modalInputBaseline=[...document.querySelectorAll('.sheet-content input,.sheet-content select')].map(x=>[x.id,x.value]);scheduleFormViewport()};
+let modalInputBaseline=[],lastModalDay=null;
+const modal=(h,isDay=false)=>{const previous=$('#m .ov');const replacing=!!previous&&!previous.classList.contains('closing');const currentDay=isDay?ed.d:null;const keepScroll=replacing&&isDay&&lastModalDay===currentDay;const scrollTop=keepScroll?($('.sheet-content')?.scrollTop||0):0;$('#m').innerHTML=`<div class="ov ${replacing?'sheet-swap':'sheet-enter'}" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja"><div class="sheet-toolbar">${isDay?`<button type="button" class="sheet-control" data-a="prevday" aria-label="Edellinen päivä">‹</button><span class="sheet-date">${fd(pd(ed.d))}</span><button type="button" class="sheet-control" data-a="nextday" aria-label="Seuraava päivä">›</button>`:'<span class="sheet-date"></span>'}<button type="button" class="sheet-control sheet-done" data-a="dismisssheet" aria-label="Sulje ikkuna" title="Sulje">✓</button></div><div class="sheet-content">${h}</div></div></div>`;lastModalDay=currentDay;if(keepScroll)$('.sheet-content').scrollTop=scrollTop;modalInputBaseline=[...document.querySelectorAll('.sheet-content input,.sheet-content select')].map(x=>[x.id,x.value]);scheduleFormViewport()};
 const dayModal=h=>modal(h,true);
 function dayHasChanges(){
 if(!ed)return false;sync();
@@ -198,7 +220,15 @@ function allowSheetExit(){
 const changed=dayHasChanges()||modalInputBaseline.some(([id,value])=>id&&$('#'+id)&&$('#'+id).value!==value);
 return !changed||confirm('Tallentamattomat muutokset hylätään. Jatketaanko?');
 }
-function closeSheet(){document.activeElement?.blur();ed=null;dayEditing=false;ret=0;$('#m').innerHTML='';modalInputBaseline=[]}
+function closeSheet(){
+document.activeElement?.blur();ed=null;dayEditing=false;ret=0;modalInputBaseline=[];lastModalDay=null;
+const overlay=$('#m .ov');if(!overlay)return;
+if(matchMedia('(prefers-reduced-motion: reduce)').matches){overlay.remove();return}
+overlay.inert=true;overlay.classList.add('closing');
+const remove=()=>{overlay.removeEventListener('animationend',finished);overlay.remove()};
+const finished=event=>{if(event.target===overlay)remove()};
+overlay.addEventListener('animationend',finished);setTimeout(remove,260);
+}
 function changeSheetDay(offset){if(!ed||!allowSheetExit())return;const d=dk(addD(pd(ed.d),offset));document.activeElement?.blur();ed=mk(d);dayEditing=false;ret=0;sheet()}
 
 function sync(){const g=id=>$('#'+id);if(g('fp'))ed.p=g('fp').value;if(g('fh'))ed.h=g('fh').value.trim()===''?'':+g('fh').value;if(g('fc'))ed.c=g('fc').value;if(g('edit-project-name')){const id=g('edit-project-name').dataset.project;ed.projects=ed.projects||{};ed.projects[id]={n:g('edit-project-name').value,a:g('edit-project-address').value}}}
@@ -227,21 +257,21 @@ if(a==='pw'){wo--;render(1)}else if(a==='nw'){wo++;render(1)}else if(a==='pm'){m
 else if(a==='day'){dayEditing=false;ed=mk(b.dataset.d);sheet()}
 else if(a==='editday'){const first=S.en.find(x=>x.d===ed.d);dayEditing=true;ed=first?{...first,c:first.c||''}:mk(ed.d);sheet()}
 else if(a==='adddayentry'){dayEditing=true;ed=mk(ed.d);sheet()}
-else if(a==='canceledit'){const d=ed.d;dayEditing=false;ed=mk(d);if(S.en.some(x=>x.d===d))sheet();else{ed=null;$('#m').innerHTML=''}}
+else if(a==='canceledit'){const d=ed.d;dayEditing=false;ed=mk(d);if(S.en.some(x=>x.d===d))sheet();else{closeSheet()}}
 else if(a==='ee'){dayEditing=true;const x=S.en.find(z=>z.id===id);ed=Object.assign({},x,{c:x.c||''});sheet()}
 else if(a==='ty'){sync();ed.t=b.dataset.t;if(ABS.includes(ed.t))ed.h=DEFAULT_HOURS;sheet()}
 else if(a==='hh'){sync();ed.h=+b.dataset.h;sheet()}
 else if(a==='sv'){sync();if(!ed.t)return toast('Valitse työlaji');if(!(Number.isFinite(ed.h)&&ed.h>=0.5&&ed.h<=24))return toast('Anna tunnit (0,5–24)');if(S.en.filter(e=>e.d===ed.d&&e.id!==ed.id).reduce((a,e)=>a+e.h,0)+ed.h>24)return toast('Päivän tunnit eivät voi ylittää 24 tuntia');const ab=ABS.includes(ed.t);if(!ab&&!ed.p)return toast('Lisää ensin projekti');const projectChanges=Object.entries(ed.projects||{}).filter(([id])=>S.pr.some(p=>p.id===id));if(projectChanges.some(([,p])=>!p.n.trim()))return toast('Anna projektille nimi');for(const [id,p] of projectChanges)Object.assign(S.pr.find(x=>x.id===id),{n:p.n.trim(),a:p.a.trim()});const o={d:ed.d,p:ab?'':ed.p,t:ed.t,h:ed.h,c:(ed.c||'').trim()};
 if(ed.id)Object.assign(S.en.find(z=>z.id===ed.id),o);else S.en.push(Object.assign({id:'e'+crypto.randomUUID()},o));S.last={t:ed.t,p:ab?S.last.p:ed.p};if(!save())return;closeSheet();render(1);toast('Tallennettu')}
-else if(a==='de'){if(!confirm('Poistetaanko tämä kirjaus?'))return;const deletedDay=ed.d;S.en=S.en.filter(z=>z.id!==id);if(!save())return;dayEditing=false;ed=mk(deletedDay);render(1);if(S.en.some(x=>x.d===deletedDay))sheet();else{ed=null;$('#m').innerHTML=''}toast('Kirjaus poistettu')}
+else if(a==='de'){if(!confirm('Poistetaanko tämä kirjaus?'))return;const deletedDay=ed.d;S.en=S.en.filter(z=>z.id!==id);if(!save())return;dayEditing=false;ed=mk(deletedDay);render(1);if(S.en.some(x=>x.d===deletedDay))sheet();else{closeSheet()}toast('Kirjaus poistettu')}
 else if(a==='prevday'){changeSheetDay(-1)}
 else if(a==='nextday'){changeSheetDay(1)}
 else if(a==='dismisssheet'){if(allowSheetExit())closeSheet()}
 else if(a==='close'){if(ev.target.closest('.sheet'))return;if(allowSheetExit())closeSheet()}
 else if(a==='np'){ret=0;pform()}else if(a==='np2'){sync();ret=1;pform()}else if(a==='ep'){ret=0;pform(id)}
 else if(a==='ep2'){sync();ret=1;pform(id)}
-else if(a==='pc'){if(ret&&ed)sheet();else $('#m').innerHTML=''}
-else if(a==='sp'){const n=$('#pn').value.trim();if(!n)return toast('Anna projektille nimi');const a2=$('#pa').value.trim();let pid=id;if(id){Object.assign(S.pr.find(z=>z.id===id),{n,a:a2})}else{pid='p'+crypto.randomUUID();S.pr.push({id:pid,n,a:a2})}save();if(ret&&ed){ed.p=pid;sheet()}else{$('#m').innerHTML='';render(1)}toast('Projekti tallennettu')}
+else if(a==='pc'){if(ret&&ed)sheet();else closeSheet()}
+else if(a==='sp'){const n=$('#pn').value.trim();if(!n)return toast('Anna projektille nimi');const a2=$('#pa').value.trim();let pid=id;if(id){Object.assign(S.pr.find(z=>z.id===id),{n,a:a2})}else{pid='p'+crypto.randomUUID();S.pr.push({id:pid,n,a:a2})}save();if(ret&&ed){ed.p=pid;sheet()}else{closeSheet();render(1)}toast('Projekti tallennettu')}
 else if(a==='removechosenproject'){
 if(!ed)return;sync();const pid=ed.p;const project=S.pr.find(p=>p.id===pid);if(!project)return;
 if(S.en.some(e=>e.p===pid))return toast('Projektilla on tallennettuja tunteja. Projektia ei voi poistaa.');
@@ -252,7 +282,7 @@ if(!save()){S.pr=previous;S.last.p=previousLast;return}
 ed.p='';if(ed.projects)delete ed.projects[pid];
 render(1);sheet();toast('Projekti poistettu');
 }
-else if(a==='dp'){if(S.en.some(e=>e.p===id))return toast('Projektilla on kirjauksia. Poista kirjaukset ensin.');if(!confirm('Poistetaanko projekti?'))return;S.pr=S.pr.filter(z=>z.id!==id);save();$('#m').innerHTML='';render(1)}
+else if(a==='dp'){if(S.en.some(e=>e.p===id))return toast('Projektilla on kirjauksia. Poista kirjaukset ensin.');if(!confirm('Poistetaanko projekti?'))return;S.pr=S.pr.filter(z=>z.id!==id);save();closeSheet();render(1)}
 else if(a==='demo'){if(confirm('Palautetaanko esimerkkitiedot?')){localStorage.removeItem(K);S={init:0,pr:[],en:[],set:{goal:DEFAULT_HOURS},pf:{name:'',emp:'',role:''},last:{t:'Laskutyö',p:''}};seed();render(1)}}
 else if(a==='clear'){if(confirm('Poistetaanko kaikki tiedot?')){S.en=[];S.pr=[];S.init=1;save();render(1)}}});
 document.addEventListener('change',ev=>{const t=ev.target;if(t.id==='show-weekends'){S.set.showWeekends=t.checked;save();render(1);$('#show-weekends')?.focus({preventScroll:true});return}if(t.dataset.s){const v=Number(t.value);if(!Number.isFinite(v)||v<1||v>24){t.value=S.set.goal;return toast('Anna tavoite 1–24 h')}S.set.goal=v;save();render(1)}else if(t.dataset.p){S.pf[t.dataset.p]=t.value;save()}});
