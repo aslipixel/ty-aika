@@ -132,19 +132,19 @@ main{padding-top:4px;padding-inline:12px}
 .project-remove{display:block;color:#c53049;margin:6px 0;min-height:44px;text-align:left}
 
 /* Gentle motion; content and actions remain immediately available. */
-@keyframes overlay-in{from{background-color:rgba(10,15,45,0);backdrop-filter:blur(0)}to{background-color:rgba(10,15,45,.5);backdrop-filter:blur(4px)}}
-@keyframes sheet-in{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
-@keyframes sheet-content-in{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes overlay-in{from{opacity:0}to{opacity:1}}
+@keyframes sheet-in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sheet-content-in{from{opacity:.65;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 @keyframes overlay-out{from{opacity:1}to{opacity:0}}
-@keyframes sheet-out{from{transform:translateY(0)}to{transform:translateY(20px)}}
-.sheet-enter{animation:overlay-in 300ms ease-out both}
-.sheet-enter>.sheet{animation:sheet-in 340ms cubic-bezier(.22,1,.36,1) both}
-.sheet-swap .sheet-content{animation:sheet-content-in 220ms cubic-bezier(.22,1,.36,1) both}
-.ov.closing{animation:overlay-out 200ms ease-in both;pointer-events:none}
-.ov.closing>.sheet{animation:sheet-out 200ms ease-in both}
-.btn,.sheet-control,.lnk,.nav a,.week-entry{transition:background-color 180ms ease,color 180ms ease,box-shadow 180ms ease,transform 180ms ease}
+@keyframes sheet-out{from{transform:translateY(0)}to{transform:translateY(12px)}}
+.sheet-enter{animation:overlay-in 420ms cubic-bezier(.25,.8,.25,1) both}
+.sheet-enter>.sheet{animation:sheet-in 520ms cubic-bezier(.25,.8,.25,1) both}
+.sheet-swap .sheet-content{animation:sheet-content-in 380ms cubic-bezier(.25,.8,.25,1) both}
+.ov.closing{animation:overlay-out 340ms cubic-bezier(.4,0,.6,1) both;pointer-events:none}
+.ov.closing>.sheet{animation:sheet-out 340ms cubic-bezier(.4,0,.6,1) both}
+.btn,.sheet-control,.lnk,.nav a,.week-entry{transition:background-color 240ms ease,color 240ms ease,box-shadow 240ms ease,transform 240ms ease}
 .btn:active,.sheet-control:active{transform:scale(.98)}
-input,select{transition:border-color 180ms ease,box-shadow 180ms ease}
+input,select{transition:border-color 240ms ease,box-shadow 240ms ease}
 @media(prefers-reduced-motion:reduce){
 .sheet-enter,.sheet-enter>.sheet,.sheet-swap .sheet-content,.ov.closing,.ov.closing>.sheet{animation:none!important}
 .btn,.sheet-control,.lnk,.nav a,.week-entry,input,select{transition:none!important}
@@ -203,7 +203,7 @@ return `<div class="card" style="text-align:center"><div class="big">${esc((S.pf
 const R={kalenteri,projektit,asetukset,profiili};
 let lastRenderedRoute=null;
 function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
-if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:280,easing:'cubic-bezier(.22,1,.36,1)'});}lastRenderedRoute=a;
+if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:440,easing:'cubic-bezier(.25,.8,.25,1)'});}lastRenderedRoute=a;
 $('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['asetukset','gear','Asetukset'],['profiili','user','Profiili']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances()}
 addEventListener('hashchange',()=>render());
 let modalInputBaseline=[],lastModalDay=null;
@@ -227,7 +227,7 @@ if(matchMedia('(prefers-reduced-motion: reduce)').matches){overlay.remove();retu
 overlay.inert=true;overlay.classList.add('closing');
 const remove=()=>{overlay.removeEventListener('animationend',finished);overlay.remove()};
 const finished=event=>{if(event.target===overlay)remove()};
-overlay.addEventListener('animationend',finished);setTimeout(remove,260);
+overlay.addEventListener('animationend',finished);setTimeout(remove,420);
 }
 function changeSheetDay(offset){if(!ed||!allowSheetExit())return;const d=dk(addD(pd(ed.d),offset));document.activeElement?.blur();ed=mk(d);dayEditing=false;ret=0;sheet()}
 
