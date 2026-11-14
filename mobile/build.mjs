@@ -14,6 +14,7 @@ replaceOnce('localStorage.setItem(K,JSON.stringify(S));return true', 'localStora
 replaceOnce('function download(name,text,type){', 'function download(name,text,type){return window.nativeDownload(name,text,type);}\nfunction browserDownload(name,text,type){');
 replaceOnce('function backup(){download(', 'function backup(){return download(');
 replaceOnce('backup();const previous=S;', 'await backup();const previous=S;');
+replaceOnce('function tesOpenPdf(doc){', 'function tesOpenPdf(doc){return window.nativeOpenPdf(doc);}\nfunction browserTesOpenPdf(doc){');
 html = html.replace(match[0], '<script src="native.js"></script>');
 html = html.replace(/<link[^>]+fonts\.googleapis\.com[^>]*>/g, '<link rel="stylesheet" href="fonts.css">');
 await writeFile('www/index.html', html);
