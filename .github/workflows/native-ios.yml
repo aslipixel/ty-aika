@@ -1,12 +1,6 @@
 name: Build TuntiX IPA
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'mobile/**'
-      - 'tuntix/tyontekija/index.html'
-      - '.github/workflows/native-ios.yml'
 permissions:
   contents: read
 jobs:
