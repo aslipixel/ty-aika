@@ -119,7 +119,7 @@ const toast=m=>{const t=$('#t');t.innerHTML=`<div class="toast">${esc(m)}</div>`
 const H=()=>{const h={};S.en.forEach(e=>h[e.d]=(h[e.d]||0)+e.h);return h};
 function projectSummary(entries){const first=entries.find(e=>e.p);return first?`<span>${esc(pn(first.p)||'Poistettu projekti')}</span>`:'<small>–</small>'}
 function kalenteri(){const n=new Date(),ws=addD(mon(n),wo*7),h=H(),g=S.set.goal*5;let tot=0,rows='';
-for(let i=0;i<7;i++){const d=addD(ws,i),k=dk(d),es=S.en.filter(e=>e.d===k);tot+=h[k]||0;if(i>4&&!S.set.showWeekends&&!es.length&&k!==dk(n))continue;
+for(let i=0;i<7;i++){const d=addD(ws,i),k=dk(d),es=S.en.filter(e=>e.d===k);tot+=h[k]||0;if(i>4&&!S.set.showWeekends&&!es.length)continue;
 rows+=`<div class="row" data-a="day" data-d="${k}"><div class="d ${k===dk(n)?'today':''}"><b>${DN[i]}</b><span>${fd(d)}</span></div><div class="g">${projectSummary(es)}</div><b>${h[k]?(Math.round(h[k]*10)/10).toString().replace('.',','):''}</b><span class="plus">+</span></div>`}
 const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
 for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b>${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
