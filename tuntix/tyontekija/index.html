@@ -216,8 +216,9 @@ input,select{transition:border-color 240ms ease,box-shadow 240ms ease}
 .tes-reader-controls button:disabled{opacity:.35}
 .tes-reader-controls label{display:flex;align-items:center;gap:6px;margin:0;font-size:13px}
 .tes-reader-controls input{width:56px;padding:8px;margin:0;font-size:16px}
+.tes-reader-hint{font-size:12px;text-align:center;margin:8px 0;color:var(--muted)}
 .tes-reader-status{font-size:12px;margin:8px 0;min-height:18px;text-align:center}
-.tes-reader-scroll{height:calc(100dvh - 310px - env(safe-area-inset-top) - env(safe-area-inset-bottom));min-height:260px;overflow:auto;overscroll-behavior:contain;background:#dfe3eb;border-radius:8px;padding:8px;touch-action:pan-x pan-y pinch-zoom}
+.tes-reader-scroll{height:calc(100dvh - 310px - env(safe-area-inset-top) - env(safe-area-inset-bottom));min-height:260px;overflow:auto;overscroll-behavior:contain;background:#dfe3eb;border-radius:8px;padding:8px;touch-action:none;user-select:none;-webkit-user-select:none}
 .tes-reader-scroll canvas{display:block;background:white;margin:0 auto;max-width:none}
 </style>
 </head>

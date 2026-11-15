@@ -25,3 +25,5 @@ console.log('Packaged TuntiX with local fonts and native backup sharing.');
 
 await cp('../tuntix/tyontekija/pdfjs','www/pdfjs',{recursive:true});
 await cp('../tuntix/tyontekija/tes-reader.mjs','www/tes-reader.mjs');
+
+await cp('../tuntix/tyontekija/tes-gestures.mjs','www/tes-gestures.mjs');
