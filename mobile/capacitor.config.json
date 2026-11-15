@@ -2,5 +2,6 @@
   "appId": "fi.tuntix.tyontekija",
   "appName": "tuntiX",
   "webDir": "www",
+  "server": { "androidScheme": "https", "cleartext": false, "allowNavigation": [] },
   "ios": { "contentInset": "never" }
 }
