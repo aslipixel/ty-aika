@@ -17,6 +17,15 @@ window.nativeDownload = async (name, text) => {
     throw error;
   }
 };
+window.nativeOpenPdf = async doc => {
+ try {
+  const supplement=doc==='liite';
+  const el=document.getElementById(supplement?'tes-pdf-liite':'tes-pdf-main');
+  const name=supplement?'Vedeneristys-TES-lisaliite-2026.pdf':'Vedeneristys-TES-2025-2028.pdf';
+  const {uri}=await Filesystem.writeFile({path:name,data:el.textContent.trim(),directory:Directory.Cache});
+  await Share.share({title:name,files:[uri],dialogTitle:'Avaa tai tallenna TES'});
+ } catch(error) {if(!/cancel|dismiss/i.test(String(error?.message||error)))alert('PDF:n avaaminen epäonnistui. Yritä uudelleen.');}
+};
 async function start() {
   try {
     const { value } = await Preferences.get({ key });
