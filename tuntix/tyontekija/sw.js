@@ -1,5 +1,5 @@
 /* Cache only the TuntiX app shell. No addresses, requests or external APIs. */
-const CACHE='tuntix-shell-tes-20261114-3';
+const CACHE='tuntix-shell-hours-20261115-1';
 const INDEX=new URL('./index.html',self.registration.scope).href;
 self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);const response=await fetch(INDEX,{cache:'reload'});if(!response.ok)throw Error('App download failed');await cache.put(INDEX,response);await self.skipWaiting()})())});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('tuntix-shell-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})())});

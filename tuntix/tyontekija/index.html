@@ -1218,7 +1218,7 @@ let lastRenderedRoute=null;
 function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
 if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:440,easing:'cubic-bezier(.25,.8,.25,1)'});}lastRenderedRoute=a;
 $('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['asetukset','gear','Asetukset'],['profiili','user','Profiili'],['lisaa','more','Lisää']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances()}
-addEventListener('hashchange',()=>{projectDeleteMode=false;selectedProjects.clear();render()});
+addEventListener('hashchange',()=>{if($('#m .ov')){if(!allowSheetExit()){history.replaceState(null,'','#'+(lastRenderedRoute||'kalenteri'));return}closeSheet()}projectDeleteMode=false;selectedProjects.clear();render()});
 let modalInputBaseline=[],lastModalDay=null;
 const modal=(h,isDay=false)=>{const previous=$('#m .ov');const replacing=!!previous&&!previous.classList.contains('closing');const currentDay=isDay?ed.d:null;const keepScroll=replacing&&isDay&&lastModalDay===currentDay;const scrollTop=keepScroll?($('.sheet-content')?.scrollTop||0):0;$('#m').innerHTML=`<div class="ov ${replacing?'sheet-swap':'sheet-enter'}" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja"><div class="sheet-toolbar">${isDay?`<button type="button" class="sheet-control" data-a="prevday" aria-label="Edellinen päivä">‹</button><span class="sheet-date">${fd(pd(ed.d))}</span><button type="button" class="sheet-control" data-a="nextday" aria-label="Seuraava päivä">›</button>`:'<span class="sheet-date"></span>'}<button type="button" class="sheet-control sheet-done" data-a="dismisssheet" aria-label="Sulje ikkuna" title="Sulje">✓</button></div><div class="sheet-content">${h}</div></div></div>`;lastModalDay=currentDay;if(keepScroll)$('.sheet-content').scrollTop=scrollTop;modalInputBaseline=[...document.querySelectorAll('.sheet-content input,.sheet-content select')].map(x=>[x.id,x.value]);scheduleFormViewport()};
 const dayModal=h=>modal(h,true);
@@ -1229,7 +1229,14 @@ if(!original)return true;
 if(['t','p','h','c'].some(k=>String(ed[k]??'')!==String(original[k]??'')))return true;
 return Object.entries(ed.projects||{}).some(([id,p])=>{const saved=S.pr.find(x=>x.id===id);return saved&&(p.n!==saved.n||p.a!==saved.a)});
 }
+function saveDayEntry(){
+if(!ed||!$('#fh'))return false;
+const invalid=message=>{toast(message);return false};
+sync();if(!ed.t)return invalid('Valitse työlaji');if(!(Number.isFinite(ed.h)&&ed.h>=0.5&&ed.h<=24))return invalid('Anna tunnit (0,5–24)');if(S.en.filter(e=>e.d===ed.d&&e.id!==ed.id).reduce((a,e)=>a+e.h,0)+ed.h>24)return invalid('Päivän tunnit eivät voi ylittää 24 tuntia');const ab=ABS.includes(ed.t);if(!ab&&!ed.p)return invalid('Lisää ensin projekti');const projectChanges=Object.entries(ed.projects||{}).filter(([id])=>S.pr.some(p=>p.id===id));if(projectChanges.some(([,p])=>!p.n.trim()))return invalid('Anna projektille nimi');const previous=structuredClone(S);for(const [id,p] of projectChanges)Object.assign(S.pr.find(x=>x.id===id),{n:p.n.trim(),a:p.a.trim()});const o={d:ed.d,p:ab?'':ed.p,t:ed.t,h:ed.h,c:(ed.c||'').trim()};
+const entryId=ed.id||'e'+crypto.randomUUID();if(ed.id)Object.assign(S.en.find(z=>z.id===ed.id),o);else S.en.push(Object.assign({id:entryId},o));S.last={t:ed.t,p:ab?S.last.p:ed.p};if(!save()){S=previous;return false}ed.id=entryId;return true;
+}
 function allowSheetExit(){
+if(ed&&$('#fh')){if(!dayHasChanges())return true;if(!saveDayEntry())return false;render(1);toast('Tallennettu');return true}
 const changed=dayHasChanges()||modalInputBaseline.some(([id,value])=>id&&$('#'+id)&&$('#'+id).value!==value);
 return !changed||confirm('Tallentamattomat muutokset hylätään. Jatketaanko?');
 }
@@ -1245,7 +1252,7 @@ overlay.addEventListener('animationend',finished);setTimeout(remove,420);
 }
 function changeSheetDay(offset){if(!ed||!allowSheetExit())return;const d=dk(addD(pd(ed.d),offset));document.activeElement?.blur();ed=mk(d);dayEditing=false;ret=0;sheet()}
 
-function sync(){const g=id=>$('#'+id);if(g('fp'))ed.p=g('fp').value;if(g('fh'))ed.h=g('fh').value.trim()===''?'':+g('fh').value;if(g('fc'))ed.c=g('fc').value;if(g('edit-project-name')){const id=g('edit-project-name').dataset.project;ed.projects=ed.projects||{};ed.projects[id]={n:g('edit-project-name').value,a:g('edit-project-address').value}}}
+function sync(){const g=id=>$('#'+id);if(g('work-type'))ed.t=g('work-type').value;if(g('fp'))ed.p=g('fp').value;if(g('fh'))ed.h=g('fh').value.trim()===''?'':+g('fh').value;if(g('fc'))ed.c=g('fc').value;if(g('edit-project-name')){const id=g('edit-project-name').dataset.project;ed.projects=ed.projects||{};ed.projects[id]={n:g('edit-project-name').value,a:g('edit-project-address').value}}}
 let dayEditing=false;
 function allWorkTypes(settings=S.set){return [...TY,...(settings.customTypes||[]).filter(n=>!TY.some(t=>t[0]===n)).map(n=>[n,'#8B5CF6'])]}
 function visibleWorkTypes(){return allWorkTypes().filter(t=>!(S.set.hiddenTypes||[]).includes(t[0]))}
@@ -1275,13 +1282,12 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(
 if(a==='pw'){wo--;render(1)}else if(a==='nw'){wo++;render(1)}else if(a==='pm'){mo--;render(1)}else if(a==='nm'){mo++;render(1)}
 else if(a==='day'){dayEditing=false;ed=mk(b.dataset.d);sheet()}
 else if(a==='editday'){const first=S.en.find(x=>x.d===ed.d);dayEditing=true;ed=first?{...first,c:first.c||''}:mk(ed.d);sheet()}
-else if(a==='adddayentry'){dayEditing=true;ed=mk(ed.d);sheet()}
+else if(a==='adddayentry'){if(!allowSheetExit())return;dayEditing=true;ed=mk(ed.d);sheet()}
 else if(a==='canceledit'){const d=ed.d;dayEditing=false;ed=mk(d);if(S.en.some(x=>x.d===d))sheet();else{closeSheet()}}
-else if(a==='ee'){dayEditing=true;const x=S.en.find(z=>z.id===id);ed=Object.assign({},x,{c:x.c||''});sheet()}
+else if(a==='ee'){if(!allowSheetExit())return;dayEditing=true;const x=S.en.find(z=>z.id===id);ed=Object.assign({},x,{c:x.c||''});sheet()}
 else if(a==='ty'){sync();ed.t=b.dataset.t;if(ABS.includes(ed.t))ed.h=DEFAULT_HOURS;sheet()}
 else if(a==='hh'){sync();ed.h=+b.dataset.h;sheet()}
-else if(a==='sv'){sync();if(!ed.t)return toast('Valitse työlaji');if(!(Number.isFinite(ed.h)&&ed.h>=0.5&&ed.h<=24))return toast('Anna tunnit (0,5–24)');if(S.en.filter(e=>e.d===ed.d&&e.id!==ed.id).reduce((a,e)=>a+e.h,0)+ed.h>24)return toast('Päivän tunnit eivät voi ylittää 24 tuntia');const ab=ABS.includes(ed.t);if(!ab&&!ed.p)return toast('Lisää ensin projekti');const projectChanges=Object.entries(ed.projects||{}).filter(([id])=>S.pr.some(p=>p.id===id));if(projectChanges.some(([,p])=>!p.n.trim()))return toast('Anna projektille nimi');for(const [id,p] of projectChanges)Object.assign(S.pr.find(x=>x.id===id),{n:p.n.trim(),a:p.a.trim()});const o={d:ed.d,p:ab?'':ed.p,t:ed.t,h:ed.h,c:(ed.c||'').trim()};
-if(ed.id)Object.assign(S.en.find(z=>z.id===ed.id),o);else S.en.push(Object.assign({id:'e'+crypto.randomUUID()},o));S.last={t:ed.t,p:ab?S.last.p:ed.p};if(!save())return;closeSheet();render(1);toast('Tallennettu')}
+else if(a==='sv'){if(!saveDayEntry())return;closeSheet();render(1);toast('Tallennettu')}
 else if(a==='de'){if(!confirm('Poistetaanko tämä kirjaus?'))return;const deletedDay=ed.d;S.en=S.en.filter(z=>z.id!==id);if(!save())return;dayEditing=false;ed=mk(deletedDay);render(1);if(S.en.some(x=>x.d===deletedDay))sheet();else{closeSheet()}toast('Kirjaus poistettu')}
 else if(a==='prevday'){changeSheetDay(-1)}
 else if(a==='nextday'){changeSheetDay(1)}
@@ -1317,6 +1323,7 @@ function refreshDayOnReturn(){
 const today=dk(new Date());if(today===lastForegroundDay)return;
 const previous=lastForegroundDay;lastForegroundDay=today;
 const reopenToday=!!ed&&ed.d===previous;
+if(reopenToday&&!allowSheetExit()){lastForegroundDay=previous;return}
 wo=0;mo=0;
 if(reopenToday){ed=mk(today);dayEditing=false;ret=0;}
 render(1);
