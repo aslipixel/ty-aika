@@ -2,8 +2,8 @@ name: Build TuntiX IPA
 on:
   workflow_dispatch:
   push:
-    branches: [main]
-    paths: ['mobile/build-request.json']
+    branches: [main, tuntix-tyontekija]
+    paths: ['mobile/**', 'tuntix/tyontekija/**', '.github/workflows/native-ios.yml']
 permissions:
   contents: read
 jobs:
@@ -36,13 +36,13 @@ jobs:
           test -f Payload/App.app/public/index.html
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' Payload/App.app/Info.plist
           file Payload/App.app/App
-          zip -qry TuntiX-unsigned.ipa Payload
-          shasum -a 256 TuntiX-unsigned.ipa > SHA256SUMS.txt
+          zip -qry tuntiX.ipa Payload
+          shasum -a 256 tuntiX.ipa > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: TuntiX-iPhone-IPA
           path: |
-            mobile/TuntiX-unsigned.ipa
+            mobile/tuntiX.ipa
             mobile/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 90

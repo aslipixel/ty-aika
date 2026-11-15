@@ -1,6 +1,6 @@
 {
   "appId": "fi.tuntix.tyontekija",
-  "appName": "TuntiX",
+  "appName": "tuntiX",
   "webDir": "www",
   "ios": { "contentInset": "never" }
 }
