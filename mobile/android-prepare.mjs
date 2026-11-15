@@ -23,4 +23,9 @@ for (const [expression,source] of paths) {
 await writeFile('android/capacitor.settings.gradle',settings);
 
 const gradle='android/app/build.gradle';
-await writeFile(gradle,(await readFile(gradle,'utf8')).replace(/versionCode \d+/,'versionCode 4').replace(/versionName "[^"]+"/,'versionName "1.3"'));
+const versionCode=Number(process.env.TUNTIX_BUILD_NUMBER||5);
+if(!Number.isSafeInteger(versionCode)||versionCode<5)throw Error('Invalid release build number');
+await writeFile(gradle,(await readFile(gradle,'utf8')).replace(/versionCode \d+/,'versionCode '+versionCode).replace(/versionName "[^"]+"/,'versionName "1.4"'));
+const manifest='android/app/src/main/AndroidManifest.xml';
+await writeFile(manifest,(await readFile(manifest,'utf8')).replace('android:allowBackup="true"','android:allowBackup="false" android:usesCleartextTraffic="false"'));
+await writeFile('android/app/src/main/res/xml/file_paths.xml','<?xml version="1.0" encoding="utf-8"?><paths xmlns:android="http://schemas.android.com/apk/res/android"><cache-path name="exports" path="exports/" /></paths>');

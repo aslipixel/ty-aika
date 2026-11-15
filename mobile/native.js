@@ -10,7 +10,7 @@ window.nativePersist = value => {
 };
 window.nativeDownload = async (name, text) => {
   try {
-    const { uri } = await Filesystem.writeFile({ path: name, data: text, directory: Directory.Cache, encoding: Encoding.UTF8 });
+    const { uri } = await Filesystem.writeFile({ path: "exports/"+name, recursive: true, data: text, directory: Directory.Cache, encoding: Encoding.UTF8 });
     await Share.share({ title: name, files: [uri] });
   } catch (error) {
     alert('Tiedostoa ei jaettu. Yritä uudelleen asetuksista.');
@@ -22,7 +22,7 @@ window.nativeOpenPdf = async doc => {
   const supplement=doc==='liite';
   const el=document.getElementById(supplement?'tes-pdf-liite':'tes-pdf-main');
   const name=supplement?'Vedeneristys-TES-lisaliite-2026.pdf':'Vedeneristys-TES-2025-2028.pdf';
-  const {uri}=await Filesystem.writeFile({path:name,data:el.textContent.trim(),directory:Directory.Cache});
+  const {uri}=await Filesystem.writeFile({path:"exports/"+name,recursive:true,data:el.textContent.trim(),directory:Directory.Cache});
   await Share.share({title:name,files:[uri],dialogTitle:'Avaa tai tallenna TES'});
  } catch(error) {if(!/cancel|dismiss/i.test(String(error?.message||error)))alert('PDF:n avaaminen epäonnistui. Yritä uudelleen.');}
 };

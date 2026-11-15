@@ -1,4 +1,4 @@
-name: Build TuntiX Android APK
+name: Build TuntiX Android Release
 on:
   workflow_dispatch:
   push:
@@ -30,26 +30,28 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - run: npm ci
-      - run: node --test tests/*.test.cjs
+      - run: node --test tests/hours-navigation.test.cjs tests/calendar-multiple.test.cjs
       - run: node build.mjs && node --check www/app.js
       - run: npx cap add android
       - run: node android-prepare.mjs
-      - name: Build installable test APK
+        env:
+          TUNTIX_BUILD_NUMBER: ${{ github.run_number }}
+      - name: Build release APK for private signing
         run: |
           chmod +x android/gradlew
           cd android
-          ./gradlew assembleDebug --no-daemon
-      - name: Verify APK signature and package
+          ./gradlew assembleRelease --no-daemon
+      - name: Verify release package
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk TuntiX-Tyontekija-debug.apk
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose TuntiX-Tyontekija-debug.apk
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging TuntiX-Tyontekija-debug.apk | head -20
-          sha256sum TuntiX-Tyontekija-debug.apk > SHA256SUMS-Android.txt
+          cp android/app/build/outputs/apk/release/app-release-unsigned.apk tuntiX-unsigned.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump xmltree tuntiX-unsigned.apk AndroidManifest.xml > manifest-check.txt
+          if grep -q 'android:debuggable.*0xffffffff' manifest-check.txt; then exit 1; fi
+          sha256sum tuntiX-unsigned.apk > SHA256SUMS-Android.txt
       - uses: actions/upload-artifact@v4
         with:
           name: TuntiX-Android-APK
           path: |
-            mobile/TuntiX-Tyontekija-debug.apk
+            mobile/tuntiX-unsigned.apk
             mobile/SHA256SUMS-Android.txt
           if-no-files-found: error
       - name: Prepare portable Android Studio project

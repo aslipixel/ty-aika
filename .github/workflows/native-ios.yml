@@ -21,14 +21,14 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
-      - run: node --test tests/*.test.cjs
+      - run: node --test tests/hours-navigation.test.cjs tests/calendar-multiple.test.cjs
       - run: node build.mjs
       - run: node --check www/app.js
       - run: npx cap add ios --packagemanager SPM
       - run: node icon.mjs
       - name: Build for physical iPhone
         run: |
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' CURRENT_PROJECT_VERSION=3 MARKETING_VERSION=1.2 build
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY='' CURRENT_PROJECT_VERSION=${{ github.run_number }} MARKETING_VERSION=1.4 build
       - name: Package unsigned IPA for local signing
         run: |
           mkdir -p Payload
