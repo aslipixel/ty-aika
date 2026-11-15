@@ -21,3 +21,6 @@ for (const [expression,source] of paths) {
   settings = settings.replace(expression,`new File('${destination}')`);
 }
 await writeFile('android/capacitor.settings.gradle',settings);
+
+const gradle='android/app/build.gradle';
+await writeFile(gradle,(await readFile(gradle,'utf8')).replace(/versionCode \d+/,'versionCode 4').replace(/versionName "[^"]+"/,'versionName "1.3"'));

@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['mobile/build-request.json']
+    paths: ['mobile/**', 'tuntix/tyontekija/**', '.github/workflows/native-android.yml']
 permissions:
   contents: read
 jobs:
@@ -30,6 +30,7 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - run: npm ci
+      - run: node --test tests/*.test.cjs
       - run: node build.mjs && node --check www/app.js
       - run: npx cap add android
       - run: node android-prepare.mjs
