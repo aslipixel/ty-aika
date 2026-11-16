@@ -310,6 +310,7 @@ body{background:radial-gradient(ellipse at top right,rgba(20,200,181,.14),transp
 </style>
 
 <style id="aurora-design" media="not all">
+:root{--nav-base:#24468b}
 :root{--ink:#fff;--mut:#e0e9ff;--card:rgba(255,255,255,.16);--lil:rgba(255,255,255,.12);--line:rgba(255,255,255,.32);--teal:#b4fff0;--blue:#fff;--vio:#d8cfff;--bg1:#087b68;--bg2:#5536ce;--glass-bg:linear-gradient(135deg,#087b68 0%,#1953b3 52%,#5536ce 100%);color-scheme:dark}
 :root[data-glass="blue"]{--glass-bg:linear-gradient(135deg,#093765,#174dc2 55%,#078ba7)}
 :root[data-glass="sun"]{--glass-bg:linear-gradient(135deg,#8e192c,#bd174b 52%,#b54d11)}
@@ -335,6 +336,13 @@ input::placeholder,textarea::placeholder{color:#d5dff2}select option{background:
 .calculator-icon,.calculator-chevron,.plus{color:white;background:rgba(255,255,255,.18)}.toast{background:#fff;color:#21335f}.lnk,.sheet a{color:#fff}.btn.del{color:#ffccd7}
 .glass-colors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 4px}.glass-choice{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin:0;padding:12px 4px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.12);color:white;font-size:14px;cursor:pointer}.glass-choice:has(input:checked){outline:2px solid white;outline-offset:1px;box-shadow:inset 0 0 0 1px white}.glass-choice:focus-within{outline:3px solid white}.glass-choice input{position:absolute;opacity:0;width:1px;height:1px}.glass-swatch{width:42px;height:42px;border:1px solid white;border-radius:50%;background:var(--swatch)}
 @media(max-width:370px){.card{padding:13px}.cal{gap:5px}.cd{border-radius:14px;font-size:16px}.glass-choice{font-size:12px}}
+</style>
+<style id="bottom-navigation-layout">
+/* Dock navigation to the screen edge and cover the home-indicator area. */
+.nav{bottom:0;width:100%;max-width:520px;border-radius:22px 22px 0 0;border-bottom:0;padding:8px max(4px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));background:var(--nav-base,var(--card));box-shadow:0 -4px 18px rgba(20,35,70,.14)}
+.nav a{min-height:52px;position:relative}
+main{padding-bottom:calc(var(--nav-height) + 32px)}
+.cd{scroll-margin-bottom:calc(var(--nav-height) + 24px)}
 </style>
 </head>
 <body>
