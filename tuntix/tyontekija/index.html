@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-yc2FgfRmNzyzxc6IQgORRyQlb+hCHgmLzLIhzbhyjB8=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-BU8Sii5HxZN9sFMV1RmcXfB5QdO2vwZNqU8pyVbevL8=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14C8B5"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
@@ -1267,11 +1267,68 @@ function updateConcreteCalculator(event){
 document.addEventListener('input',updateConcreteCalculator);
 document.addEventListener('change',updateConcreteCalculator);
 
+function slopeVolumeCalculator(){
+  const field=(name,label,value)=>`<div><label for="slope-${name}">${label}</label><input id="slope-${name}" inputmode="decimal" value="${value}"></div>`;
+  const result=(name,label)=>`<div class="tes-grand"><span>${label}</span><output id="slope-${name}">–</output></div>`;
+  return `<div id="slope-volume-calculator">
+    <div class="tes-page-toolbar"><h2>Kaltevuus ja tilavuus</h2><button type="button" class="sheet-control sheet-done tes-menu-return" data-tes="home" aria-label="Takaisin valikkoon">✓</button></div>
+    <section class="card"><h3>Kaltevuus</h3>
+      <div class="tes-inputs">${field('rise','Korkeusero (m)','0,15')}${field('run','Vaakaetäisyys (m)',10)}</div>
+      ${result('percent','Kaltevuus')}${result('angle','Kulma')}${result('ratio','Suhde')}${result('length','Pituus kaltevuutta pitkin')}
+    </section>
+    <section class="card"><h3>Suorakulmaisen laatan tilavuus</h3>
+      <div class="tes-inputs">${field('slab-length','Pituus (m)',20)}${field('slab-width','Leveys (m)',15)}</div>
+      ${field('depth','Paksuus (cm)',10)}
+      <label class="tes-check"><input type="checkbox" id="slope-enabled">Kalteva laatta pituussuunnassa</label>
+      <div id="slope-grade-fields" hidden>
+        <p>Paksuus kasvaa tasaisesti alapäästä yläpäähän. Laskenta olettaa vaakasuoran pohjan.</p>
+        ${field('grade','Laatan kaltevuus (%)','1,5')}
+      </div>
+      ${result('volume','Tilavuus')}${result('litres','Litroina')}${result('area','Pohjan pinta-ala')}
+      <div id="slope-average-row" hidden>${result('average','Keskipaksuus')}</div>
+    </section></div>`;
+}
+
+function updateSlopeVolume(){
+  if(!document.getElementById('slope-volume-calculator'))return;
+  const field=name=>document.getElementById('slope-'+name);
+  const read=name=>{
+    const value=field(name).value.trim().replace(',','.');
+    return /^\d+(?:\.\d+)?$/.test(value)?Number(value):NaN;
+  };
+  const format=new Intl.NumberFormat('fi-FI',{maximumFractionDigits:3});
+  const write=(name,value,unit)=>{field(name).textContent=Number.isFinite(value)?format.format(value)+unit:'–'};
+  const rise=read('rise'),run=read('run');
+  const gradient=run>0?rise/run:NaN;
+  write('percent',gradient*100,' %');
+  write('angle',Math.atan(gradient)*180/Math.PI,'°');
+  write('length',run>0?Math.hypot(run,rise):NaN,' m');
+  field('ratio').textContent=gradient>0&&Number.isFinite(1/gradient)?'1 : '+format.format(1/gradient):'–';
+  const slope=field('enabled').checked;
+  field('grade-fields').hidden=!slope;
+  field('average-row').hidden=!slope;
+  field('depth').labels[0].textContent=slope?'Paksuus alapäässä (cm)':'Paksuus (cm)';
+  const length=read('slab-length'),width=read('slab-width');
+  const area=length>0&&width>0?length*width:NaN;
+  const average=read('depth')+(slope?length*read('grade')/2:0);
+  const volume=area*average/100;
+  write('area',area,' m²');
+  write('average',average,' cm');
+  write('volume',volume,' m³');
+  write('litres',volume*1000,' l');
+}
+for(const type of ['input','change']){
+  document.addEventListener(type,event=>{
+    if(event.target.closest('#slope-volume-calculator'))updateSlopeVolume();
+  });
+}
+
 function lisaa(){
+if(tesTab==='slope-volume')return slopeVolumeCalculator();
 if(tesTab==='concrete')return concreteCalculator();
 if(tesTab==='trapezoid')return trapezoidCalculator();
 const cat=tesCatalog();let body='';
-if(tesTab==='home')body=`<section class="card"><h3>Urakkalaskuri</h3><p>Valitse työ tai materiaali ja syötä määrä. Hinta lasketaan TES:n työkorvauksesta.</p><button class="btn pri" data-tes="calculator">Laske hinta</button><button class="btn" data-tes="catalogue">Hinnasto · muokkaa ja lisää</button></section><section class="card"><h3>Tilavuus ja pinta-ala</h3><button class="btn" data-tes="concrete">Tilavuuslaskuri</button><button class="btn" data-tes="trapezoid">Puolisuunnikkaan pinta-ala</button></section><section class="card"><h3>Koko TES</h3><p>Rakennusliitto · Kattoliitto<br>Vedeneristysalan TES 2025–2028</p><button class="btn" data-tes="pdf" data-doc="tes">Lataa TES 2025–2028 · PDF</button><button class="btn" data-tes="pdf" data-doc="liite">Lataa lisäliite 2026 · PDF</button><p class="tes-note">PDF:t ja laskuri toimivat ilman verkkoyhteyttä, kun sovellus on ladattu laitteelle.</p></section>`;
+if(tesTab==='home')body=`<section class="card"><h3>Urakkalaskuri</h3><p>Valitse työ tai materiaali ja syötä määrä. Hinta lasketaan TES:n työkorvauksesta.</p><button class="btn pri" data-tes="calculator">Laske hinta</button><button class="btn" data-tes="catalogue">Hinnasto · muokkaa ja lisää</button></section><section class="card"><h3>Tilavuus ja pinta-ala</h3><button class="btn" data-tes="concrete">Tilavuuslaskuri</button><button class="btn" data-tes="slope-volume">Kaltevuus- ja tilavuuslaskuri</button><button class="btn" data-tes="trapezoid">Puolisuunnikkaan pinta-ala</button></section><section class="card"><h3>Koko TES</h3><p>Rakennusliitto · Kattoliitto<br>Vedeneristysalan TES 2025–2028</p><button class="btn" data-tes="pdf" data-doc="tes">Lataa TES 2025–2028 · PDF</button><button class="btn" data-tes="pdf" data-doc="liite">Lataa lisäliite 2026 · PDF</button><p class="tes-note">PDF:t ja laskuri toimivat ilman verkkoyhteyttä, kun sovellus on ladattu laitteelle.</p></section>`;
 if(tesTab==='calculator')body=tesCalculator();
 if(tesTab==='catalogue')body=`<section class="card"><h3>Työt ja materiaalit</h3><p class="tes-note">${esc(cat.title)} · hinnat ${esc(cat.effective)} alkaen. Omat muutokset merkitään erikseen.</p><button class="btn pri" data-tes="newitem">+ Lisää työ / materiaali</button><label for="tes-search">Hae nimellä tai TES-numerolla</label><input type="search" id="tes-search" value="${esc(tesSearch)}" placeholder="Pintakermit, aluskermit, kaivot…"><div id="tes-list">${tesCatalogueList()}</div></section><section class="card"><h3>Päivitä tai siirrä hinnasto</h3><p>Hinnasto tallentuu tälle laitteelle. Vie tiedosto ja tuo se toisella laitteella.</p><button class="btn" data-tes="export">Vie hinnasto · JSON</button><button class="btn" data-tes="import">Tuo hinnasto · JSON</button><input id="tes-import" type="file" accept="application/json,.json" hidden><button class="btn del" data-tes="resetcatalog">Palauta alkuperäiset TES-hinnat</button></section>`;
 return `${tesTab!=='home'?'<div class="tes-page-toolbar"><h2>Laskurit</h2><button type="button" class="sheet-control sheet-done tes-menu-return" data-tes="home" aria-label="Takaisin valikkoon" title="Takaisin valikkoon">✓</button></div>':'<h2>Laskurit</h2>'}<div class="tes-version">TES 2025–2028 · ${esc(cat.id===TES_BASE.id?'2026 hinnasto':cat.title)}</div><p class="tes-note">Hinnasto tarkistettu ${esc(cat.checked||'–')}. ${esc(cat.note||'')}</p>${cat.validUntil&&dk(new Date())>cat.validUntil?'<p class="card tes-warning">Tämän hinnaston voimassaolo on päättynyt. Tarkista uudet hinnat ennen laskemista.</p>':''}${body}`
@@ -1295,7 +1352,7 @@ function tesOpenPdf(doc){const supplement=doc==='liite',el=document.getElementBy
 document.addEventListener('input',ev=>{if(ev.target.id==='tes-search'){tesSearch=ev.target.value;$('#tes-list').innerHTML=tesCatalogueList()}if(['tes-qty','tes-layers'].includes(ev.target.id))tesPreview()});
 document.addEventListener('change',async ev=>{if(ev.target.id==='tes-item'){tesSelected=ev.target.value;$('#tes-item-fields').innerHTML=tesItemFields()}if(['tes-small','tes-slope','tes-renovation','tes-unit-confirm'].includes(ev.target.id))tesPreview();if(ev.target.id==='tes-import'&&ev.target.files[0]){try{const f=ev.target.files[0];if(f.size>1500000)throw Error();const raw=JSON.parse(await f.text()),cat=tesValidateCatalog(raw.catalog||raw);for(const row of cat.items){const base=TES_BASE.items.find(b=>b.id===row.id);if(!base||base.price!==row.price||base.unit!==row.unit||base.name!==row.name){row.custom=true;row.source='Tuotu hinnasto · '+row.source}}if(!confirm('Otetaanko hinnasto ”'+cat.title+'” käyttöön? Nykyinen hinnasto korvataan.'))return;if(!tesPersist(s=>s.catalog=cat))return;tesSelected='';render(1);toast('Hinnasto tuotu')}catch{toast('Virheellinen hinnastotiedosto. Tietoja ei muutettu.')}finally{ev.target.value=''}}});
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-tes]');if(!b)return;const a=b.dataset.tes,id=b.dataset.id;
-if(['home','calculator','catalogue','trapezoid','concrete'].includes(a)){tesTab=a;render();return}
+if(['home','calculator','catalogue','trapezoid','concrete','slope-volume'].includes(a)){tesTab=a;render();return}
 if(a==='pdf')return tesOpenPdf(b.dataset.doc);
 if(a==='newitem'||a==='edititem')return tesEditor(id);
 if(a==='saveitem')return tesSaveItem();
@@ -1313,7 +1370,7 @@ const R={kalenteri,projektit,asetukset,profiili,lisaa};
 let lastRenderedRoute=null;
 function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
 if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:440,easing:'cubic-bezier(.25,.8,.25,1)'});}lastRenderedRoute=a;
-$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['asetukset','gear','Asetukset'],['profiili','user','Profiili'],['lisaa','more','Laskurit']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances()}
+$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['asetukset','gear','Asetukset'],['profiili','user','Profiili'],['lisaa','more','Laskurit']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances();updateSlopeVolume()}
 addEventListener('hashchange',()=>{if($('#m .ov')){if(!allowSheetExit()){history.replaceState(null,'','#'+(lastRenderedRoute||'kalenteri'));return}closeSheet()}projectDeleteMode=false;selectedProjects.clear();render()});
 let modalInputBaseline=[],lastModalDay=null;
 const modal=(h,isDay=false)=>{const previous=$('#m .ov');const replacing=!!previous&&!previous.classList.contains('closing');const currentDay=isDay?ed.d:null;const keepScroll=replacing&&isDay&&lastModalDay===currentDay;const scrollTop=keepScroll?($('.sheet-content')?.scrollTop||0):0;$('#m').innerHTML=`<div class="ov ${replacing?'sheet-swap':'sheet-enter'}" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja"><div class="sheet-toolbar">${isDay?`<button type="button" class="sheet-control" data-a="prevday" aria-label="Edellinen päivä">‹</button><span class="sheet-date">${fd(pd(ed.d))}</span><button type="button" class="sheet-control" data-a="nextday" aria-label="Seuraava päivä">›</button>`:'<span class="sheet-date"></span>'}<button type="button" class="sheet-control sheet-done" data-a="dismisssheet" aria-label="Sulje ikkuna" title="Sulje">✓</button></div><div class="sheet-content">${h}</div></div></div>`;lastModalDay=currentDay;if(keepScroll)$('.sheet-content').scrollTop=scrollTop;modalInputBaseline=[...document.querySelectorAll('.sheet-content input,.sheet-content select')].map(x=>[x.id,x.value]);scheduleFormViewport()};
