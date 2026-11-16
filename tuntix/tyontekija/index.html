@@ -2,11 +2,11 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-LwmPopaE41Dv8D7HUf2YSswtiTfIHtFHmazHhgLS2Ws=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-rANlq2Y2Lzwc7vslI9jtIhgOp0ZtAEV/ZsdrolPYm0w=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14C8B5"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;--ink:#0F1F4D;--mut:#6B7694;--card:#fff;--bg1:#f2fbff;--bg2:#efeaff;--line:#e8eaf5;--sh:0 8px 30px rgba(80,70,200,.10);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme]){--ink:#eef0ff;--mut:#a3accb;--card:#18203f;--bg1:#0b1230;--bg2:#1a1340;--lil:#2a2563;--line:#2a3360}}
@@ -232,6 +232,54 @@ input,select{transition:border-color 240ms ease,box-shadow 240ms ease}
 :root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .btn.pri{background:linear-gradient(90deg,var(--teal),var(--accent-end));box-shadow:0 8px 20px rgba(20,40,70,.16)}
 :root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .cd.has{background:var(--lil)}
 #concrete-size-fields[hidden],#concrete-loads-row[hidden]{display:none}
+
+/* TuntiX theme surfaces and raised controls */
+:root:not([data-theme]),:root[data-theme="light"]{
+ --teal:#1F9DB5;--blue:#176F82;--vio:#6FE0CF;--lil:#DDF6F2;
+ --bg1:#E3F2F5;--bg2:#F6FBFB;--ink:#17324A;--mut:#52677B;--line:#D6E3E6
+}
+@media(prefers-color-scheme:dark){
+ :root:not([data-theme]){--teal:#75D9D0;--blue:#91DDD9;--vio:#255D6D;--lil:#203640;--bg1:#101D29;--bg2:#172932;--ink:#EEF7FA;--mut:#ACC0CC;--line:#344955}
+}
+:root[data-theme="dark"]{--teal:#75D9D0;--blue:#91DDD9;--vio:#255D6D;--lil:#203640;--bg1:#101D29;--bg2:#172932;--ink:#EEF7FA;--mut:#ACC0CC;--line:#344955}
+:root{
+ --rim:#B2CED4;--rim:color-mix(in srgb,var(--teal) 24%,var(--line));
+ --surface:linear-gradient(180deg,var(--card),var(--bg2));
+ --control:linear-gradient(180deg,var(--card),var(--lil));
+ --accent:linear-gradient(145deg,var(--teal),var(--blue));
+ --lift:0 10px 16px -8px rgba(30,60,90,.4),inset 0 1px 0 rgba(255,255,255,.22)
+}
+body{font-family:Nunito,Poppins,system-ui,sans-serif;font-weight:700;background:linear-gradient(180deg,var(--bg1),var(--bg2)) fixed}
+button,input,select,textarea,.cd,.lnk,.chip,.num{font-family:inherit}
+h2,h3,.btn{font-weight:800}
+h2{font-size:22px}
+#app,.sheet{max-width:520px}
+.card,.nav,.sheet{background:var(--surface)}
+.card,.nav{border:1px solid var(--line);border-bottom:4px solid var(--rim);box-shadow:var(--lift)}
+.card{border-radius:18px}
+.btn:not(.del),.sheet-control:not(.sheet-done),.cd{
+ background:var(--control);border:1px solid var(--line);border-bottom:3px solid var(--rim);
+ box-shadow:0 4px 7px -3px rgba(30,60,90,.45),inset 0 1px rgba(255,255,255,.22)
+}
+:root .btn.pri,:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .btn.pri{
+ background:var(--accent);border-color:var(--blue);color:white;text-shadow:0 1px 2px #143742;box-shadow:var(--lift)
+}
+:root .cd.has{background:var(--control);border-bottom-color:var(--teal)}
+:root .cd.today{outline:2px solid var(--blue)}
+:root .cd.has b{color:var(--blue)}
+:root .cd.has b.multiple-entries{color:#d32640}
+input:not([type="checkbox"]),select,textarea{background:var(--surface);box-shadow:inset 0 3px 6px rgba(30,80,95,.12)}
+.nav{max-width:500px;width:calc(100% - 20px);bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:8px 2px 6px;border-radius:20px}
+.nav a{font-weight:700}
+.nav a.on{color:var(--blue);font-weight:800}
+.nav a svg{width:34px;height:34px;padding:6px;border-radius:11px}
+.nav a.on svg,.calculator-icon{color:white;background:var(--accent);box-shadow:0 3px 0 var(--blue),inset 0 1px rgba(255,255,255,.4)}
+.calculator-link{justify-content:flex-start;gap:12px;min-height:60px;text-align:left}
+.calculator-link:last-child{margin-bottom:4px}
+.calculator-icon{display:grid;place-items:center;width:36px;height:36px;flex:none;border-radius:10px}
+.calculator-name{flex:1;min-width:0}
+.calculator-chevron{display:grid;place-items:center;border-radius:50%;width:25px;height:25px;flex:none;background:var(--lil);color:var(--blue)}
+@media(prefers-reduced-motion:no-preference){.btn:active,.cd:active{transform:translateY(1px)}}
 </style>
 </head>
 <body>
@@ -1323,13 +1371,21 @@ for(const type of ['input','change']){
   });
 }
 
+function calculatorLink(action,label,icon){
+  return `<button type="button" class="btn calculator-link" data-tes="${action}"><span class="calculator-icon" aria-hidden="true"><svg class="i" viewBox="0 0 24 24">${icon}</svg></span><span class="calculator-name">${label}</span><span class="calculator-chevron" aria-hidden="true">›</span></button>`;
+}
 function lisaa(){
 if(tesTab==='slope-volume')return slopeVolumeCalculator();
 if(tesTab==='concrete')return concreteCalculator();
 if(tesTab==='trapezoid')return trapezoidCalculator();
 const cat=tesCatalog();let body='';
 const tesNotice=`<div class="tes-version">TES 2025–2028 · ${esc(cat.id===TES_BASE.id?'2026 hinnasto':cat.title)}</div><p class="tes-note">Hinnasto tarkistettu ${esc(cat.checked||'–')}. ${esc(cat.note||'')}</p>${cat.validUntil&&dk(new Date())>cat.validUntil?'<p class="card tes-warning">Tämän hinnaston voimassaolo on päättynyt. Tarkista uudet hinnat ennen laskemista.</p>':''}`;
-if(tesTab==='home')body=`<section class="card"><p>Valitse työ tai materiaali ja syötä määrä. Hinta lasketaan TES:n työkorvauksesta.</p><button class="btn pri" data-tes="calculator">Urakkalaskuri</button></section><section class="card"><h3>Tilavuus ja pinta-ala</h3><button class="btn pri" data-tes="concrete">Tilavuuslaskuri</button><button class="btn pri" data-tes="slope-volume">Kaltevuus- ja tilavuuslaskuri</button><button class="btn pri" data-tes="trapezoid">Puolisuunnikkaan pinta-ala</button></section><section class="card"><h3>Koko TES</h3><p>Rakennusliitto · Kattoliitto<br>Vedeneristysalan TES 2025–2028</p><button class="btn" data-tes="pdf" data-doc="tes">Lataa TES 2025–2028 · PDF</button><button class="btn" data-tes="pdf" data-doc="liite">Lataa lisäliite 2026 · PDF</button><p class="tes-note">PDF:t ja laskuri toimivat ilman verkkoyhteyttä, kun sovellus on ladattu laitteelle.</p>${tesNotice}</section>`;
+if(tesTab==='home')body=`<section class="card">
+ ${calculatorLink('calculator','Urakkalaskuri','<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8 7h8v4H8zM9 15h.01M15 15h.01M9 18h.01M15 18h.01"/>')}
+ ${calculatorLink('concrete','Tilavuuslaskuri','<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9"/>')}
+ ${calculatorLink('slope-volume','Kaltevuus- ja tilavuuslaskuri','<path d="M4 19h16V6L4 19z"/>')}
+ ${calculatorLink('trapezoid','Puolisuunnikkaan pinta-ala','<path d="M7 6h10l4 12H3L7 6z"/>')}
+ </section><section class="card"><h3>Koko TES</h3><p>Rakennusliitto · Kattoliitto<br>Vedeneristysalan TES 2025–2028</p><button class="btn" data-tes="pdf" data-doc="tes">Lataa TES 2025–2028 · PDF</button><button class="btn" data-tes="pdf" data-doc="liite">Lataa lisäliite 2026 · PDF</button><p class="tes-note">PDF:t ja laskuri toimivat ilman verkkoyhteyttä, kun sovellus on ladattu laitteelle.</p>${tesNotice}</section>`;
 if(tesTab==='calculator')body=(cat.validUntil&&dk(new Date())>cat.validUntil?'<p class="card tes-warning">Hinnaston voimassaolo on päättynyt.</p>':'')+tesCalculator();
 if(tesTab==='catalogue')body=`<section class="card"><h3>Työt ja materiaalit</h3><p class="tes-note">${esc(cat.title)} · hinnat ${esc(cat.effective)} alkaen. Omat muutokset merkitään erikseen.</p><button class="btn pri" data-tes="newitem">+ Lisää työ / materiaali</button><label for="tes-search">Hae nimellä tai TES-numerolla</label><input type="search" id="tes-search" value="${esc(tesSearch)}" placeholder="Pintakermit, aluskermit, kaivot…"><div id="tes-list">${tesCatalogueList()}</div></section><section class="card"><h3>Päivitä tai siirrä hinnasto</h3><p>Hinnasto tallentuu tälle laitteelle. Vie tiedosto ja tuo se toisella laitteella.</p><button class="btn" data-tes="export">Vie hinnasto · JSON</button><button class="btn" data-tes="import">Tuo hinnasto · JSON</button><input id="tes-import" type="file" accept="application/json,.json" hidden><button class="btn del" data-tes="resetcatalog">Palauta alkuperäiset TES-hinnat</button></section>`;
 return `${tesTab!=='home'?'<div class="tes-page-toolbar"><h2>Laskurit</h2><button type="button" class="sheet-control sheet-done tes-menu-return" data-tes="home" aria-label="Takaisin valikkoon" title="Takaisin valikkoon">✓</button></div>':'<h2>Laskurit</h2>'}${body}`
