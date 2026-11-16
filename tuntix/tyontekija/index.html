@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-rANlq2Y2Lzwc7vslI9jtIhgOp0ZtAEV/ZsdrolPYm0w=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-vBfvqhLFJ4QQQErMO7a5Z1Lj97MLj6Q+Ruz4MSpry6s=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14C8B5"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
@@ -280,6 +280,27 @@ input:not([type="checkbox"]),select,textarea{background:var(--surface);box-shado
 .calculator-name{flex:1;min-width:0}
 .calculator-chevron{display:grid;place-items:center;border-radius:50%;width:25px;height:25px;flex:none;background:var(--lil);color:var(--blue)}
 @media(prefers-reduced-motion:no-preference){.btn:active,.cd:active{transform:translateY(1px)}}
+
+/* Crisp white and green surfaces for the default light palette. */
+:root[data-theme="light"]{
+ --teal:#087D49;--blue:#075B36;--vio:#40AE70;--lil:#E4F6E9;
+ --bg1:#E3F2E8;--bg2:#F4FAF5;--ink:#143525;--mut:#486556;--line:#C6DFCF;
+ --rim:#78AA8D;--surface:#fff;--control:linear-gradient(#fff,#E9F6EC);
+ --accent:linear-gradient(#149358,#087647)
+}
+@media(prefers-color-scheme:light){
+ :root:not([data-theme]){
+  --teal:#087D49;--blue:#075B36;--vio:#40AE70;--lil:#E4F6E9;
+  --bg1:#E3F2E8;--bg2:#F4FAF5;--ink:#143525;--mut:#486556;--line:#C6DFCF;
+  --rim:#78AA8D;--surface:#fff;--control:linear-gradient(#fff,#E9F6EC);
+  --accent:linear-gradient(#149358,#087647)
+ }
+}
+.card,.nav{border-bottom-width:5px;box-shadow:0 3px 0 rgba(23,65,43,.2),0 5px 6px -3px rgba(23,65,43,.24)}
+.btn:not(.del),.cd,.sheet-control:not(.sheet-done){border-bottom-width:4px;box-shadow:0 2px 0 rgba(23,65,43,.18)}
+:root .btn.pri,:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .btn.pri{box-shadow:0 3px 0 rgba(16,59,36,.34)}
+.week-summary-heading strong{padding:7px 13px;border-radius:12px;background:var(--accent);color:white;text-shadow:0 1px 2px #143742;box-shadow:0 3px 0 var(--blue)}
+:root .cd.has{background:var(--lil);border-bottom-color:var(--teal)}
 </style>
 </head>
 <body>
@@ -315,7 +336,8 @@ rows+=`<button type="button" class="week-entry ${es.length?'recorded':'empty'}" 
 const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
 for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b class="${counts[k]>1?'multiple-entries':''}">${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
 return `<div class="hero"><div class="clk" id="clk">${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}</div><b>${DL[wd(n)]} ${fd(n)}${n.getFullYear()}</b></div>
-<div class="card"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><div class="weekdate-field"><input id="weekdate" type="date" value="${dk(ws)}"></div><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div></div><section class="card week-summary" aria-labelledby="week-summary-heading"><div class="week-summary-heading"><h2 id="week-summary-heading">${wo===0?'Tämän viikon tunnit':'Viikon tunnit'}</h2><strong>${fh(tot)}</strong></div><div class="week-entries">${rows}</div></section>
+<section class="card week-summary" aria-labelledby="week-summary-heading"><div class="week-summary-heading"><h2 id="week-summary-heading">${wo===0?'Tämän viikon tunnit':'Viikon tunnit'}</h2><strong>${fh(tot)}</strong></div><div class="week-entries">${rows}</div></section>
+<div class="card"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><div class="weekdate-field"><input id="weekdate" type="date" value="${dk(ws)}"></div><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div></div>
 <div class="card"><div class="wk"><button class="btn sm" data-a="pm">‹</button><b>${MO[m0.getMonth()]} ${m0.getFullYear()}</b><button class="btn sm" data-a="nm">›</button></div><div class="cal">${c}</div></div>`}
 function projectDays(){const groups=new Map();for(const e of S.en){if(!e.p)continue;const key=e.d+'|'+e.p;if(!groups.has(key))groups.set(key,{p:e.p,d:e.d,h:0});groups.get(key).h+=e.h}const rows=[...groups.values()].sort((a,b)=>b.d.localeCompare(a.d)||pn(a.p).localeCompare(pn(b.p),'fi'));const used=new Set(rows.map(r=>r.p));for(const p of S.pr)if(!used.has(p.id))rows.push({p:p.id,d:'',h:0});return rows}
 let projectDeleteMode=false;const selectedProjects=new Set();
