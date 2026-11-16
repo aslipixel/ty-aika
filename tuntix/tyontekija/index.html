@@ -344,35 +344,6 @@ input::placeholder,textarea::placeholder{color:#d5dff2}select option{background:
 main{padding-bottom:calc(var(--nav-height) + 32px)}
 .cd{scroll-margin-bottom:calc(var(--nav-height) + 24px)}
 </style>
-<style id="compact-home-layout">
-/* Apply the safe-area inset once, then keep the working week above navigation. */
-:root{padding:0}
-@media(min-width:0px){
-.top{padding:0 12px;min-height:28px;gap:8px}
-.brand{font-size:17px;gap:4px}.brand svg{width:24px;height:24px}
-.top::after{font-size:7px;letter-spacing:.6px}
-main{padding-top:0}
-.hero{padding:2px 0 6px}.clk{font-size:28px;line-height:1.05}.hero b{font-size:12px}
-.card:has(>.weektools){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:6px 10px;margin-bottom:8px}
-.card>.weektools{grid-column:1;grid-row:1;grid-template-columns:minmax(0,1fr) 74px;gap:5px;margin:0}
-.card>.weekend-toggle{grid-column:2;grid-row:1;margin:0;min-height:40px;gap:5px;font-size:12px;white-space:nowrap}
-.card>.weekend-toggle input{width:18px;height:18px;min-width:18px}
-.card:has(>.weektools)>.wk{grid-column:1/-1;margin:0;min-height:42px}
-.card:has(>.weektools)>.wk .btn{min-height:40px;padding:6px 12px}
-.card:has(>.weektools)>.wk b{font-size:13px}
-.card:has(>.weektools)>.wk p{font-size:11px}
-.weektools .weekdate-field input{height:36px;min-height:36px;font-size:13px}
-.weektools .lnk{font-size:11px}
-.card.week-summary{padding:11px 12px 12px;margin-bottom:10px}
-.week-summary-heading{padding-bottom:8px}.week-summary-heading h2{font-size:16px}.week-summary-heading strong{font-size:22px}
-.week-entries{gap:4px}
-.week-summary .week-entry{min-height:44px;padding:5px 8px 5px 22px;font-size:18px;grid-template-columns:100px minmax(0,1fr) 26px;gap:6px;border-radius:12px}
-.week-day{gap:5px}.week-day b{font-size:16px}.week-day small{font-size:13px}
-.week-status{width:25px;height:25px}.week-status svg{width:23px;height:23px}
-.nav{padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom,0px))}
-.nav a{min-height:46px;font-size:11px}.nav a svg{width:30px;height:30px}
-}
-</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14C8B5"/><stop offset=".55" stop-color="#2a8ad8"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
