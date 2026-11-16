@@ -281,26 +281,33 @@ input:not([type="checkbox"]),select,textarea{background:var(--surface);box-shado
 .calculator-chevron{display:grid;place-items:center;border-radius:50%;width:25px;height:25px;flex:none;background:var(--lil);color:var(--blue)}
 @media(prefers-reduced-motion:no-preference){.btn:active,.cd:active{transform:translateY(1px)}}
 
-/* Crisp white and green surfaces for the default light palette. */
+/* Raised week rows with the original TuntiX colors. */
 :root[data-theme="light"]{
- --teal:#087D49;--blue:#075B36;--vio:#40AE70;--lil:#E4F6E9;
- --bg1:#E3F2E8;--bg2:#F4FAF5;--ink:#143525;--mut:#486556;--line:#C6DFCF;
- --rim:#78AA8D;--surface:#fff;--control:linear-gradient(#fff,#E9F6EC);
- --accent:linear-gradient(#149358,#087647)
+ --teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;
+ --bg1:#F2FBFF;--bg2:#EFEAFF;--ink:#0F1F4D;--mut:#6B7694;--line:#E0E3F0;
+ --accent:linear-gradient(145deg,#12BEAF,#0AA5B5)
 }
 @media(prefers-color-scheme:light){
  :root:not([data-theme]){
-  --teal:#087D49;--blue:#075B36;--vio:#40AE70;--lil:#E4F6E9;
-  --bg1:#E3F2E8;--bg2:#F4FAF5;--ink:#143525;--mut:#486556;--line:#C6DFCF;
-  --rim:#78AA8D;--surface:#fff;--control:linear-gradient(#fff,#E9F6EC);
-  --accent:linear-gradient(#149358,#087647)
+  --teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;
+  --bg1:#F2FBFF;--bg2:#EFEAFF;--ink:#0F1F4D;--mut:#6B7694;--line:#E0E3F0;
+  --accent:linear-gradient(145deg,#12BEAF,#0AA5B5)
  }
 }
-.card,.nav{border-bottom-width:5px;box-shadow:0 3px 0 rgba(23,65,43,.2),0 5px 6px -3px rgba(23,65,43,.24)}
-.btn:not(.del),.cd,.sheet-control:not(.sheet-done){border-bottom-width:4px;box-shadow:0 2px 0 rgba(23,65,43,.18)}
-:root .btn.pri,:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .btn.pri{box-shadow:0 3px 0 rgba(16,59,36,.34)}
-.week-summary-heading strong{padding:7px 13px;border-radius:12px;background:var(--accent);color:white;text-shadow:0 1px 2px #143742;box-shadow:0 3px 0 var(--blue)}
-:root .cd.has{background:var(--lil);border-bottom-color:var(--teal)}
+body{background:radial-gradient(ellipse at top right,rgba(20,200,181,.14),transparent 50%),linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed}
+.card,.nav,.sheet{background:var(--card)}
+.card,.nav{border-bottom-width:5px;box-shadow:0 3px 0 rgba(31,53,89,.14),0 7px 10px -5px rgba(31,53,89,.25)}
+.week-summary-heading strong{color:var(--ink)}
+.week-entries{display:grid;gap:10px}
+.week-summary .week-entry{
+ border:1px solid var(--line);border-bottom:4px solid var(--rim);border-radius:15px;
+ min-height:49px;padding:7px 10px 7px 25px;
+ background:linear-gradient(180deg,var(--card),var(--bg1));box-shadow:0 5px 7px -4px rgba(31,53,89,.35)
+}
+.week-summary .week-entry::before{left:9px;width:6px;box-shadow:inset 0 2px 3px rgba(31,53,89,.18)}
+.week-status{box-shadow:inset 0 2px 5px rgba(31,53,89,.2),0 1px 0 rgba(255,255,255,.4)}
+.week-summary .week-entry .week-hours{text-align:right}
+@media(prefers-reduced-motion:no-preference){.week-entry:active{transform:translateY(2px)}}
 </style>
 </head>
 <body>
