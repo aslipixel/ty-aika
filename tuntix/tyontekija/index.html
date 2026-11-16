@@ -347,13 +347,13 @@ main{padding-bottom:calc(var(--nav-height) + 32px)}
 <style id="compact-home-layout">
 /* Apply the safe-area inset once, then keep the working week above navigation. */
 :root{padding:0}
-@media(max-width:600px){
-.top{padding:4px 12px 0;min-height:34px;gap:8px}
-.brand{font-size:19px;gap:5px}.brand svg{width:28px;height:28px}
+@media(min-width:0px){
+.top{padding:0 12px;min-height:28px;gap:8px}
+.brand{font-size:17px;gap:4px}.brand svg{width:24px;height:24px}
 .top::after{font-size:7px;letter-spacing:.6px}
 main{padding-top:0}
-.hero{padding:5px 0 9px}.clk{font-size:34px;line-height:1.05}.hero b{font-size:13px}
-.card:has(>.weektools){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:10px 12px;margin-bottom:10px}
+.hero{padding:2px 0 6px}.clk{font-size:28px;line-height:1.05}.hero b{font-size:12px}
+.card:has(>.weektools){display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;padding:6px 10px;margin-bottom:8px}
 .card>.weektools{grid-column:1;grid-row:1;grid-template-columns:minmax(0,1fr) 74px;gap:5px;margin:0}
 .card>.weekend-toggle{grid-column:2;grid-row:1;margin:0;min-height:40px;gap:5px;font-size:12px;white-space:nowrap}
 .card>.weekend-toggle input{width:18px;height:18px;min-width:18px}
@@ -365,7 +365,7 @@ main{padding-top:0}
 .weektools .lnk{font-size:11px}
 .card.week-summary{padding:11px 12px 12px;margin-bottom:10px}
 .week-summary-heading{padding-bottom:8px}.week-summary-heading h2{font-size:16px}.week-summary-heading strong{font-size:22px}
-.week-entries{gap:6px}
+.week-entries{gap:4px}
 .week-summary .week-entry{min-height:44px;padding:5px 8px 5px 22px;font-size:18px;grid-template-columns:100px minmax(0,1fr) 26px;gap:6px;border-radius:12px}
 .week-day{gap:5px}.week-day b{font-size:16px}.week-day small{font-size:13px}
 .week-status{width:25px;height:25px}.week-status svg{width:23px;height:23px}
