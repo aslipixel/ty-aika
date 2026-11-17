@@ -20,7 +20,7 @@ html = html.replace(match[0], '<script src="native.js"></script>');
 html = html.replace(/<link[^>]+fonts\.googleapis\.com[^>]*>/g, '<link rel="stylesheet" href="fonts.css">');
 await writeFile('www/index.html', html);
 await writeFile('www/app.js', app);
-for (const path of ['measurement.js', 'home-mileage.js', 'vendor']) {
+for (const path of ['measurement.js', 'home-mileage.js', 'Mittaustodistus_92986_editable.pdf', 'Mittaustodistus_92986.jpg', 'vendor']) {
   await cp('../tuntix/tyontekija/' + path, 'www/' + path, { recursive: true });
 }
 await build({ entryPoints: ['native.js'], bundle: true, outfile: 'www/native.js', target: 'safari15', minify: true });

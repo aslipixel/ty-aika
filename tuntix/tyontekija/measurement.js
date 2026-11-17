@@ -1,4 +1,7 @@
 const measurementFields = {
+  siteExtra: ['Kohde, toinen rivi', 55],
+  billingExtra: ['Laskutusosoite, toinen rivi', 65],
+  approvalExtra: ['Tilaajan edustajan lisätiedot', 45],
   customerNumber: ['Asiakasnumero', 22],
   jobNumber: ['Työnumero', 30],
   site: ['Kohde', 55],
@@ -11,7 +14,7 @@ const measurementFields = {
   warrantyShort: ['Takuupäivä (2 v)', 24],
   place: ['Paikka', 27],
   date: ['Päiväys', 16],
-  workers: ['Työntekijät', 180, 5],
+  workers: ['Työntekijät', 240, 10],
   approvedBy: ['Tilaajan edustajan hyväksyntä', 45],
   supervisor: ['Icopalin työnjohtaja', 45],
   billed: ['Laskutettu', 45],
@@ -21,31 +24,28 @@ const measurementColumns = {
   mark: ['Tilaajan merkinnät', 20],
   work: ['Työselitys', 100],
   quantity: ['Määrä', 20],
+  unit: ['Yksikkö', 6],
   euros: ['Euro', 10],
   cents: ['Snt', 2],
   totalEuros: ['Yhteensä euro', 15],
   totalCents: ['Yhteensä snt', 2],
 };
-const measurementRowCount = 36;
-const measurementPositions = {
-    customerNumber: [394, 104, 111, 21],
-    jobNumber: [589, 100, 320, 18],
-    site: [213, 135, 295, 25],
-    customer: [560, 123, 349, 21],
-    billing: [606, 149, 303, 21],
-    vatZero: [79, 132, 83, 28],
-    vatAmount: [77, 168, 85, 28],
-    hours: [285, 933, 222, 16],
-    warrantyLong: [90, 996, 380, 29],
-    warrantyShort: [90, 1032, 380, 31],
-    place: [27, 1078, 145, 22],
-    date: [183, 1079, 104, 21],
-    workers: [297, 1085, 209, 161],
-    approvedBy: [27, 1117, 112, 20],
-    supervisor: [27, 1190, 112, 20],
-    billed: [27, 1227, 261, 20],
-    notes: [517, 1018, 392, 228],
-  };
+const measurementRowCount = 39;
+const measurementPdfUrl = './Mittaustodistus_92986_editable.pdf';
+const measurementPreviewUrl = './Mittaustodistus_92986.jpg';
+const measurementPdfNames = {
+  customerNumber: 'asnr_o', jobNumber: 'tyonumero', site: 'kohde_1', siteExtra: 'kohde_2',
+  customer: 'tilaaja', billing: 'laskutusosoite_1', billingExtra: 'laskutusosoite_2',
+  vatZero: 'k_alv_0', vatAmount: 'alv_24', hours: 'tyoselitys_37',
+  warrantyLong: 'takuupvm_10v', warrantyShort: 'takuupvm_2v', place: 'paikka', date: 'paivays',
+  workers: 'tyontekija_1', approvedBy: 'tilaajan_edust_1', approvalExtra: 'tilaajan_edust_2',
+  supervisor: 'icopalin_tyonjohtaja', billed: 'laskutettu', notes: 'huomautuksia',
+};
+const measurementPdfColumns = {
+  mark: 'merkinnat', work: 'tyoselitys', quantity: 'maara', unit: 'yksikko',
+  euros: 'euro', cents: 's1', totalEuros: 'yhteensa', totalCents: 's2',
+};
+const measurementTypes = { partial: 'osamittaus', final: 'loppumittaus' };
 const measurementSignatures = {
   approvedBy: ['Tilaajan edustajan allekirjoitus', [143, 1106, 142, 30]],
   supervisor: ['Työnjohtajan allekirjoitus', [143, 1178, 142, 30]],
@@ -66,103 +66,45 @@ function validateMeasurementSignatures(value) {
     return [key, strokes];
   }));
 }
-const measurementColumnBounds = [[25, 118], [123, 508], [514, 643], [670, 720], [725, 753], [758, 862], [868, 912]];
-function measurementCells(row) {
-  return Object.entries(measurementColumns).map(([key, field], index) => {
-    const [start, end] = measurementColumnBounds[index];
-    return [key, field, [start, 234.6 + row * 19.35, end - start, 17.65]];
-  });
-}
-
 let measurementTemplate;
-let measurementTemplateUrl;
-let measurementTemplateLoading = true;
-let measurementTemplateSaving = false;
+let measurementLoading = false;
+let measurementLoadError = false;
 
-function measurementTemplateStorage(mode, request) {
-  return new Promise((resolve, reject) => {
-    const opening = indexedDB.open('tuntix-measurement-template', 1);
-    opening.onupgradeneeded = () => opening.result.createObjectStore('files');
-    opening.onerror = () => reject(opening.error);
-    opening.onsuccess = () => {
-      const db = opening.result;
-      const tx = db.transaction('files', mode);
-      const result = request(tx.objectStore('files'));
-      tx.oncomplete = () => { db.close(); resolve(result.result); };
-      tx.onabort = () => { db.close(); reject(tx.error); };
-    };
-  });
-}
-
-async function measurementSource(pdf, template) {
-  const bytes = new Uint8Array(template.bytes);
-  if (bytes[0] === 0xff && bytes[1] === 0xd8) return pdf.embedJpg(bytes);
-  if (bytes[0] === 0x89 && bytes[1] === 0x50) return pdf.embedPng(bytes);
-  throw Error('Valitse kuva JPG- tai PNG-muodossa.');
-}
-
-function useMeasurementTemplate(template) {
-  if (measurementTemplateUrl) URL.revokeObjectURL(measurementTemplateUrl);
-  measurementTemplate = template;
-  measurementTemplateUrl = template ? URL.createObjectURL(new Blob([template.bytes], { type: template.type })) : null;
-  const preview = document.getElementById('measurement-preview');
-  if (preview) preview.innerHTML = measurementPreview(S.mittaus || { rows: [] });
-}
-
-function paintMeasurementTemplate(message) {
-  const status = document.getElementById('measurement-template-status');
-  if (!status) return;
-  status.textContent = message || (measurementTemplate
-    ? 'Käytössä: ' + measurementTemplate.name
-    : 'Valitse mittaustodistuksen valokuva tai skannaus.');
-  $('#measurement-template').disabled = measurementTemplateSaving || measurementTemplateLoading;
-  document.querySelectorAll('[data-measurement-export]').forEach(button => {
-    button.disabled = !measurementTemplate || measurementTemplateSaving;
-  });
+function measurementCells(row) {
+  return Object.entries(measurementColumns)
+    .filter(([key]) => row !== 36 || key !== 'work')
+    .map(([key, field]) => [key, field, measurementPdfColumns[key] + '_' + (row + 1)]);
 }
 
 async function loadMeasurementTemplate() {
-  if (!measurementTemplateLoading) return;
+  if (measurementLoading || measurementTemplate) return;
+  measurementLoading = true;
+  measurementLoadError = false;
   try {
-    useMeasurementTemplate(await measurementTemplateStorage('readonly', files => files.get('original')));
+    const response = await fetch(measurementPdfUrl);
+    if (!response.ok) throw Error('PDF unavailable');
+    const bytes = await response.arrayBuffer();
+    const pdf = await PDFLib.PDFDocument.load(bytes);
+    const { width, height } = pdf.getPage(0).getSize();
+    const positions = Object.fromEntries(pdf.getForm().getFields().map(field => {
+      const { x, y, width: w, height: h } = field.acroField.getWidgets()[0].getRectangle();
+      return [field.getName(), [x / width * 939, (height - y - h) / height * 1280, w / width * 939, h / height * 1280]];
+    }));
+    // The names share their printed rows with the handwritten signatures.
+    positions.tilaajan_edust_1[2] = 112;
+    positions.icopalin_tyonjohtaja[2] = 112;
+    positions.tyontekija_1 = [297, 1085, 209, 161];
+    measurementTemplate = { bytes, positions };
   } catch {
-    // A selected image can still be used for the current session.
+    measurementLoadError = true;
   } finally {
-    measurementTemplateLoading = false;
-    paintMeasurementTemplate();
-  }
-}
-
-async function saveMeasurementTemplate(input) {
-  const file = input.files[0];
-  if (!file || measurementTemplateSaving || measurementTemplateLoading) return;
-  if (file.size > 20 * 1024 * 1024) {
-    paintMeasurementTemplate('Kuva on liian suuri. Enimmäiskoko on 20 Mt.');
-    input.value = '';
-    return;
-  }
-  measurementTemplateSaving = true;
-  paintMeasurementTemplate('Avataan kuvaa…');
-  let message;
-  try {
-    const bytes = await file.arrayBuffer();
-    const type = new Uint8Array(bytes)[0] === 0xff ? 'image/jpeg' : 'image/png';
-    const template = { name: file.name, type, bytes };
-    const doc = await PDFLib.PDFDocument.create();
-    const image = await measurementSource(doc, template);
-    if (image.width >= image.height) throw Error('Valitse pystysuuntainen kuva koko lomakkeesta.');
-    useMeasurementTemplate(template);
-    try {
-      await measurementTemplateStorage('readwrite', files => files.put(template, 'original'));
-    } catch {
-      message = 'Kuva on käytössä tämän istunnon ajan. Selain ei voinut tallentaa sitä.';
-    }
-  } catch (error) {
-    message = /^(Valitse )/.test(error.message) ? error.message : 'Kuvan avaaminen epäonnistui. Kokeile toista JPG- tai PNG-kuvaa.';
-  } finally {
-    measurementTemplateSaving = false;
-    input.value = '';
-    paintMeasurementTemplate(message);
+    measurementLoading = false;
+    const preview = document.getElementById('measurement-preview');
+    if (!preview) return;
+    preview.innerHTML = measurementPreview(S.mittaus || { rows: [] });
+    document.querySelectorAll('[data-measurement-export]').forEach(button => {
+      button.disabled = !measurementTemplate;
+    });
   }
 }
 
@@ -190,13 +132,16 @@ function measurementRows(rows) {
   return Array.from({length: Math.max(rows.length, 1)}, (_, index) =>
     `<details class="measurement-row"${index === Math.max(rows.length, 1) - 1 ? ' open' : ''}>
       <summary>Työrivi ${index + 1}<span data-measurement-summary>${rows[index]?.work ? ' · ' + esc(rows[index].work) : ''}</span></summary>
-      <div>${Object.entries(measurementColumns).map(([key, field]) => measurementInput(key, field, rows[index]?.[key], index)).join('')}</div>
+      <div>${measurementCells(index).map(([key, field]) => measurementInput(key, field, rows[index]?.[key], index)).join('')}</div>
       <button type="button" class="btn sm del" data-measurement-action="remove" data-row="${index}">Poista työrivi ${index + 1}</button>
     </details>`).join('');
 }
 
 function measurementPreview(draft) {
-  if (!measurementTemplateUrl) return '';
+  if (!measurementTemplate) return measurementLoadError
+    ? '<div class="card"><p role="status">Lomakkeen lataaminen epäonnistui.</p><button type="button" class="btn" data-measurement-action="retry">Yritä uudelleen</button></div>'
+    : '<div class="card"><p role="status">Ladataan mittaustodistusta…</p></div>';
+  const { positions } = measurementTemplate;
   const style = ([x, y, w, h]) => `left:${x / 939 * 100}%;top:${y / 1280 * 100}%;width:${w / 939 * 100}%;height:${h / 1280 * 100}%`;
   function overlay(key, field, position, row) {
     const [label, max, multiline] = field, value = row === undefined ? draft[key] : draft.rows[row]?.[key];
@@ -211,35 +156,32 @@ function measurementPreview(draft) {
     <label class="weekend-toggle" for="measurement-zoom"><input type="checkbox" id="measurement-zoom"> Suurenna lomaketta</label>
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
-        <img src="${measurementTemplateUrl}" alt="Alkuperäinen mittaustodistus" draggable="false">
+        <img src="${measurementPreviewUrl}" alt="Alkuperäinen mittaustodistus" draggable="false">
         ${Object.entries(measurementSignatures).map(([key, [label, position]]) => {
           const strokes = draft.signatures?.[key];
           if (!strokes?.length) return '';
           return `<img class="measurement-signature-preview" style="${style(position)}" src="${signatureImage(strokes)}" alt="${label}">`;
         }).join('')}
-        ${type('partial', 'Osamittaus', [122, 110, 15, 15])}
-        ${type('final', 'Loppumittaus', [277, 110, 15, 15])}
-        ${Object.entries(measurementPositions).map(([key, position]) => overlay(key, measurementFields[key], position)).join('')}
+        ${type('partial', 'Osamittaus', positions.osamittaus)}
+        ${type('final', 'Loppumittaus', positions.loppumittaus)}
+        ${Object.entries(measurementPdfNames).map(([key, name]) => overlay(key, measurementFields[key], positions[name])).join('')}
         ${Array.from({length: measurementRowCount}, (_, row) =>
-          measurementCells(row).map(([key, field, position]) => overlay(key, field, position, row)).join('')).join('')}
+          measurementCells(row).map(([key, field, name]) => overlay(key, field, positions[name], row)).join('')).join('')}
       </div>
     </div>
   </section>`;
 }
 
 function measurementForm(fromCalculator = false) {
+  if (!measurementTemplate && !measurementLoadError) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadMeasurementTemplate, { once: true });
+    else loadMeasurementTemplate();
+  }
   const draft = S.mittaus || { rows: [] };
   const fields = keys => keys.map(key => measurementInput(key, measurementFields[key], draft[key])).join('');
   return `${fromCalculator
     ? '<div class="tes-page-toolbar"><h2>Urakkaselitys</h2><button type="button" class="btn sm" data-tes="calculator">Takaisin</button></div><h3>Mittaustodistus</h3>'
     : '<h2>Mittaustodistus</h2>'}
-    <section class="card">
-      <h3>Alkuperäinen lomake</h3>
-      <p>Valitse kuva, jossa koko mittaustodistus näkyy suorassa. Kuva säilyy tämän laitteen selaimessa. PDF käyttää kuvaa sellaisenaan ja lisää täyttökentät sen päälle.</p>
-      <label for="measurement-template">Mittaustodistuksen kuva (JPG tai PNG)</label>
-      <input type="file" id="measurement-template" accept="image/jpeg,image/png,.jpg,.jpeg,.png"${measurementTemplateSaving || measurementTemplateLoading ? ' disabled' : ''}>
-      <p id="measurement-template-status" role="status">${measurementTemplateLoading ? 'Etsitään tallennettua kuvaa…' : measurementTemplate ? 'Käytössä: ' + esc(measurementTemplate.name) : 'Valitse mittaustodistuksen valokuva tai skannaus.'}</p>
-    </section>
     <div id="measurement-preview">${measurementPreview(draft)}</div>
     <details class="card measurement-form">
       <summary>Täytä kenttälistassa</summary>
@@ -250,13 +192,13 @@ function measurementForm(fromCalculator = false) {
         <option value="partial"${draft.kind === 'partial' ? ' selected' : ''}>Osamittaus</option>
         <option value="final"${draft.kind === 'final' ? ' selected' : ''}>Loppumittaus</option>
       </select>
-      ${fields(['customerNumber', 'jobNumber', 'site', 'customer', 'billing', 'vatZero', 'vatAmount'])}
+      ${fields(['customerNumber', 'jobNumber', 'site', 'siteExtra', 'customer', 'billing', 'billingExtra', 'vatZero', 'vatAmount'])}
       <h3>Työrivit</h3>
       <div id="measurement-rows">${measurementRows(draft.rows)}</div>
       <button type="button" class="btn" data-measurement-action="add"${draft.rows.length >= measurementRowCount ? ' disabled' : ''}>+ Lisää työrivi</button>
       ${fields(['hours'])}
       <h3>Takuu, hyväksyntä ja huomautukset</h3>
-      ${fields(['warrantyLong', 'warrantyShort', 'place', 'date', 'workers', 'approvedBy', 'supervisor', 'billed', 'notes'])}
+      ${fields(['warrantyLong', 'warrantyShort', 'place', 'date', 'workers', 'approvedBy', 'approvalExtra', 'supervisor', 'billed', 'notes'])}
     </details>
     <section class="card">
       <h3>Allekirjoitukset</h3>
@@ -264,9 +206,9 @@ function measurementForm(fromCalculator = false) {
     </section>
     <section class="card">
       <h3>Valmis mittaustodistus</h3>
-      <button type="button" class="btn pri" data-measurement-action="download" data-measurement-export${measurementTemplate && !measurementTemplateSaving ? '' : ' disabled'}>Lataa täytettävä PDF</button>
-      <button type="button" class="btn" data-measurement-action="print" data-measurement-export${measurementTemplate && !measurementTemplateSaving ? '' : ' disabled'}>Avaa PDF tulostusta varten</button>
-      <button type="button" class="btn" data-measurement-action="mail" data-measurement-export${measurementTemplate && !measurementTemplateSaving ? '' : ' disabled'}>Lähetä sähköpostilla</button>
+      <button type="button" class="btn pri" data-measurement-action="download" data-measurement-export${measurementTemplate ? '' : ' disabled'}>Lataa täytettävä PDF</button>
+      <button type="button" class="btn" data-measurement-action="print" data-measurement-export${measurementTemplate ? '' : ' disabled'}>Avaa PDF tulostusta varten</button>
+      <button type="button" class="btn" data-measurement-action="mail" data-measurement-export${measurementTemplate ? '' : ' disabled'}>Lähetä sähköpostilla</button>
       <p id="measurement-status" role="status" hidden></p>
       <a id="measurement-email" href="mailto:?subject=Mittaustodistus" hidden>Avaa sähköposti</a>
       <button type="button" class="btn del" data-measurement-action="reset">Tyhjennä lomake</button>
@@ -274,53 +216,41 @@ function measurementForm(fromCalculator = false) {
 }
 
 async function makeMeasurementPdf(draft, template) {
-  const { PDFDocument, StandardFonts, rgb } = PDFLib;
-  const pdf = await PDFDocument.create();
-  pdf.setTitle('Mittaustodistus');
-  const image = await measurementSource(pdf, template);
-  const page = pdf.addPage([595.28, 841.89]);
-  const scale = Math.min(page.getWidth() / image.width, page.getHeight() / image.height);
-  const imageWidth = image.width * scale, imageHeight = image.height * scale;
-  const left = (page.getWidth() - imageWidth) / 2, bottom = (page.getHeight() - imageHeight) / 2;
-  page.drawImage(image, { x: left, y: bottom, width: imageWidth, height: imageHeight });
-
-  const form = pdf.getForm(), font = await pdf.embedFont(StandardFonts.Helvetica);
-  const ink = rgb(0.08, 0.12, 0.17);
-  // Field coordinates are measured on the full, uncropped 939 × 1280 reference photo.
-  function rect(x, top, width, height) {
-    return { x: left + x / 939 * imageWidth, y: bottom + (1280 - top - height) / 1280 * imageHeight,
-      width: width / 939 * imageWidth, height: height / 1280 * imageHeight };
-  }
-  const transparent = { borderWidth: 0, borderColor: undefined, backgroundColor: undefined, textColor: ink };
-  function textField(name, value, max, position, multiline = false) {
-    const field = form.createTextField(name);
-    if (multiline) field.enableMultiline();
-    field.setMaxLength(max);
-    const box = rect(...position);
-    field.addToPage(page, { ...box, ...transparent, font });
-    field.setText(value || '');
-    const fit = multiline || !value ? Infinity : (box.width - 2) / font.widthOfTextAtSize(value, 1);
-    field.setFontSize(Math.min(9, fit));
-  }
-
-  const kind = form.createRadioGroup('mittaustapa');
-  kind.addOptionToPage('partial', page, { ...rect(122, 110, 15, 15), ...transparent });
-  kind.addOptionToPage('final', page, { ...rect(277, 110, 15, 15), ...transparent });
-  if (draft.kind) kind.select(draft.kind);
-  for (const [id, position] of Object.entries(measurementPositions)) {
-    const [, max, multiline] = measurementFields[id];
-    textField(id, draft[id], max, position, !!multiline);
-  }
-  for (let row = 0; row < measurementRowCount; row++) {
-    for (const [key, [, max], position] of measurementCells(row)) {
-      textField(`tyorivi-${row + 1}-${key}`, draft.rows[row]?.[key], max, position);
+  const { PDFDocument, StandardFonts } = PDFLib;
+  const pdf = await PDFDocument.load(template.bytes, { updateMetadata: false });
+  const page = pdf.getPage(0), form = pdf.getForm();
+  const { width, height } = page.getSize();
+  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  function fill(name, value, narrow = false) {
+    if (!value) return;
+    const field = form.getTextField(name);
+    field.setText(value);
+    // The source uses octal escapes in its appearance strings.
+    field.acroField.setDefaultAppearance('/Helv 9 Tf 0.05 0.08 0.25 rg');
+    if (!field.isMultiline()) {
+      const limit = narrow ? width * 112 / 939 : field.acroField.getWidgets()[0].getRectangle().width;
+      field.setFontSize(Math.min(9, (limit - 4) / font.widthOfTextAtSize(value, 1)));
     }
   }
-  for (const [key, [, position]] of Object.entries(measurementSignatures)) {
+  if (draft.kind) form.getCheckBox(measurementTypes[draft.kind]).check();
+  for (const [key, name] of Object.entries(measurementPdfNames)) {
+    if (key === 'workers') continue;
+    fill(name, draft[key], key === 'approvedBy' || key === 'supervisor');
+  }
+  draft.workers.split(/\r?\n/).slice(0, 10).forEach((value, i) => fill('tyontekija_' + i, value));
+  draft.rows.forEach((row, index) => {
+    for (const [key, , name] of measurementCells(index)) fill(name, row[key]);
+  });
+  // Earlier drafts could store a work description in the slot used for invoice hours.
+  if (!draft.hours) fill(measurementPdfNames.hours, draft.rows[36]?.work);
+  for (const [key, [, [x, top, w, h]]] of Object.entries(measurementSignatures)) {
     const strokes = draft.signatures[key];
     if (!strokes.length) continue;
     const signature = await pdf.embedPng(signatureImage(strokes));
-    page.drawImage(signature, rect(...position));
+    page.drawImage(signature, {
+      x: x / 939 * width, y: (1280 - top - h) / 1280 * height,
+      width: w / 939 * width, height: h / 1280 * height,
+    });
   }
   form.updateFieldAppearances(font);
   return pdf.save();
@@ -507,10 +437,6 @@ async function exportMeasurement(action) {
 
 document.addEventListener('change', event => {
   const input = event.target, key = input.dataset.measurementField;
-  if (input.id === 'measurement-template') {
-    saveMeasurementTemplate(input);
-    return;
-  }
   if (!key || (input.type === 'radio' && !input.checked)) return;
   const draft = S.mittaus ||= { rows: [] };
   if (input.dataset.row !== undefined) {
@@ -543,7 +469,8 @@ document.addEventListener('click', event => {
   const button = event.target.closest('[data-measurement-action]');
   if (!button) return;
   const action = button.dataset.measurementAction;
-  if (action === 'add' || action === 'remove') changeMeasurementRow(action, button);
+  if (action === 'retry') loadMeasurementTemplate();
+  else if (action === 'add' || action === 'remove') changeMeasurementRow(action, button);
   else if (action === 'reset') {
     if (!S.mittaus || !confirm('Tyhjennetäänkö tallennettu mittaustodistus?')) return;
     const previous = S.mittaus;
@@ -552,5 +479,3 @@ document.addEventListener('click', event => {
     else S.mittaus = previous;
   } else exportMeasurement(action);
 });
-
-document.addEventListener('DOMContentLoaded', loadMeasurementTemplate, { once: true });
