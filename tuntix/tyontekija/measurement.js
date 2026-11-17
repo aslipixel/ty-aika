@@ -128,16 +128,11 @@ function measurementInput(key, field, value, row) {
 }
 
 function measurementRow(row, index) {
-  const fields = measurementCells(index);
-  const primary = fields.filter(([key]) => key === 'work' || key === 'quantity');
-  const extra = fields.filter(([key]) => key !== 'work' && key !== 'quantity');
-  const inputs = entries => entries.map(([key, field]) => measurementInput(key, field, row?.[key], index)).join('');
-  return `<div class="measurement-row">
-    <h4>Työrivi ${index + 1}</h4>
-    <div class="measurement-row-main">${primary.map(entry => `<div>${inputs([entry])}</div>`).join('')}</div>
-    <details><summary>Muut rivitiedot</summary>${inputs(extra)}</details>
+  return `<details class="measurement-row"${index === 0 ? ' open' : ''}>
+    <summary>Työrivi ${index + 1}<span data-measurement-summary>${row?.work ? ' · ' + esc(row.work) : ''}</span></summary>
+    <div>${measurementCells(index).map(([key, field]) => measurementInput(key, field, row?.[key], index)).join('')}</div>
     <button type="button" class="btn sm del" data-measurement-action="remove" data-row="${index}">Poista työrivi ${index + 1}</button>
-  </div>`;
+  </details>`;
 }
 
 function measurementRows(rows) {
@@ -165,11 +160,12 @@ function measurementPreview(draft) {
   }
   return `<section class="card">
     <h3>Täytä suoraan lomakkeeseen</h3>
-    <button type="button" class="btn" data-measurement-action="add">+ Lisää työrivi</button>
     <label class="weekend-toggle" for="measurement-zoom"><input type="checkbox" id="measurement-zoom"> Suurenna lomaketta</label>
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
         <img src="${measurementPreviewUrl}" alt="Alkuperäinen mittaustodistus" draggable="false">
+        <button type="button" class="measurement-table-add" data-measurement-action="add" data-measurement-table-add
+          aria-label="Lisää työrivi: Työselitys ja määrä" title="Lisää työrivi">+</button>
         ${Object.entries(measurementSignatures).map(([key, [label, position]]) => {
           const strokes = draft.signatures?.[key];
           if (!strokes?.length) return '';
@@ -194,15 +190,13 @@ function measurementForm(fromCalculator = false) {
     ? '<div class="tes-page-toolbar"><h2>Urakkaselitys</h2><button type="button" class="btn sm" data-tes="calculator">Takaisin</button></div><h3>Mittaustodistus</h3>'
     : '<h2>Mittaustodistus</h2>'}
     <div id="measurement-preview">${measurementPreview(draft)}</div>
-    <section class="card measurement-form" aria-labelledby="measurement-rows-title">
-      <h3 id="measurement-rows-title">Työselitys ja määrä</h3>
-      <div id="measurement-rows">${measurementRows(draft.rows)}</div>
-      <button type="button" class="btn" data-measurement-action="add">+ Lisää työrivi</button>
-    </section>
     <details class="card measurement-form">
       <summary>Täytä kenttälistassa</summary>
       <h3>Mittauksen tiedot</h3>
       ${fields(['customerNumber', 'jobNumber', 'site', 'siteExtra', 'customer', 'billing', 'billingExtra', 'vatZero', 'vatAmount'])}
+      <h3>Työrivit</h3>
+      <div id="measurement-rows">${measurementRows(draft.rows)}</div>
+      <button type="button" class="btn" data-measurement-action="add">+ Lisää työrivi</button>
       ${fields(['hours'])}
       <h3>Takuu, hyväksyntä ja huomautukset</h3>
       ${fields(['warrantyLong', 'warrantyShort', 'place', 'date', 'workers', 'approvedBy', 'approvalExtra', 'supervisor', 'billed', 'notes'])}
@@ -425,7 +419,15 @@ function changeMeasurementRow(action, button) {
   }
   if (action === 'add') {
     appendMeasurementRows(rows);
-    document.getElementById(`mittaus-${rows.length - 1}-work`)?.focus();
+    const index = rows.length - 1;
+    if (button.hasAttribute('data-measurement-table-add') && index < measurementRowCount) {
+      document.querySelector(`[data-measurement-overlay][data-measurement-field="work"][data-row="${index}"]`)?.focus();
+    } else {
+      const field = document.getElementById(`mittaus-${index}-work`);
+      field.closest('.measurement-form').open = true;
+      field.closest('.measurement-row').open = true;
+      field.focus();
+    }
   } else {
     $('#measurement-rows').innerHTML = measurementRows(rows);
     $('#measurement-preview').innerHTML = measurementPreview(S.mittaus);
@@ -496,6 +498,10 @@ document.addEventListener('input', event => {
     while (draft.rows.length <= index) draft.rows.push({});
     draft.rows[index][key] = input.value;
     appendMeasurementRows(draft.rows);
+    if (key === 'work') {
+      const summary = $('#measurement-rows').children[index]?.querySelector('[data-measurement-summary]');
+      if (summary) summary.textContent = input.value ? ' · ' + input.value : '';
+    }
   } else {
     draft[key] = input.value;
   }
