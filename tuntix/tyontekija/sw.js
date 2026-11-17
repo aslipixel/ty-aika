@@ -1,7 +1,8 @@
 /* Cache only the TuntiX app shell. No addresses, requests or external APIs. */
-const CACHE='tuntix-shell-soft-light-20261117-32';
+const CACHE='tuntix-shell-measurement-mileage-33';
 const INDEX=new URL('./index.html',self.registration.scope).href;
-const ASSETS=[INDEX];
+const ASSETS=[INDEX,...['measurement.js','home-mileage.js','vendor/pdf-lib.min.js']
+  .map(path=>new URL(path,self.registration.scope).href)];
 self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);await Promise.all(ASSETS.map(async url=>{const response=await fetch(url,{cache:'reload'});if(!response.ok)throw Error('App download failed');await cache.put(url,response)}));await self.skipWaiting()})())});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('tuntix-shell-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})())});
 self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method==='GET'&&ASSETS.slice(1).includes(url.href)){event.respondWith((async()=>{const cache=await caches.open(CACHE);return await cache.match(url.href)||fetch(event.request)})());return}if(event.request.method!=='GET'||event.request.mode!=='navigate'||url.origin!==self.location.origin||![new URL(self.registration.scope).pathname,new URL(INDEX).pathname].includes(url.pathname))return;event.respondWith((async()=>{const cache=await caches.open(CACHE),controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),3500);try{const response=await fetch(event.request,{signal:controller.signal});if(!response.ok)throw Error('Unavailable');await cache.put(INDEX,response.clone());return response}catch{return await cache.match(INDEX)||new Response('Avaa TuntiX kerran verkkoyhteydellä.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}})}finally{clearTimeout(timeout)}})())});

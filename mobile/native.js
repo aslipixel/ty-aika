@@ -17,6 +17,16 @@ window.nativeDownload = async (name, text) => {
     throw error;
   }
 };
+window.nativeSharePdf = async (name, bytes) => {
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+  }
+  const { uri } = await Filesystem.writeFile({
+    path: 'exports/' + name, recursive: true, data: btoa(binary), directory: Directory.Cache
+  });
+  await Share.share({ title: name, files: [uri], dialogTitle: 'Jaa tai tallenna mittaustodistus' });
+};
 window.nativeOpenPdf = async doc => {
  try {
   const supplement=doc==='liite';

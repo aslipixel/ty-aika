@@ -20,6 +20,9 @@ html = html.replace(match[0], '<script src="native.js"></script>');
 html = html.replace(/<link[^>]+fonts\.googleapis\.com[^>]*>/g, '<link rel="stylesheet" href="fonts.css">');
 await writeFile('www/index.html', html);
 await writeFile('www/app.js', app);
+for (const path of ['measurement.js', 'home-mileage.js', 'vendor']) {
+  await cp('../tuntix/tyontekija/' + path, 'www/' + path, { recursive: true });
+}
 await build({ entryPoints: ['native.js'], bundle: true, outfile: 'www/native.js', target: 'safari15', minify: true });
 await build({ stdin: { contents: [400,500,600,700].map(w => `@import "@fontsource/poppins/latin-${w}.css";`).join('\n'), resolveDir: process.cwd(), loader: 'css' }, bundle: true, outfile: 'www/fonts.css', loader: { '.woff2': 'file', '.woff': 'file' } });
 console.log('Packaged TuntiX with local fonts and native backup sharing.');
