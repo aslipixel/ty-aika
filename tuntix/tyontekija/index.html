@@ -257,6 +257,18 @@ input,select{background:#f8faff;border:1px solid #dbe3ef;box-shadow:none}input[t
 .measurement-row{margin:8px 0;padding:10px 12px;border:1px solid #e4eaf4;border-radius:12px}
 .measurement-row summary{cursor:pointer;font-weight:600;overflow-wrap:anywhere}
 .measurement-row summary span{font-weight:400}
+.measurement-form>summary{cursor:pointer;font-weight:600}
+.measurement-scroll{overflow:auto;margin-top:8px;border:1px solid #e4eaf4}
+.measurement-photo{position:relative;container-type:inline-size}
+label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-width:830px}
+.measurement-photo img{display:block;width:100%;height:auto}
+.measurement-photo .measurement-signature-preview{position:absolute;pointer-events:none}
+.measurement-signature-dialog canvas{display:block;width:100%;height:clamp(85px,25vw,120px);border:1px dashed #9aaaca;border-radius:10px;background:#fff;touch-action:none;margin:10px 0}
+.measurement-signature-dialog .g2{margin-top:8px}
+.measurement-photo [data-measurement-overlay]{position:absolute;margin:0;padding:0 2px;border:0;border-radius:0;background:transparent;color:#15253c;min-height:0;font:11px/1.1 Arial,sans-serif;font-size:1.6cqw;resize:none}
+.measurement-photo [data-measurement-overlay]:focus-visible{outline:1px solid #2864e8;outline-offset:0;background:#ffffffb0}
+.measurement-photo input[type="radio"]{appearance:none;cursor:pointer;display:grid;place-items:center}
+.measurement-photo input[type="radio"]:checked::after{content:"";width:65%;height:65%;background:#174f94;border-radius:50%}
 .mileage-list{list-style:none;padding:0;margin:0}
 .mileage-list li{padding:9px 0;border-top:1px solid #e4eaf4;overflow-wrap:anywhere}
 .mileage-list li span{display:block;font-size:13px;color:var(--mut)}
