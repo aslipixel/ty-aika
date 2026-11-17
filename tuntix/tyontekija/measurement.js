@@ -30,7 +30,21 @@ const measurementColumns = {
   totalEuros: ['Yhteensä euro', 15],
   totalCents: ['Yhteensä snt', 2],
 };
+const measurementGroups = {
+  rows: ['Työrivit', Object.keys(measurementColumns)],
+  details: ['Mittauksen tiedot', ['customerNumber', 'jobNumber', 'site', 'siteExtra', 'customer', 'billing', 'billingExtra', 'vatZero', 'vatAmount']],
+  warranty: ['Takuu ja hyväksyntä', ['warrantyLong', 'warrantyShort', 'place', 'date', 'approvedBy', 'approvalExtra', 'supervisor', 'billed']],
+  remarks: ['Tunnit, työntekijät ja huomautukset', ['hours', 'workers', 'notes']],
+};
+const measurementVisibilityKeys = new Set(Object.entries(measurementGroups).flatMap(([group, [, keys]]) => [group, ...keys]));
+
+function visibleMeasurementFields(draft, group) {
+  const hidden = draft?.hiddenFields || [];
+  return hidden.includes(group) ? [] : measurementGroups[group][1].filter(key => !hidden.includes(key));
+}
+
 const measurementRowCount = 39;
+const measurementInitialListRows = 6;
 const measurementHoursRow = 36;
 const measurementPdfUrl = './Mittaustodistus_92986_editable.pdf';
 const measurementPreviewUrl = './Mittaustodistus_92986.jpg';
@@ -113,6 +127,7 @@ function validateMeasurement(raw) {
   return {
     ...Object.fromEntries(Object.entries(measurementFields).map(([key, [, max]]) => [key, text(raw?.[key], max)])),
     signatures: validateMeasurementSignatures(raw?.signatures),
+    hiddenFields: Array.isArray(raw?.hiddenFields) ? [...new Set(raw.hiddenFields.filter(key => measurementVisibilityKeys.has(key)))] : [],
     rows: Array.isArray(raw?.rows) ? raw.rows.map(row =>
       Object.fromEntries(Object.entries(measurementColumns).map(([key, [, max]]) => [key, text(row?.[key], max)]))) : []
   };
@@ -128,19 +143,22 @@ function measurementInput(key, field, value, row) {
 }
 
 function measurementRow(row, index) {
+  const keys = visibleMeasurementFields(S.mittaus, 'rows');
   return `<details class="measurement-row"${index === 0 ? ' open' : ''}>
     <summary>Työrivi ${index + 1}<span data-measurement-summary>${row?.work ? ' · ' + esc(row.work) : ''}</span></summary>
-    <div>${measurementCells(index).map(([key, field]) => measurementInput(key, field, row?.[key], index)).join('')}</div>
+    <div>${measurementCells(index).filter(([key]) => keys.includes(key))
+      .map(([key, field]) => measurementInput(key, field, row?.[key], index)).join('')}</div>
     <button type="button" class="btn sm del" data-measurement-action="remove" data-row="${index}">Poista työrivi ${index + 1}</button>
   </details>`;
 }
 
 function measurementRows(rows) {
-  return Array.from({length: Math.max(rows.length, 1)}, (_, index) => measurementRow(rows[index], index)).join('');
+  return Array.from({length: Math.max(rows.length, measurementInitialListRows)}, (_, index) => measurementRow(rows[index], index)).join('');
 }
 
 function appendMeasurementRows(rows) {
   const list = $('#measurement-rows');
+  if (!list) return;
   for (let index = list.children.length; index < rows.length; index++) {
     list.insertAdjacentHTML('beforeend', measurementRow(rows[index], index));
   }
@@ -151,6 +169,8 @@ function measurementPreview(draft) {
     ? '<div class="card"><p role="status">Lomakkeen lataaminen epäonnistui.</p><button type="button" class="btn" data-measurement-action="retry">Yritä uudelleen</button></div>'
     : '<div class="card"><p role="status">Ladataan mittaustodistusta…</p></div>';
   const { positions } = measurementTemplate;
+  const rowKeys = visibleMeasurementFields(draft, 'rows');
+  const headerKeys = ['details', 'warranty', 'remarks'].flatMap(group => visibleMeasurementFields(draft, group));
   const style = ([x, y, w, h]) => `left:${x / 939 * 100}%;top:${y / 1280 * 100}%;width:${w / 939 * 100}%;height:${h / 1280 * 100}%`;
   function overlay(key, field, position, row) {
     const [label, max, multiline] = field, value = row === undefined ? draft[key] : draft.rows[row]?.[key];
@@ -164,19 +184,45 @@ function measurementPreview(draft) {
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
         <img src="${measurementPreviewUrl}" alt="Alkuperäinen mittaustodistus" draggable="false">
-        <button type="button" class="measurement-table-add" data-measurement-action="add" data-measurement-table-add
-          aria-label="Lisää työrivi: Työselitys ja määrä" title="Lisää työrivi">+</button>
+        ${rowKeys.length ? '<button type="button" class="measurement-table-add" data-measurement-action="add" data-measurement-table-add aria-label="Lisää työrivi: Työselitys ja määrä" title="Lisää työrivi">+</button>' : ''}
         ${Object.entries(measurementSignatures).map(([key, [label, position]]) => {
           const strokes = draft.signatures?.[key];
           if (!strokes?.length) return '';
           return `<img class="measurement-signature-preview" style="${style(position)}" src="${signatureImage(strokes)}" alt="${label}">`;
         }).join('')}
-        ${Object.entries(measurementPdfNames).map(([key, name]) => overlay(key, measurementFields[key], positions[name])).join('')}
+        ${headerKeys.map(key => overlay(key, measurementFields[key], positions[measurementPdfNames[key]])).join('')}
         ${Array.from({length: measurementRowCount}, (_, row) =>
-          measurementCells(row).map(([key, field, name]) => overlay(key, field, positions[name], row)).join('')).join('')}
+          measurementCells(row).filter(([key]) => rowKeys.includes(key)).map(([key, field, name]) => overlay(key, field, positions[name], row)).join('')).join('')}
       </div>
     </div>
   </section>`;
+}
+
+function measurementFieldList(draft) {
+  const hidden = draft.hiddenFields || [];
+  const checkbox = (key, label) => `<label class="measurement-visibility-choice">
+    <input type="checkbox" data-measurement-visibility="${key}"${hidden.includes(key) ? '' : ' checked'}> ${label}
+  </label>`;
+  return `<details class="card measurement-form">
+    <summary>Täytä kenttälistassa</summary>
+    <details class="measurement-field-group" id="measurement-visibility">
+      <summary>Valitse osiot ja kentät</summary>
+      ${Object.entries(measurementGroups).map(([group, [label, keys]]) =>
+        `<fieldset><legend>${label}</legend>
+          ${checkbox(group, 'Näytä osio')}
+          ${keys.map(key => checkbox(key, (measurementFields[key] || measurementColumns[key])[0])).join('')}
+        </fieldset>`).join('')}
+    </details>
+    ${Object.entries(measurementGroups).map(([group, [label]]) => {
+      const keys = visibleMeasurementFields(draft, group);
+      if (!keys.length) return '';
+      const content = group === 'rows'
+        ? `<div id="measurement-rows">${measurementRows(draft.rows)}</div>
+           <button type="button" class="btn" data-measurement-action="add">+ Lisää työrivi</button>`
+        : keys.map(key => measurementInput(key, measurementFields[key], draft[key])).join('');
+      return `<details class="measurement-field-group" open><summary>${label}</summary>${content}</details>`;
+    }).join('')}
+  </details>`;
 }
 
 function measurementForm(fromCalculator = false) {
@@ -185,22 +231,11 @@ function measurementForm(fromCalculator = false) {
     else loadMeasurementTemplate();
   }
   const draft = S.mittaus || { rows: [] };
-  const fields = keys => keys.map(key => measurementInput(key, measurementFields[key], draft[key])).join('');
   return `${fromCalculator
     ? '<div class="tes-page-toolbar"><h2>Urakkaselitys</h2><button type="button" class="btn sm" data-tes="calculator">Takaisin</button></div><h3>Mittaustodistus</h3>'
     : '<h2>Mittaustodistus</h2>'}
     <div id="measurement-preview">${measurementPreview(draft)}</div>
-    <details class="card measurement-form">
-      <summary>Täytä kenttälistassa</summary>
-      <h3>Mittauksen tiedot</h3>
-      ${fields(['customerNumber', 'jobNumber', 'site', 'siteExtra', 'customer', 'billing', 'billingExtra', 'vatZero', 'vatAmount'])}
-      <h3>Työrivit</h3>
-      <div id="measurement-rows">${measurementRows(draft.rows)}</div>
-      <button type="button" class="btn" data-measurement-action="add">+ Lisää työrivi</button>
-      ${fields(['hours'])}
-      <h3>Takuu, hyväksyntä ja huomautukset</h3>
-      ${fields(['warrantyLong', 'warrantyShort', 'place', 'date', 'workers', 'approvedBy', 'approvalExtra', 'supervisor', 'billed', 'notes'])}
-    </details>
+    ${measurementFieldList(draft)}
     <section class="card">
       <h3>Allekirjoitukset</h3>
       ${Object.entries(measurementSignatures).map(([key, [label]]) => `<button type="button" class="btn" data-measurement-signature="${key}">${label}${draft.signatures?.[key]?.length ? ' ✓' : ''}</button>`).join('')}
@@ -234,16 +269,26 @@ async function makeMeasurementPdf(draft, template) {
     }
   }
   for (const name of ['osamittaus', 'loppumittaus']) form.removeField(form.getCheckBox(name));
-  for (const [key, name] of Object.entries(measurementPdfNames)) {
-    if (key === 'workers') continue;
-    fill(name, draft[key], key === 'approvedBy' || key === 'supervisor');
+  const headerKeys = ['details', 'warranty', 'remarks'].flatMap(group => visibleMeasurementFields(draft, group));
+  const rowKeys = visibleMeasurementFields(draft, 'rows');
+  for (const key of headerKeys) {
+    if (key === 'workers') {
+      draft.workers.split(/\r?\n/).slice(0, 10).forEach((value, i) => fill('tyontekija_' + i, value));
+    } else {
+      fill(measurementPdfNames[key], draft[key], key === 'approvedBy' || key === 'supervisor');
+    }
   }
-  draft.workers.split(/\r?\n/).slice(0, 10).forEach((value, i) => fill('tyontekija_' + i, value));
-  draft.rows.slice(0, measurementRowCount).forEach((row, index) => {
-    for (const [key, , name] of measurementCells(index)) fill(name, row[key]);
-  });
+  if (rowKeys.length) {
+    draft.rows.slice(0, measurementRowCount).forEach((row, index) => {
+      for (const [key, , name] of measurementCells(index)) {
+        if (rowKeys.includes(key)) fill(name, row[key]);
+      }
+    });
+  }
   // Earlier drafts could store a work description in the slot used for invoice hours.
-  if (!draft.hours) fill(measurementPdfNames.hours, draft.rows[measurementHoursRow]?.work);
+  if (headerKeys.includes('hours') && rowKeys.includes('work') && !draft.hours) {
+    fill(measurementPdfNames.hours, draft.rows[measurementHoursRow]?.work);
+  }
   for (const [key, [, [x, top, w, h]]] of Object.entries(measurementSignatures)) {
     const strokes = draft.signatures[key];
     if (!strokes.length) continue;
@@ -253,12 +298,12 @@ async function makeMeasurementPdf(draft, template) {
       width: w / 939 * width, height: h / 1280 * height,
     });
   }
-  addMeasurementContinuation(pdf, form, font, draft.rows.slice(measurementRowCount), width, height);
+  if (rowKeys.length) addMeasurementContinuation(pdf, form, font, draft.rows.slice(measurementRowCount), width, height, rowKeys);
   form.updateFieldAppearances(font);
   return pdf.save();
 }
 
-function addMeasurementContinuation(pdf, form, font, rows, width, height) {
+function addMeasurementContinuation(pdf, form, font, rows, width, height, rowKeys) {
   const { rgb } = PDFLib;
   const ink = rgb(0.05, 0.08, 0.25);
   const columns = Object.entries(measurementColumns);
@@ -274,6 +319,7 @@ function addMeasurementContinuation(pdf, form, font, rows, width, height) {
     let x = left;
     columns.forEach(([key, [label, max]], column) => {
       const w = columnWidths[column];
+      if (!rowKeys.includes(key)) return;
       page.drawText(label, { x: x + 3, y: height - 82, font, size: 7, color: ink });
       pageRows.forEach((row, index) => {
         const y = height - 90 - rowHeight * (index + 1);
@@ -397,8 +443,11 @@ function openMeasurementSignature(key) {
 function changeMeasurementRow(action, button) {
   const previous = S.mittaus;
   const rows = [...(previous?.rows || [])];
+  const addOnForm = button.hasAttribute('data-measurement-table-add');
   if (action === 'add') {
-    if (!rows.length || rows.length === measurementHoursRow) rows.push({});
+    const minimum = addOnForm ? 1 : measurementInitialListRows;
+    while (rows.length < minimum) rows.push({});
+    if (rows.length === measurementHoursRow) rows.push({});
     rows.push({});
   } else {
     const index = Number(button.dataset.row);
@@ -420,13 +469,15 @@ function changeMeasurementRow(action, button) {
   if (action === 'add') {
     appendMeasurementRows(rows);
     const index = rows.length - 1;
-    if (button.hasAttribute('data-measurement-table-add') && index < measurementRowCount) {
-      document.querySelector(`[data-measurement-overlay][data-measurement-field="work"][data-row="${index}"]`)?.focus();
+    if (addOnForm && index < measurementRowCount) {
+      const selector = `[data-measurement-overlay][data-row="${index}"]`;
+      (document.querySelector(selector + '[data-measurement-field="work"]') || document.querySelector(selector))?.focus();
     } else {
-      const field = document.getElementById(`mittaus-${index}-work`);
-      field.closest('.measurement-form').open = true;
-      field.closest('.measurement-row').open = true;
-      field.focus();
+      const newRow = $('#measurement-rows').children[index];
+      newRow.closest('.measurement-form').open = true;
+      newRow.closest('.measurement-field-group').open = true;
+      newRow.open = true;
+      (newRow.querySelector('[data-measurement-field="work"]') || newRow.querySelector('input'))?.focus();
     }
   } else {
     $('#measurement-rows').innerHTML = measurementRows(rows);
@@ -499,7 +550,7 @@ document.addEventListener('input', event => {
     draft.rows[index][key] = input.value;
     appendMeasurementRows(draft.rows);
     if (key === 'work') {
-      const summary = $('#measurement-rows').children[index]?.querySelector('[data-measurement-summary]');
+      const summary = $('#measurement-rows')?.children[index]?.querySelector('[data-measurement-summary]');
       if (summary) summary.textContent = input.value ? ' · ' + input.value : '';
     }
   } else {
@@ -513,7 +564,25 @@ document.addEventListener('input', event => {
 });
 
 document.addEventListener('change', event => {
-  if (event.target.dataset.measurementField) save();
+  const input = event.target, key = input.dataset.measurementVisibility;
+  if (input.dataset.measurementField) save();
+  if (!key) return;
+  const previous = S.mittaus;
+  const hidden = new Set(previous?.hiddenFields);
+  if (input.checked) hidden.delete(key);
+  else hidden.add(key);
+  S.mittaus = { ...previous, rows: previous?.rows || [], hiddenFields: [...hidden] };
+  if (!save()) {
+    S.mittaus = previous;
+    input.checked = !input.checked;
+    return;
+  }
+  const scrollPosition = window.scrollY;
+  render(1);
+  $('#measurement-visibility').closest('.measurement-form').open = true;
+  $('#measurement-visibility').open = true;
+  window.scrollTo(0, scrollPosition);
+  document.querySelector(`[data-measurement-visibility="${key}"]`)?.focus({preventScroll:true});
 });
 
 document.addEventListener('click', event => {
@@ -530,7 +599,7 @@ document.addEventListener('click', event => {
   else if (action === 'reset') {
     if (!S.mittaus || !confirm('Tyhjennetäänkö tallennettu mittaustodistus?')) return;
     const previous = S.mittaus;
-    delete S.mittaus;
+    S.mittaus = { rows: [], hiddenFields: previous.hiddenFields || [] };
     if (save()) render(1);
     else S.mittaus = previous;
   } else exportMeasurement(action);
