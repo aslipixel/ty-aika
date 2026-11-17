@@ -256,7 +256,9 @@ input,select{background:#f8faff;border:1px solid #dbe3ef;box-shadow:none}input[t
 .measurement-form textarea{display:block;width:100%;padding:10px;border:1px solid #dbe3ef;border-radius:12px;color:var(--ink);background:#f8faff;font:inherit;resize:vertical}
 .measurement-row{margin:8px 0;padding:10px 12px;border:1px solid #e4eaf4;border-radius:12px}
 .measurement-row summary{cursor:pointer;font-weight:600;overflow-wrap:anywhere}
-.measurement-row summary span{font-weight:400}
+.measurement-row h4{margin:0 0 6px}
+.measurement-row-main{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:8px}
+.measurement-row details{margin:8px 0}
 .measurement-form>summary{cursor:pointer;font-weight:600}
 .measurement-scroll{overflow:auto;margin-top:8px;border:1px solid #e4eaf4}
 .measurement-photo{position:relative;container-type:inline-size}
@@ -280,7 +282,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./measurement.js?v=4"></script>
+<script src="./measurement.js?v=5"></script>
 <script src="./home-mileage.js"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
