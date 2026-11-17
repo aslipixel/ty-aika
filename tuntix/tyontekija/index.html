@@ -2,11 +2,12 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-WRTGSyFIoHj0VpdRlmwxN5/9Idk4ZDakfTUskM58/H8=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-QLlkmNVwNz8lhOTDyOeuXXcxfmn7QscdlsvYN2nxyEw=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
 <style>
+@font-face{font-family:Caveat;src:url('./fonts/Caveat-Medium.ttf') format('truetype');font-style:normal;font-weight:500;font-display:swap}
 @font-face{font-family:Inter;src:url('./fonts/inter-latin.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 @font-face{font-family:Inter;src:url('./fonts/inter-cyrillic.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 :root{--font-ui:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;--teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;--ink:#0F1F4D;--mut:#6B7694;--card:#fff;--bg1:#f2fbff;--bg2:#efeaff;--line:#e8eaf5;--sh:0 8px 30px rgba(80,70,200,.10);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -278,7 +279,8 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 .measurement-photo .measurement-signature-preview{position:absolute;pointer-events:none}
 .measurement-signature-dialog canvas{display:block;width:100%;height:clamp(85px,25vw,120px);border:1px dashed #9aaaca;border-radius:10px;background:#fff;touch-action:none;margin:10px 0}
 .measurement-signature-dialog .g2{margin-top:8px}
-.measurement-photo [data-measurement-overlay]{position:absolute;margin:0;padding:0 2px;border:0;border-radius:0;background:transparent;color:#15253c;min-height:0;font:11px/1.1 Arial,sans-serif;font-size:1.6cqw;resize:none}
+.measurement-form [data-measurement-field]{font:500 20px/1.25 Caveat,cursive;color:#20365b}
+.measurement-photo [data-measurement-overlay]{position:absolute;margin:0;padding:0 2px;border:0;border-radius:0;background:transparent;color:#20365b;min-height:0;font:500 12px/1 Caveat,cursive;font-size:1.8cqw;resize:none}
 .measurement-photo [data-measurement-overlay]:focus-visible{outline:1px solid #2864e8;outline-offset:0;background:#ffffffb0}
 @media(max-width:400px){.nav a{font-size:10px}.nav a svg{width:20px;height:20px;padding-inline:7px}}
 </style>
@@ -289,7 +291,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./measurement.js?v=8"></script>
+<script src="./measurement.js?v=9"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
 const TY=[['Laskutyö','#0B5BD3'],['Sovittu','#14C8B5'],['Urakka','#8B5CF6'],['Koulutus','#d98a00'],['Etumies','#0ea5e9'],['Sää','#64748b'],['Pekkanen','#ec4899'],['Sairasloma','#ef4444'],['Loma','#22a55a']],ABS=['Sää','Pekkanen','Sairasloma','Loma'];
@@ -320,10 +322,25 @@ for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())
 return `<div class="card week-controls"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><div class="weekdate-field"><input id="weekdate" type="date" value="${dk(ws)}"></div><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div></div>
 <section class="card week-summary" aria-labelledby="week-summary-heading"><div class="week-summary-heading"><h2 id="week-summary-heading">${wo===0?'Tämän viikon tunnit':'Viikon tunnit'}</h2><strong>${fh(tot)}</strong></div><div class="week-entries">${rows}</div></section>
 <div class="card"><div class="wk"><button class="btn sm" data-a="pm">‹</button><b>${MO[m0.getMonth()]} ${m0.getFullYear()}</b><button class="btn sm" data-a="nm">›</button></div><div class="cal">${c}</div></div>`}
-function projectDays(){const groups=new Map();for(const e of S.en){if(!e.p)continue;const key=e.d+'|'+e.p;if(!groups.has(key))groups.set(key,{p:e.p,d:e.d,h:0});groups.get(key).h+=e.h}const rows=[...groups.values()].sort((a,b)=>b.d.localeCompare(a.d)||pn(a.p).localeCompare(pn(b.p),'fi'));const used=new Set(rows.map(r=>r.p));for(const p of S.pr)if(!used.has(p.id))rows.push({p:p.id,d:'',h:0});return rows}
+function projectDays(){const projectIds=new Set(S.pr.map(project=>project.id)),groups=new Map();for(const e of S.en){if(!projectIds.has(e.p))continue;const key=e.d+'|'+e.p;if(!groups.has(key))groups.set(key,{p:e.p,d:e.d,h:0});groups.get(key).h+=e.h}const rows=[...groups.values()].sort((a,b)=>b.d.localeCompare(a.d)||pn(a.p).localeCompare(pn(b.p),'fi'));const used=new Set(rows.map(r=>r.p));for(const p of S.pr)if(!used.has(p.id))rows.push({p:p.id,d:'',h:0});return rows}
 let projectDeleteMode=false;const selectedProjects=new Set();
 function projektit(){const rows=projectDays();const seen=new Set();
-return `<h2>Projektit</h2>${rows.map(r=>{const p=S.pr.find(p=>p.id===r.p)||{id:r.p,n:'Poistettu projekti',a:''};const selectable=!seen.has(p.id);seen.add(p.id);return `<div class="card" style="margin-bottom:10px">${projectDeleteMode&&selectable?`<label class="project-delete-choice"><input type="checkbox" data-project-select="${esc(p.id)}" ${selectedProjects.has(p.id)?'checked':''} > Valitse poistettavaksi</label>`:''}${r.d?`<h3 class="project-day-heading">${DN[wd(pd(r.d))]} ${fd(pd(r.d))}${String(pd(r.d).getFullYear()).slice(-2)}</h3>`:'<p>Ei kirjauksia</p>'}<div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div style="min-width:0;overflow-wrap:anywhere"><b>${esc(p.n)}</b><p style="margin:2px 0">📍 ${esc(p.a||'Ei osoitetta')}</p><p style="margin:2px 0">${r.d?'Tunnit: ':''}<b>${fh(r.h)}</b> ${distanceBadge(p.id)}</p></div><div class="project-actions">${r.d?`<button class="btn sm" data-a="day" data-d="${r.d}">Avaa</button>`:`<button class="btn sm" data-a="ep" data-id="${esc(p.id)}">Avaa</button>`}</div></div></div>`}).join('')||'<div class="card"><p>Ei projekteja vielä.</p></div>'}`}
+const controls=!S.pr.length?'':projectDeleteMode
+  ? `<div class="project-delete-footer"><button class="btn" data-a="toggle-project-delete">Peruuta</button><button class="btn del" data-a="delete-selected-projects" ${selectedProjects.size?'':'disabled'}>Poista valitut (${selectedProjects.size})</button></div>`
+  : '<button class="lnk project-remove" data-a="toggle-project-delete">Poista projekteja</button>';
+return `<h2>Projektit</h2>${controls}${rows.map(r=>{const p=S.pr.find(p=>p.id===r.p);const selectable=!seen.has(p.id);seen.add(p.id);return `<div class="card" style="margin-bottom:10px">${projectDeleteMode&&selectable?`<label class="project-delete-choice"><input type="checkbox" data-project-select="${esc(p.id)}" ${selectedProjects.has(p.id)?'checked':''} > Valitse poistettavaksi</label>`:''}${r.d?`<h3 class="project-day-heading">${DN[wd(pd(r.d))]} ${fd(pd(r.d))}${String(pd(r.d).getFullYear()).slice(-2)}</h3>`:'<p>Ei kirjauksia</p>'}<div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div style="min-width:0;overflow-wrap:anywhere"><b>${esc(p.n)}</b><p style="margin:2px 0">📍 ${esc(p.a||'Ei osoitetta')}</p><p style="margin:2px 0">${r.d?'Tunnit: ':''}<b>${fh(r.h)}</b> ${distanceBadge(p.id)}</p></div><div class="project-actions">${r.d?`<button class="btn sm" data-a="day" data-d="${r.d}">Avaa</button>`:`<button class="btn sm" data-a="ep" data-id="${esc(p.id)}">Avaa</button>`}</div></div></div>`}).join('')||'<div class="card"><p>Ei projekteja vielä.</p></div>'}`}
+function deleteSelectedProjects(){
+  if(!selectedProjects.size || !confirm('Poistetaanko valitut projektit? Kirjatut tunnit säilyvät kalenterissa.'))return;
+  const previous=S;
+  S={...S,pr:S.pr.filter(project=>!selectedProjects.has(project.id)),
+    en:S.en.map(entry=>selectedProjects.has(entry.p)?{...entry,p:''}:entry),
+    last:selectedProjects.has(S.last.p)?{...S.last,p:''}:S.last};
+  if(!save()){S=previous;return}
+  selectedProjects.clear();
+  projectDeleteMode=false;
+  render(1);
+  toast('Projektit poistettu');
+}
 function aboutApp(){modal(`<h2>Tietoa tuntiX-sovelluksesta</h2><p>Oma työaikapäiväkirja sinulle ja ystävillesi. Kirjaa tunnit, työlajit, projektit, osoitteet ja kommentit. Kalenteri laskee päivä- ja viikkotunnit. Punainen tuntimäärä tarkoittaa, että päivälle on useampi kirjaus.</p><h3>Omat tiedot ja tallennus</h3><p>Tiedot ovat tällä laitteella. Sovelluksessa ei ole käyttäjätiliä, työnantajan palvelinta eikä automaattista synkronointia laitteiden välillä. Työtunteja, kommentteja ja profiilitietoja ei lähetetä sovelluksen palvelimelle.</p><p>Puhelinsovellus tallentaa tiedot paikalliseen verkkonäkymän tallennustilaan ja lisäksi iOS:n UserDefaults- tai Androidin SharedPreferences-tallennukseen. Selaimessa käytetään localStoragea. Tiedoilla ei ole sovelluksen omaa salausta. Laitteen lukitus ja käyttöjärjestelmän suojaus ovat tärkeitä.</p><p>Sovelluksen poistaminen, sovellustietojen tyhjennys tai selaintietojen poistaminen voi hävittää tiedot. Käyttöjärjestelmän varmuuskopiointi riippuu laitteesta ja sovellusversiosta. Älä luota siihen ainoana kopiona.</p><h3>Varmuuskopio ja raportit</h3><p>Asetuksista voit viedä JSON-varmuuskopion ja CSV-tuntiraportin. Tiedostot eivät ole salattuja. Puhelimessa valitset itse järjestelmän jakovalikosta tallennuspaikan tai vastaanottajan. Jos valitset pilvipalvelun tai viestisovelluksen, tiedosto siirtyy kyseiseen palveluun. Varmuuskopio palautetaan erikseen toiselle laitteelle.</p><h3>Milloin internetiä käytetään?</h3><p><b>Osoite-ehdotukset:</b> kun kirjoitat vähintään kolme merkkiä osoitekenttään ja pidät lyhyen tauon, kirjoittamasi hakuteksti lähetetään Photon-palveluun (photon.komoot.io). Lähtöosoitteen tallennus ja projektin osoitteen tarkistus voivat myös käyttää Photonia.</p><p><b>Kilometrien laskenta:</b> kun näkyvällä projektilla on osoite mutta ei voimassa olevaa tallennettua reittiä, sovellus tarkistaa osoitteen Photonilla ja lähettää lähtö- ja kohdekoordinaatit OSRM-palveluun (router.project-osrm.org). Sama voi tapahtua osoitteen muutoksen tai uudelleenyrityksen jälkeen. Kilometrit tallennetaan laitteelle. Kyse on arvioidusta automatkasta yhteen suuntaan, ei GPS-seurannasta.</p><p>Karttapalvelut saavat hakutekstin tai koordinaatit sekä verkkopyyntöön liittyvät tekniset tiedot, kuten IP-osoitteen. Tunteja tai kommentteja ei lisätä näihin pyyntöihin.</p><p><b>Verkkosivusto:</b> GitHub Pages toimittaa sivun ja tarkistaa sovellustiedostojen päivityksiä. Fontit toimitetaan sivuston mukana. APK/IPA sisältää käyttöliittymän, fontit ja TES-tiedostot, eikä lataa käyttöliittymää GitHubista käynnistyessään.</p><p><b>Ulkoiset linkit:</b> OpenStreetMapin tekijänoikeuslinkki avaa palvelun sivun vain painettaessa. TES-PDF avataan tai tallennetaan laitteelle; PDF on mukana sovelluksessa.</p><h3>Ilman verkkoyhteyttä</h3><p>Tuntikirjaukset, muokkaus, kalenteri, raportit ja TES-hintalaskuri toimivat ilman internetiä. Osoitehaku ja uusi reittilaskenta tarvitsevat yhteyden. Puhelinsovelluksen päivitys asennetaan erikseen. Verkkosivun käyttö ilman yhteyttä edellyttää aiempaa onnistunutta latausta.</p><h3>Oikeudet ja yksityisyys</h3><p>Sovelluksessa ei ole mainoksia, analytiikkaa, GPS-seurantaa eikä kameran tai mikrofonin käyttöä. Käyttöjärjestelmä, allekirjoitus- ja asennustyökalut sekä itse valitsemasi muut sovellukset voivat tehdä omia verkkopyyntöjään.</p><h3>TES ja laskelmat</h3><p>TES 2025–2028 ja vuoden 2026 lisäliite ovat luettavissa PDF-tiedostoina. Hintalaskelma on arvio: varmista hinnaston voimassaolo, työn ehdot ja soveltuvat lisät. Sovellus ei ole työnantajan hyväksymä palkka- tai työaikajärjestelmä.</p>`)}
 function asetukset(){return `<h2>Asetukset</h2><div class="card"><button class="btn" data-a="aboutapp">Tietoa sovelluksesta</button></div>${settingsExtra()}`}
 function profiili(){const n=new Date(),y=String(n.getFullYear()),m=dk(n).slice(0,7),mes=S.en.filter(e=>e.d.startsWith(m)),tot=mes.reduce((a,e)=>a+e.h,0),by={};mes.forEach(e=>by[e.t]=(by[e.t]||0)+e.h);
@@ -1502,6 +1519,8 @@ render(1);return true;
 }
 const mk=d=>({d,t:'',p:'',h:DEFAULT_HOURS,c:''});
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
+if(a==='toggle-project-delete'){projectDeleteMode=!projectDeleteMode;selectedProjects.clear();render(1);return}
+if(a==='delete-selected-projects'){deleteSelectedProjects();return}
 if(a==='aboutapp'){aboutApp();return}
 if(a==='pw'){wo--;render(1)}else if(a==='nw'){wo++;render(1)}else if(a==='pm'){mo--;render(1)}else if(a==='nm'){mo++;render(1)}
 else if(a==='day'){dayEditing=false;ed=mk(b.dataset.d);sheet()}

@@ -297,16 +297,26 @@ async function makeMeasurementPdf(draft, template) {
   const pdf = await PDFDocument.load(template.bytes, { updateMetadata: false });
   const page = pdf.getPage(0), form = pdf.getForm();
   const { width, height } = page.getSize();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
+  await import('./vendor/fontkit.umd.min.js');
+  pdf.registerFontkit(window.fontkit);
+  const fontResponse = await fetch('./fonts/Caveat-Medium.ttf');
+  if (!fontResponse.ok) throw Error('Lomakkeen fontin lataaminen epäonnistui');
+  const font = await pdf.embedFont(await fontResponse.arrayBuffer(), { customName: 'CaveatMedium' });
+  const resources = form.acroForm.dict.lookup(PDFLib.PDFName.of('DR'), PDFLib.PDFDict);
+  resources.lookup(PDFLib.PDFName.of('Font'), PDFLib.PDFDict).set(PDFLib.PDFName.of(font.name), font.ref);
+  // Keep the handwriting font when a blank field is filled in a PDF reader.
+  for (const field of form.getFields()) {
+    if (field instanceof PDFLib.PDFTextField) {
+      field.acroField.setDefaultAppearance(`/${font.name} 10.5 Tf 0.125 0.212 0.357 rg`);
+    }
+  }
   function fill(name, value, narrow = false) {
     if (!value) return;
     const field = form.getTextField(name);
     field.setText(value);
-    // The source uses octal escapes in its appearance strings.
-    field.acroField.setDefaultAppearance('/Helv 9 Tf 0.05 0.08 0.25 rg');
     if (!field.isMultiline()) {
       const limit = narrow ? width * 112 / 939 : field.acroField.getWidgets()[0].getRectangle().width;
-      field.setFontSize(Math.min(9, (limit - 4) / font.widthOfTextAtSize(value, 1)));
+      field.setFontSize(Math.min(10.5, (limit - 4) / font.widthOfTextAtSize(value, 1)));
     }
   }
   for (const name of ['osamittaus', 'loppumittaus']) form.removeField(form.getCheckBox(name));
@@ -339,12 +349,15 @@ async function makeMeasurementPdf(draft, template) {
       width: w / 939 * width, height: h / 1280 * height,
     });
   }
-  if (rowKeys.length) addMeasurementContinuation(pdf, form, font, draft.rows.slice(measurementRowCount), width, height, rowKeys);
+  if (rowKeys.length && draft.rows.length > measurementRowCount) {
+    const labelFont = await pdf.embedFont(StandardFonts.Helvetica);
+    addMeasurementContinuation(pdf, form, font, draft.rows.slice(measurementRowCount), width, height, rowKeys, labelFont);
+  }
   form.updateFieldAppearances(font);
   return pdf.save();
 }
 
-function addMeasurementContinuation(pdf, form, font, rows, width, height, rowKeys) {
+function addMeasurementContinuation(pdf, form, font, rows, width, height, rowKeys, labelFont) {
   const { rgb } = PDFLib;
   const ink = rgb(0.05, 0.08, 0.25);
   const columns = Object.entries(measurementColumns);
@@ -354,14 +367,14 @@ function addMeasurementContinuation(pdf, form, font, rows, width, height, rowKey
   for (let offset = 0; offset < rows.length; offset += rowsPerPage) {
     const page = pdf.addPage([width, height]);
     page.drawText('Mittaustodistus 92986 – Työrivit, jatkosivu ' + (1 + offset / rowsPerPage), {
-      x: left, y: height - 52, font, size: 14, color: ink,
+      x: left, y: height - 52, font: labelFont, size: 14, color: ink,
     });
     const pageRows = rows.slice(offset, offset + rowsPerPage);
     let x = left;
     columns.forEach(([key, [label, max]], column) => {
       const w = columnWidths[column];
       if (!rowKeys.includes(key)) return;
-      page.drawText(label, { x: x + 3, y: height - 82, font, size: 7, color: ink });
+      page.drawText(label, { x: x + 3, y: height - 82, font: labelFont, size: 7, color: ink });
       pageRows.forEach((row, index) => {
         const y = height - 90 - rowHeight * (index + 1);
         page.drawRectangle({ x, y, width: w, height: rowHeight, borderColor: ink, borderWidth: 0.4 });
@@ -373,7 +386,7 @@ function addMeasurementContinuation(pdf, form, font, rows, width, height, rowKey
         });
         const value = row[key] || '';
         field.setText(value);
-        field.setFontSize(value ? Math.min(9, (w - 6) / font.widthOfTextAtSize(value, 1)) : 9);
+        field.setFontSize(value ? Math.min(10.5, (w - 6) / font.widthOfTextAtSize(value, 1)) : 10.5);
       });
       x += w;
     });
