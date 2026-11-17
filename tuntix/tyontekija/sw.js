@@ -1,7 +1,7 @@
 /* Cache only the TuntiX app shell. No addresses, requests or external APIs. */
-const CACHE='tuntix-shell-original-measurement-34';
+const CACHE='tuntix-shell-original-measurement-35';
 const INDEX=new URL('./index.html',self.registration.scope).href;
-const ASSETS=[INDEX,...['measurement.js','home-mileage.js','vendor/pdf-lib.min.js']
+const ASSETS=[INDEX,...['measurement.js?v=2','home-mileage.js','vendor/pdf-lib.min.js']
   .map(path=>new URL(path,self.registration.scope).href)];
 self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);await Promise.all(ASSETS.map(async url=>{const response=await fetch(url,{cache:'reload'});if(!response.ok)throw Error('App download failed');await cache.put(url,response)}));await self.skipWaiting()})())});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('tuntix-shell-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})())});
