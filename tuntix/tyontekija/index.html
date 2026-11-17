@@ -267,8 +267,6 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 .measurement-signature-dialog .g2{margin-top:8px}
 .measurement-photo [data-measurement-overlay]{position:absolute;margin:0;padding:0 2px;border:0;border-radius:0;background:transparent;color:#15253c;min-height:0;font:11px/1.1 Arial,sans-serif;font-size:1.6cqw;resize:none}
 .measurement-photo [data-measurement-overlay]:focus-visible{outline:1px solid #2864e8;outline-offset:0;background:#ffffffb0}
-.measurement-photo input[type="radio"]{appearance:none;cursor:pointer;display:grid;place-items:center}
-.measurement-photo input[type="radio"]:checked::after{content:"";width:65%;height:65%;background:#174f94;border-radius:50%}
 .mileage-list{list-style:none;padding:0;margin:0}
 .mileage-list li{padding:9px 0;border-top:1px solid #e4eaf4;overflow-wrap:anywhere}
 .mileage-list li span{display:block;font-size:13px;color:var(--mut)}
@@ -282,7 +280,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./measurement.js?v=3"></script>
+<script src="./measurement.js?v=4"></script>
 <script src="./home-mileage.js"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';

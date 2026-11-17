@@ -31,6 +31,7 @@ const measurementColumns = {
   totalCents: ['Yhteensä snt', 2],
 };
 const measurementRowCount = 39;
+const measurementHoursRow = 36;
 const measurementPdfUrl = './Mittaustodistus_92986_editable.pdf';
 const measurementPreviewUrl = './Mittaustodistus_92986.jpg';
 const measurementPdfNames = {
@@ -45,7 +46,6 @@ const measurementPdfColumns = {
   mark: 'merkinnat', work: 'tyoselitys', quantity: 'maara', unit: 'yksikko',
   euros: 'euro', cents: 's1', totalEuros: 'yhteensa', totalCents: 's2',
 };
-const measurementTypes = { partial: 'osamittaus', final: 'loppumittaus' };
 const measurementSignatures = {
   approvedBy: ['Tilaajan edustajan allekirjoitus', [143, 1106, 142, 30]],
   supervisor: ['Työnjohtajan allekirjoitus', [143, 1178, 142, 30]],
@@ -72,7 +72,7 @@ let measurementLoadError = false;
 
 function measurementCells(row) {
   return Object.entries(measurementColumns)
-    .filter(([key]) => row !== 36 || key !== 'work')
+    .filter(([key]) => row !== measurementHoursRow || key !== 'work')
     .map(([key, field]) => [key, field, measurementPdfColumns[key] + '_' + (row + 1)]);
 }
 
@@ -112,7 +112,6 @@ function validateMeasurement(raw) {
   const text = (value, max) => typeof value === 'string' ? value.slice(0, max) : '';
   return {
     ...Object.fromEntries(Object.entries(measurementFields).map(([key, [, max]]) => [key, text(raw?.[key], max)])),
-    kind: ['partial', 'final'].includes(raw?.kind) ? raw.kind : '',
     signatures: validateMeasurementSignatures(raw?.signatures),
     rows: Array.isArray(raw?.rows) ? raw.rows.slice(0, measurementRowCount).map(row =>
       Object.fromEntries(Object.entries(measurementColumns).map(([key, [, max]]) => [key, text(row?.[key], max)]))) : []
@@ -149,10 +148,9 @@ function measurementPreview(draft) {
       aria-label="${label}${row === undefined ? '' : ', rivi ' + (row + 1)}" maxlength="${max}" style="${style(position)}"`;
     return multiline ? `<textarea ${attrs}>${esc('\n' + (value || ''))}</textarea>` : `<input ${attrs} value="${esc(value)}">`;
   }
-  const type = (value, label, position) => `<input type="radio" name="measurement-kind" value="${value}" data-measurement-overlay
-    data-measurement-field="kind" aria-label="${label}" style="${style(position)}"${draft.kind === value ? ' checked' : ''}>`;
   return `<section class="card">
     <h3>Täytä suoraan lomakkeeseen</h3>
+    <button type="button" class="btn" data-measurement-action="add" data-measurement-add-on-form${draft.rows.length >= measurementRowCount ? ' disabled' : ''}>+ Lisää työrivi</button>
     <label class="weekend-toggle" for="measurement-zoom"><input type="checkbox" id="measurement-zoom"> Suurenna lomaketta</label>
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
@@ -162,8 +160,6 @@ function measurementPreview(draft) {
           if (!strokes?.length) return '';
           return `<img class="measurement-signature-preview" style="${style(position)}" src="${signatureImage(strokes)}" alt="${label}">`;
         }).join('')}
-        ${type('partial', 'Osamittaus', positions.osamittaus)}
-        ${type('final', 'Loppumittaus', positions.loppumittaus)}
         ${Object.entries(measurementPdfNames).map(([key, name]) => overlay(key, measurementFields[key], positions[name])).join('')}
         ${Array.from({length: measurementRowCount}, (_, row) =>
           measurementCells(row).map(([key, field, name]) => overlay(key, field, positions[name], row)).join('')).join('')}
@@ -186,12 +182,6 @@ function measurementForm(fromCalculator = false) {
     <details class="card measurement-form">
       <summary>Täytä kenttälistassa</summary>
       <h3>Mittauksen tiedot</h3>
-      <label for="mittaus-kind">Mittaustapa</label>
-      <select id="mittaus-kind" data-measurement-field="kind">
-        <option value="">Valitse mittaustapa</option>
-        <option value="partial"${draft.kind === 'partial' ? ' selected' : ''}>Osamittaus</option>
-        <option value="final"${draft.kind === 'final' ? ' selected' : ''}>Loppumittaus</option>
-      </select>
       ${fields(['customerNumber', 'jobNumber', 'site', 'siteExtra', 'customer', 'billing', 'billingExtra', 'vatZero', 'vatAmount'])}
       <h3>Työrivit</h3>
       <div id="measurement-rows">${measurementRows(draft.rows)}</div>
@@ -232,7 +222,7 @@ async function makeMeasurementPdf(draft, template) {
       field.setFontSize(Math.min(9, (limit - 4) / font.widthOfTextAtSize(value, 1)));
     }
   }
-  if (draft.kind) form.getCheckBox(measurementTypes[draft.kind]).check();
+  for (const name of ['osamittaus', 'loppumittaus']) form.removeField(form.getCheckBox(name));
   for (const [key, name] of Object.entries(measurementPdfNames)) {
     if (key === 'workers') continue;
     fill(name, draft[key], key === 'approvedBy' || key === 'supervisor');
@@ -242,7 +232,7 @@ async function makeMeasurementPdf(draft, template) {
     for (const [key, , name] of measurementCells(index)) fill(name, row[key]);
   });
   // Earlier drafts could store a work description in the slot used for invoice hours.
-  if (!draft.hours) fill(measurementPdfNames.hours, draft.rows[36]?.work);
+  if (!draft.hours) fill(measurementPdfNames.hours, draft.rows[measurementHoursRow]?.work);
   for (const [key, [, [x, top, w, h]]] of Object.entries(measurementSignatures)) {
     const strokes = draft.signatures[key];
     if (!strokes.length) continue;
@@ -357,17 +347,31 @@ function openMeasurementSignature(key) {
   dialog.showModal();
 }
 
+function updateMeasurementAddButtons(rows) {
+  document.querySelectorAll('[data-measurement-action="add"]').forEach(button => {
+    button.disabled = rows.length >= measurementRowCount;
+  });
+}
+
 function changeMeasurementRow(action, button) {
   const previous = S.mittaus;
   const draft = validateMeasurement(previous);
   if (action === 'add') {
     if (draft.rows.length >= measurementRowCount) return;
-    if (!draft.rows.length) draft.rows.push({});
+    if (!draft.rows.length || draft.rows.length === measurementHoursRow) draft.rows.push({});
     draft.rows.push({});
   } else {
     const index = Number(button.dataset.row);
     if (Object.values(draft.rows[index] || {}).some(Boolean) && !confirm('Poistetaanko täytetty työrivi?')) return;
-    draft.rows.splice(index, 1);
+    if (index === measurementHoursRow) {
+      draft.rows[index] = {};
+    } else {
+      draft.rows.splice(index, 1);
+      if (index < measurementHoursRow && draft.rows.length >= measurementHoursRow) {
+        draft.rows.splice(measurementHoursRow - 1, 0, {});
+      }
+    }
+    if (index === measurementHoursRow && draft.rows.length === measurementHoursRow + 1) draft.rows.pop();
   }
   S.mittaus = draft;
   if (!save()) {
@@ -376,8 +380,16 @@ function changeMeasurementRow(action, button) {
   }
   $('#measurement-rows').innerHTML = measurementRows(draft.rows);
   $('#measurement-preview').innerHTML = measurementPreview(draft);
-  $('[data-measurement-action="add"]').disabled = draft.rows.length >= measurementRowCount;
-  $('#measurement-rows details[open] summary')?.focus();
+  updateMeasurementAddButtons(draft.rows);
+  if (action === 'add') {
+    const row = draft.rows.length - 1;
+    const field = button.hasAttribute('data-measurement-add-on-form')
+      ? document.querySelector(`[data-measurement-overlay][data-measurement-field="work"][data-row="${row}"]`)
+      : document.getElementById(`mittaus-${row}-work`);
+    field?.focus();
+  } else {
+    $('#measurement-rows details[open] summary')?.focus();
+  }
 }
 
 async function exportMeasurement(action) {
@@ -437,7 +449,7 @@ async function exportMeasurement(action) {
 
 document.addEventListener('change', event => {
   const input = event.target, key = input.dataset.measurementField;
-  if (!key || (input.type === 'radio' && !input.checked)) return;
+  if (!key) return;
   const draft = S.mittaus ||= { rows: [] };
   if (input.dataset.row !== undefined) {
     const index = Number(input.dataset.row);
@@ -447,15 +459,14 @@ document.addEventListener('change', event => {
     if (rowList.children.length < draft.rows.length) rowList.innerHTML = measurementRows(draft.rows);
     const summary = rowList.children[index]?.querySelector('[data-measurement-summary]');
     if (key === 'work' && summary) summary.textContent = input.value ? ' · ' + input.value : '';
-    $('[data-measurement-action="add"]').disabled = draft.rows.length >= measurementRowCount;
+    updateMeasurementAddButtons(draft.rows);
   } else {
     draft[key] = input.value;
   }
   const rowFilter = input.dataset.row === undefined ? ':not([data-row])' : `[data-row="${input.dataset.row}"]`;
   document.querySelectorAll(`[data-measurement-field="${key}"]${rowFilter}`).forEach(peer => {
     if (peer === input) return;
-    if (peer.type === 'radio') peer.checked = peer.value === input.value;
-    else peer.value = input.value;
+    peer.value = input.value;
   });
   save();
 });
