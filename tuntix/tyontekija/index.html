@@ -268,6 +268,9 @@ input,select{background:#f8faff;border:1px solid #dbe3ef;box-shadow:none}input[t
 .measurement-visibility-choice{display:flex;align-items:center;gap:8px;margin-top:8px}
 .measurement-visibility-choice input{width:18px;height:18px;margin:0}
 .measurement-field-group #measurement-rows{margin-top:8px}
+.measurement-row-actions,#measurement-hidden-rows>div{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#measurement-hidden-rows{margin-top:10px}
+#measurement-hidden-rows>summary{cursor:pointer;font-weight:600}
 .measurement-scroll{overflow:auto;margin-top:8px;border:1px solid #e4eaf4}
 .measurement-photo{position:relative;container-type:inline-size}
 label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-width:830px}
@@ -286,7 +289,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./measurement.js?v=7"></script>
+<script src="./measurement.js?v=8"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
 const TY=[['Laskutyö','#0B5BD3'],['Sovittu','#14C8B5'],['Urakka','#8B5CF6'],['Koulutus','#d98a00'],['Etumies','#0ea5e9'],['Sää','#64748b'],['Pekkanen','#ec4899'],['Sairasloma','#ef4444'],['Loma','#22a55a']],ABS=['Sää','Pekkanen','Sairasloma','Loma'];

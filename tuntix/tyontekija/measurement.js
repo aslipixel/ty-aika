@@ -129,7 +129,10 @@ function validateMeasurement(raw) {
     signatures: validateMeasurementSignatures(raw?.signatures),
     hiddenFields: Array.isArray(raw?.hiddenFields) ? [...new Set(raw.hiddenFields.filter(key => measurementVisibilityKeys.has(key)))] : [],
     rows: Array.isArray(raw?.rows) ? raw.rows.map(row =>
-      Object.fromEntries(Object.entries(measurementColumns).map(([key, [, max]]) => [key, text(row?.[key], max)]))) : []
+      ({
+        ...Object.fromEntries(Object.entries(measurementColumns).map(([key, [, max]]) => [key, text(row?.[key], max)])),
+        ...(row?.hidden === true ? { hidden: true } : {}),
+      })) : []
   };
 }
 
@@ -144,16 +147,50 @@ function measurementInput(key, field, value, row) {
 
 function measurementRow(row, index) {
   const keys = visibleMeasurementFields(S.mittaus, 'rows');
-  return `<details class="measurement-row"${index === 0 ? ' open' : ''}>
+  return `<details class="measurement-row"${index === 0 ? ' open' : ''}${row?.hidden ? ' hidden' : ''}>
     <summary>Työrivi ${index + 1}<span data-measurement-summary>${row?.work ? ' · ' + esc(row.work) : ''}</span></summary>
     <div>${measurementCells(index).filter(([key]) => keys.includes(key))
       .map(([key, field]) => measurementInput(key, field, row?.[key], index)).join('')}</div>
-    <button type="button" class="btn sm del" data-measurement-action="remove" data-row="${index}">Poista työrivi ${index + 1}</button>
+    <div class="measurement-row-actions">
+      <button type="button" class="btn sm" data-measurement-action="hide-row" data-row="${index}" aria-label="Piilota työrivi ${index + 1}">Piilota</button>
+      <button type="button" class="btn sm del" data-measurement-action="remove" data-row="${index}">Poista työrivi ${index + 1}</button>
+    </div>
   </details>`;
 }
 
 function measurementRows(rows) {
   return Array.from({length: Math.max(rows.length, measurementInitialListRows)}, (_, index) => measurementRow(rows[index], index)).join('');
+}
+
+function hiddenMeasurementRows(rows) {
+  return rows.map((row, index) => row?.hidden
+    ? `<button type="button" class="btn sm" data-measurement-action="show-row" data-row="${index}">Näytä työrivi ${index + 1}${row.work ? ' · ' + esc(row.work) : ''}</button>`
+    : '').join('');
+}
+
+function refreshHiddenMeasurementRows(rows) {
+  const details = $('#measurement-hidden-rows');
+  if (!details) return;
+  const buttons = hiddenMeasurementRows(rows);
+  details.hidden = !buttons;
+  details.querySelector('div').innerHTML = buttons;
+}
+
+function setMeasurementRowHidden(index, hidden) {
+  const previous = S.mittaus;
+  const rows = [...(previous?.rows || [])];
+  while (rows.length <= index) rows.push({});
+  rows[index] = { ...rows[index], hidden };
+  S.mittaus = { ...previous, rows };
+  if (!save()) {
+    S.mittaus = previous;
+    return;
+  }
+  const row = $('#measurement-rows').children[index];
+  row.hidden = hidden;
+  refreshHiddenMeasurementRows(rows);
+  if (hidden) $('#measurement-hidden-rows summary').focus();
+  else row.querySelector('summary').focus();
 }
 
 function appendMeasurementRows(rows) {
@@ -218,7 +255,11 @@ function measurementFieldList(draft) {
       if (!keys.length) return '';
       const content = group === 'rows'
         ? `<div id="measurement-rows">${measurementRows(draft.rows)}</div>
-           <button type="button" class="btn" data-measurement-action="add">+ Lisää työrivi</button>`
+           <button type="button" class="btn" data-measurement-action="add">+ Lisää työrivi</button>
+           <details id="measurement-hidden-rows"${draft.rows.some(row => row?.hidden) ? '' : ' hidden'}>
+             <summary>Näytä piilotetut työrivit</summary>
+             <div>${hiddenMeasurementRows(draft.rows)}</div>
+           </details>`
         : keys.map(key => measurementInput(key, measurementFields[key], draft[key])).join('');
       return `<details class="measurement-field-group" open><summary>${label}</summary>${content}</details>`;
     }).join('')}
@@ -451,7 +492,7 @@ function changeMeasurementRow(action, button) {
     rows.push({});
   } else {
     const index = Number(button.dataset.row);
-    if (Object.values(rows[index] || {}).some(Boolean) && !confirm('Poistetaanko täytetty työrivi?')) return;
+    if (Object.keys(measurementColumns).some(key => rows[index]?.[key]) && !confirm('Poistetaanko täytetty työrivi?')) return;
     if (index === measurementHoursRow && rows.length > measurementHoursRow + 1) {
       rows[index] = {};
     } else {
@@ -481,6 +522,7 @@ function changeMeasurementRow(action, button) {
     }
   } else {
     $('#measurement-rows').innerHTML = measurementRows(rows);
+    refreshHiddenMeasurementRows(rows);
     $('#measurement-preview').innerHTML = measurementPreview(S.mittaus);
   }
 }
@@ -595,6 +637,7 @@ document.addEventListener('click', event => {
   if (!button) return;
   const action = button.dataset.measurementAction;
   if (action === 'retry') loadMeasurementTemplate();
+  else if (action === 'hide-row' || action === 'show-row') setMeasurementRowHidden(Number(button.dataset.row), action === 'hide-row');
   else if (action === 'add' || action === 'remove') changeMeasurementRow(action, button);
   else if (action === 'reset') {
     if (!S.mittaus || !confirm('Tyhjennetäänkö tallennettu mittaustodistus?')) return;
