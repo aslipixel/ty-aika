@@ -23,6 +23,7 @@ function setup(){
  `,c);
  const start=source.indexOf('function dayHasChanges(){'),end=source.indexOf('function closeSheet(){',start);
  vm.runInContext(source.slice(start,end),c);
+ vm.runInContext(source.slice(source.indexOf('function saveProjectForm(){'),source.indexOf('const mk=d=>')),c);
  const syncStart=source.indexOf('function changeSheetDay(offset)'),syncEnd=source.indexOf('let dayEditing=false;',syncStart);
  vm.runInContext(source.slice(syncStart,syncEnd),c);
  const route=source.split('\n').find(s=>s.startsWith("addEventListener('hashchange'"));vm.runInContext(route,c);
@@ -56,4 +57,17 @@ test('untouched day is not saved; daily total remains limited to 24 hours',()=>{
  const run=setup();run("open('2026-11-15');changeSheetDay(1)");assert.equal(run('S.en.length'),0);
  run("S.en.push({id:'existing',d:'2026-11-16',t:'Loma',p:'',h:20,c:''});ed.t='Loma';changeSheetDay(1)");
  assert.equal(run('ed.d'),'2026-11-16');assert.equal(run('S.en.length'),1);
+});
+
+function projectForm(run,name='New project'){
+ run(`open('2026-11-17');ed.t='Laskutyö';ed.h=7.5;ret=1;for(const k of Object.keys(fields))delete fields[k];fields['#pn']={value:${JSON.stringify(name)}};fields['#pa']={value:'Helsinki'};fields['[data-a="sp"]']={dataset:{id:''}}`);
+}
+test('project checkmark persists both project and draft hours before closing',()=>{
+ const run=setup();projectForm(run);assert.equal(run('allowSheetExit()'),true);run('closeSheet();S=JSON.parse(persisted)');
+ assert.equal(run('S.en.length'),1);assert.equal(run('S.en[0].h'),7.5);assert.equal(run('S.pr.find(p=>p.id===S.en[0].p).n'),'New project');
+});
+test('project Save validates hours and rolls back both records on storage failure',()=>{
+ const run=setup();projectForm(run);run('ed.h=25');assert.equal(run('saveProjectForm()'),false);assert.equal(run('S.pr.length'),1);assert.equal(run('S.en.length'),0);
+ run('ed.h=8;failSave=true');assert.equal(run('saveProjectForm()'),false);assert.equal(run('S.pr.length'),1);assert.equal(run('S.en.length'),0);
+ run('failSave=false');assert.equal(run('saveProjectForm()'),true);assert.equal(run('S.pr.length'),2);assert.equal(run('S.en.length'),1);
 });

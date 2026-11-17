@@ -2,15 +2,13 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uUVcj5FumWcL5rCEO8P4FV5fL45aUyn7qu9FsUIT99o=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-zOZ3nglmfDqP2G7Q/beUpTmRWtRM1Diw8+Eu1ucdEcM=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14C8B5"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;--ink:#0F1F4D;--mut:#6B7694;--card:#fff;--bg1:#f2fbff;--bg2:#efeaff;--line:#e8eaf5;--sh:0 8px 30px rgba(80,70,200,.10);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme]){--ink:#eef0ff;--mut:#a3accb;--card:#18203f;--bg1:#0b1230;--bg2:#1a1340;--lil:#2a2563;--line:#2a3360}}
-:root[data-theme="dark"]{--ink:#eef0ff;--mut:#a3accb;--card:#18203f;--bg1:#0b1230;--bg2:#1a1340;--lil:#2a2563;--line:#2a3360}
 html,body{margin:0;height:100%}html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
 body{font-family:Poppins,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:radial-gradient(600px 400px at 90% 0,rgba(20,200,181,.18),transparent 70%),radial-gradient(500px 400px at 0 45%,rgba(139,92,246,.14),transparent 70%),linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg1)}
@@ -152,7 +150,6 @@ input,select{transition:border-color 240ms ease,box-shadow 240ms ease}
 .btn:active,.sheet-control:active{transform:none}
 }
 .project-day-heading{color:var(--blue);font-size:16px;font-weight:600}
-:root[data-theme="dark"] .project-day-heading{color:#78adff}
 @media(prefers-color-scheme:dark){:root:not([data-theme]) .project-day-heading{color:#78adff}}
 
 .project-picker-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:16px Poppins,system-ui,sans-serif;text-align:left;cursor:pointer}
@@ -224,13 +221,6 @@ input,select{transition:border-color 240ms ease,box-shadow 240ms ease}
 
 .cd.has b.multiple-entries,.week-entry .week-hours.multiple-entries{color:#d32640}
 
-:root[data-theme="blue"]{--teal:#1765c1;--blue:#17499c;--vio:#5599e3;--ink:#10294b;--mut:#526a88;--card:#fff;--bg1:#eef7ff;--bg2:#dae9fc;--lil:#e0ecfc;--line:#ceddf1;--accent-end:#17499c}
-:root[data-theme="red"]{--teal:#bd2946;--blue:#a1203b;--vio:#e16b7b;--ink:#4b1825;--mut:#835964;--card:#fff;--bg1:#fff5f6;--bg2:#f9dee4;--lil:#fbe3e9;--line:#edcbd4;--accent-end:#a1203b}
-:root[data-theme="green"]{--teal:#17774b;--blue:#14633f;--vio:#52a675;--ink:#173a2a;--mut:#52715f;--card:#fff;--bg1:#f0faf4;--bg2:#daf0e2;--lil:#dff2e6;--line:#cce3d5;--accent-end:#14633f}
-:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]){color-scheme:light}
-:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) body{background:linear-gradient(150deg,var(--bg1),var(--bg2));background-attachment:fixed}
-:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .btn.pri{background:linear-gradient(90deg,var(--teal),var(--accent-end));box-shadow:0 8px 20px rgba(20,40,70,.16)}
-:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .cd.has{background:var(--lil)}
 #concrete-size-fields[hidden],#concrete-loads-row[hidden]{display:none}
 
 /* Shared calculator layout */
@@ -239,104 +229,9 @@ input,select{transition:border-color 240ms ease,box-shadow 240ms ease}
 .calculator-name{flex:1;min-width:0}
 .calculator-chevron{flex:none}
 </style>
-<style id="raised-design">
-/* TuntiX theme surfaces and raised controls */
-:root{
- --rim:#B2CED4;--rim:color-mix(in srgb,var(--teal) 24%,var(--line));
- --surface:linear-gradient(180deg,var(--card),var(--bg2));
- --control:linear-gradient(180deg,var(--card),var(--lil));
- --accent:linear-gradient(145deg,var(--teal),var(--blue));
- --lift:0 10px 16px -8px rgba(30,60,90,.4),inset 0 1px 0 rgba(255,255,255,.22)
-}
-body{font-family:Nunito,Poppins,system-ui,sans-serif;font-weight:700;background:linear-gradient(180deg,var(--bg1),var(--bg2)) fixed}
-button,input,select,textarea,.cd,.lnk,.chip,.num{font-family:inherit}
-h2,h3,.btn{font-weight:800}
-h2{font-size:22px}
-#app,.sheet{max-width:520px}
-.card,.nav,.sheet{background:var(--surface)}
-.card,.nav{border:1px solid var(--line);border-bottom:4px solid var(--rim);box-shadow:var(--lift)}
-.card{border-radius:18px}
-.btn:not(.del),.sheet-control:not(.sheet-done),.cd{
- background:var(--control);border:1px solid var(--line);border-bottom:3px solid var(--rim);
- box-shadow:0 4px 7px -3px rgba(30,60,90,.45),inset 0 1px rgba(255,255,255,.22)
-}
-:root .btn.pri,:root:is([data-theme="blue"],[data-theme="red"],[data-theme="green"]) .btn.pri{
- background:var(--accent);border-color:var(--blue);color:white;text-shadow:0 1px 2px #143742;box-shadow:var(--lift)
-}
-:root .cd.has{background:var(--control);border-bottom-color:var(--teal)}
-:root .cd.today{outline:2px solid var(--blue)}
-:root .cd.has b{color:var(--blue)}
-:root .cd.has b.multiple-entries{color:#d32640}
-input:not([type="checkbox"]),select,textarea{background:var(--surface);box-shadow:inset 0 3px 6px rgba(30,80,95,.12)}
-.nav{max-width:500px;width:calc(100% - 20px);bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:8px 2px 6px;border-radius:20px}
-.nav a{font-weight:700}
-.nav a.on{color:var(--blue);font-weight:800}
-.nav a svg{width:34px;height:34px;padding:6px;border-radius:11px}
-.nav a.on svg,.calculator-icon{color:white;background:var(--accent);box-shadow:0 3px 0 var(--blue),inset 0 1px rgba(255,255,255,.4)}
-.calculator-link{justify-content:flex-start;gap:12px;min-height:60px;text-align:left}
-.calculator-link:last-child{margin-bottom:4px}
-.calculator-icon{display:grid;place-items:center;width:36px;height:36px;flex:none;border-radius:10px}
-.calculator-name{flex:1;min-width:0}
-.calculator-chevron{display:grid;place-items:center;border-radius:50%;width:25px;height:25px;flex:none;background:var(--lil);color:var(--blue)}
-@media(prefers-reduced-motion:no-preference){.btn:active,.cd:active{transform:translateY(1px)}}
 
-/* Raised week rows with the original TuntiX colors. */
-:root[data-theme="light"]{
- --teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;
- --bg1:#F2FBFF;--bg2:#EFEAFF;--ink:#0F1F4D;--mut:#6B7694;--line:#E0E3F0;
- --accent:linear-gradient(145deg,#12BEAF,#0AA5B5)
-}
-@media(prefers-color-scheme:light){
- :root:not([data-theme]){
-  --teal:#14C8B5;--blue:#0B5BD3;--vio:#8B5CF6;--lil:#EDE9FE;
-  --bg1:#F2FBFF;--bg2:#EFEAFF;--ink:#0F1F4D;--mut:#6B7694;--line:#E0E3F0;
-  --accent:linear-gradient(145deg,#12BEAF,#0AA5B5)
- }
-}
-body{background:radial-gradient(ellipse at top right,rgba(20,200,181,.14),transparent 50%),linear-gradient(160deg,var(--bg1),var(--bg2));background-attachment:fixed}
-.card,.nav,.sheet{background:var(--card)}
-.card,.nav{border-bottom-width:5px;box-shadow:0 3px 0 rgba(31,53,89,.14),0 7px 10px -5px rgba(31,53,89,.25)}
-.week-summary-heading strong{color:var(--ink)}
-.week-entries{display:grid;gap:10px}
-.week-summary .week-entry{
- border:1px solid var(--line);border-bottom:4px solid var(--rim);border-radius:15px;
- min-height:49px;padding:7px 10px 7px 25px;
- background:linear-gradient(180deg,var(--card),var(--bg1));box-shadow:0 5px 7px -4px rgba(31,53,89,.35)
-}
-.week-summary .week-entry::before{left:9px;width:6px;box-shadow:inset 0 2px 3px rgba(31,53,89,.18)}
-.week-status{box-shadow:inset 0 2px 5px rgba(31,53,89,.2),0 1px 0 rgba(255,255,255,.4)}
-.week-summary .week-entry .week-hours{text-align:right}
-@media(prefers-reduced-motion:no-preference){.week-entry:active{transform:translateY(2px)}}
-</style>
 
-<style id="aurora-design" media="not all">
-:root{--nav-base:#24468b}
-:root{--ink:#fff;--mut:#e0e9ff;--card:rgba(255,255,255,.16);--lil:rgba(255,255,255,.12);--line:rgba(255,255,255,.32);--teal:#b4fff0;--blue:#fff;--vio:#d8cfff;--bg1:#087b68;--bg2:#5536ce;--glass-bg:linear-gradient(135deg,#087b68 0%,#1953b3 52%,#5536ce 100%);color-scheme:dark}
-:root[data-glass="blue"]{--glass-bg:linear-gradient(135deg,#093765,#174dc2 55%,#078ba7)}
-:root[data-glass="sun"]{--glass-bg:linear-gradient(135deg,#8e192c,#bd174b 52%,#b54d11)}
-:root[data-glass="pink"]{--glass-bg:linear-gradient(135deg,#86143f,#bc1268 55%,#7917ac)}
-:root[data-glass="green"]{--glass-bg:linear-gradient(135deg,#125b36,#18815c 55%,#127e88)}
-:root[data-glass="violet"]{--glass-bg:linear-gradient(135deg,#352078,#6925cb 55%,#9e126f)}
-body{font-family:Nunito,system-ui,sans-serif;font-weight:700;background:var(--glass-bg);background-attachment:fixed}
-body::before{background:transparent}
-#app,.sheet{max-width:520px}
-button,input,select,textarea,.cd,.lnk,.chip,.num{font-family:inherit}
-h2,h3,.btn{font-weight:800}h2{font-size:24px}
-.card,.nav,.sheet{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.4);box-shadow:inset 0 1px rgba(255,255,255,.12);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
-.card{border-radius:28px;padding:18px}.sheet{background:linear-gradient(135deg,rgba(19,96,112,.96),rgba(63,58,153,.97))}
-.btn:not(.del),.cd,.num,.stat,.sheet-control,input:not([type="checkbox"]),select,textarea,.calculator-link{background:rgba(255,255,255,.12);border:1px solid var(--line);color:#fff;box-shadow:inset 0 1px rgba(255,255,255,.08)}
-.btn.pri,.num.on,.chip.on{background:rgba(255,255,255,.25);color:#fff;border-color:rgba(255,255,255,.65);box-shadow:none}
-input::placeholder,textarea::placeholder{color:#d5dff2}select option{background:#233d77;color:#fff}
-.clk,.x{background:none;color:white;-webkit-text-fill-color:white}
-.nav{max-width:500px;width:calc(100% - 20px);bottom:calc(8px + env(safe-area-inset-bottom,0px));border-radius:22px;padding:8px 2px 6px;background:rgba(31,62,133,.72)}
-.nav a{color:#dbe5ff}.nav a.on{color:#fff}.nav a.on svg{background:rgba(255,255,255,.22);border-radius:10px}
-.cal{gap:7px}.dh{font-size:14px;font-weight:800;padding:4px 0}.cd{border-radius:18px;font-size:18px;font-weight:800;min-width:0}.cd b{color:#d7fff6;font-size:10px}.cd.out{opacity:.38}.cd.has{background:rgba(255,255,255,.23)}.cd.today{outline:2px solid #fff;outline-offset:1px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.45)}.cd.has b.multiple-entries{color:#ffced7}
-.week-entries{display:grid;gap:7px}.week-entry{border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.1);padding:9px 9px 9px 20px}.week-entry::before{left:7px}.week-entry.empty{color:var(--mut)}
-.week-status{border-color:rgba(255,255,255,.45)}.recorded .week-status{background:rgba(174,255,216,.22);color:white;border-color:#b4ffe5}
-.calculator-icon,.calculator-chevron,.plus{color:white;background:rgba(255,255,255,.18)}.toast{background:#fff;color:#21335f}.lnk,.sheet a{color:#fff}.btn.del{color:#ffccd7}
-.glass-colors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0 4px}.glass-choice{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin:0;padding:12px 4px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.12);color:white;font-size:14px;cursor:pointer}.glass-choice:has(input:checked){outline:2px solid white;outline-offset:1px;box-shadow:inset 0 0 0 1px white}.glass-choice:focus-within{outline:3px solid white}.glass-choice input{position:absolute;opacity:0;width:1px;height:1px}.glass-swatch{width:42px;height:42px;border:1px solid white;border-radius:50%;background:var(--swatch)}
-@media(max-width:370px){.card{padding:13px}.cal{gap:5px}.cd{border-radius:14px;font-size:16px}.glass-choice{font-size:12px}}
-</style>
+
 <style id="bottom-navigation-layout">
 /* Dock navigation to the screen edge and cover the home-indicator area. */
 .nav{bottom:0;width:100%;max-width:520px;border-radius:22px 22px 0 0;border-bottom:0;padding:8px max(4px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));background:var(--nav-base,var(--card));box-shadow:0 -4px 18px rgba(20,35,70,.14)}
@@ -344,11 +239,25 @@ input::placeholder,textarea::placeholder{color:#d5dff2}select option{background:
 main{padding-bottom:calc(var(--nav-height) + 32px)}
 .cd{scroll-margin-bottom:calc(var(--nav-height) + 24px)}
 </style>
+<style id="soft-light-design">
+:root,:root[data-theme="light"]{color-scheme:light;--ink:#151b2d;--mut:#657186;--blue:#2864e8;--teal:#2864e8;--vio:#2864e8;--card:#ffffff;--bg1:#f1f5fa;--bg2:#e7eef7;--line:#e2e7f0;--lil:#edf2fc;--sh:0 8px 24px rgba(52,75,111,.07)}
+body{background:linear-gradient(145deg,#f4f7fb,#e7eff7 60%,#edf0f8);background-attachment:fixed}
+main{padding-top:16px}.card{border:1px solid rgba(255,255,255,.9);border-radius:24px;background:rgba(255,255,255,.9);box-shadow:var(--sh);padding:18px;margin-bottom:16px}
+h2{font-size:23px;letter-spacing:-.4px}.btn,.num{background:#edf2fc;box-shadow:none;border:1px solid #e4eaf4;border-radius:14px}.btn.pri,.num.on{background:#2864e8;box-shadow:0 4px 12px #2864e820;color:#fff}.btn.sm{min-height:44px}
+input,select{background:#f8faff;border:1px solid #dbe3ef;box-shadow:none}input[type="checkbox"]{accent-color:#2864e8}
+.week-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}.week-controls .weektools{grid-template-columns:minmax(0,1fr) auto;margin:0;min-width:0;gap:8px}.week-controls .weekend-toggle{margin:0;align-self:center;white-space:nowrap}.week-controls .wk{grid-column:1/-1;margin:0;padding-top:4px}.week-controls .weekdate-field{min-width:0}.week-controls .weekdate-field input{min-width:0;width:100%;font-size:14px}.week-controls .lnk{font-size:12px;white-space:nowrap}
+.week-summary-heading{padding-bottom:14px}.week-summary-heading h2{font-size:18px}.week-summary-heading strong{font-size:25px}.week-entries{display:grid;gap:10px}
+.week-summary .week-entry{min-height:64px;border:1px solid #e4e9f2;border-radius:18px;background:#f9fbfe;box-shadow:0 4px 12px #243a6010;padding:10px 12px;grid-template-columns:minmax(0,1fr) auto 28px;gap:10px}.week-entry:before{display:none}.week-day b{font-size:18px}.week-day small{font-size:14px}.week-day{gap:8px}.week-hours{font-size:18px}.recorded .week-hours{background:#e5edff;color:#2054bd;border-radius:10px;padding:5px 10px}.week-status{width:27px;height:27px;background:#e9edf4;box-shadow:none;border:0}.recorded .week-status{background:#dce8ff;color:#2864e8}.week-status svg{width:24px;height:24px}
+.cd{border:1px solid #e4eaf4;background:#f7f9fd;border-radius:13px;min-height:54px;gap:4px;box-shadow:none;font-size:15px}.cd.has{background:#f7f9fd}.cd b{height:auto;min-height:16px;font-size:11px;line-height:16px;color:#2054bd}.cd.has b{border-radius:7px;background:#dce8ff;padding:1px 7px}.cd.has b::after{content:' h';font-weight:500}.cd.today{outline:2px solid #2864e8;outline-offset:1px}.cd.today>span{color:#2054bd;font-weight:700}.cd.has b.multiple-entries,.recorded .week-hours.multiple-entries{color:#af2447;background:#ffe5ed}
+.nav{background:rgba(255,255,255,.97);border-radius:0;border-top:1px solid #e5ebf4;box-shadow:0 -4px 20px #344b6f08;max-width:560px}.nav a{font-size:11px;gap:4px;color:#657186}.nav a svg{width:26px;height:26px}.nav a.on{color:#2864e8}.nav a.on svg{background:#e1e9ff;border-radius:12px;box-sizing:content-box;padding:6px 14px;margin:-6px -14px 0;box-shadow:none}
+.sheet,.tes-dialog,.project-picker{background:#fff;box-shadow:var(--sh)}.sheet-control{background:#edf2fc;color:#2864e8;box-shadow:none;border:1px solid #e1e7f2}.project-picker-trigger{background:#f8faff;border:1px solid #dbe3ef;box-shadow:none}.sheet-done{background:#2864e8;color:white}.project-day-heading{color:#2864e8}
+@media(max-width:370px){main{padding-left:10px;padding-right:10px}.card{padding:13px}.week-controls{gap:5px}.week-controls .weektools{gap:4px}.week-controls .lnk{font-size:10px}.week-summary .week-entry{min-height:58px}.week-day{gap:5px}.nav a{font-size:10px}}
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14C8B5"/><stop offset=".55" stop-color="#2a8ad8"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
 <symbol id="logo" viewBox="0 0 64 64"><circle cx="32" cy="34" r="24" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-dasharray="118 33" transform="rotate(-4 32 34)"/><path d="M32 17v5M14 36h5" stroke="#0B5BD3" stroke-width="3" stroke-linecap="round"/><path d="M22 36l8 8 15-17" fill="none" stroke="#0B5BD3" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M45 7l2 5M52 11l-3 4M56 18l-5 1" stroke="#14C8B5" stroke-width="2.5" stroke-linecap="round"/></symbol></defs></svg>
-<div id="app"><header class="top"><a class="brand" href="#kalenteri"><svg><use href="#logo"/></svg><span>Tunti<span class="x">X</span></span></a></header><main id="v"></main><nav class="nav" id="nav"></nav></div>
+<div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
@@ -366,7 +275,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 const DN=['Ma','Ti','Ke','To','Pe','La','Su'],DL=['Maanantai','Tiistai','Keskiviikko','Torstai','Perjantai','Lauantai','Sunnuntai'],MO=['Tammikuu','Helmikuu','Maaliskuu','Huhtikuu','Toukokuu','Kesäkuu','Heinäkuu','Elokuu','Syyskuu','Lokakuu','Marraskuu','Joulukuu'];
 const pa=id=>(S.pr.find(p=>p.id===id)||{a:''}).a;
 const col=t=>(allWorkTypes().find(x=>x[0]===t)||[0,'#888'])[1],pn=id=>(S.pr.find(p=>p.id===id)||{n:''}).n;
-const P={more:'M5 11h.01M12 11h.01M19 11h.01M5 12h.01M12 12h.01M19 12h.01',cal:'M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM8 3v4M16 3v4M3 10h18',site:'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6',user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-2-4-2 1-2-1-1-2h-4l-1 2-2 1-2-1-2 4 2 1v2l-2 1 2 4 2-1 2 1 1 2h4l1-2 2-1 2 1 2-4-2-1z'};
+const P={calculator:'M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM8 6h8v3H8zM8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01',cal:'M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM8 3v4M16 3v4M3 10h18',site:'M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6',user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12l2-1-2-4-2 1-2-1-1-2h-4l-1 2-2 1-2-1-2 4 2 1v2l-2 1 2 4 2-1 2 1 1 2h4l1-2 2-1 2 1 2-4-2-1z'};
 const ic=n=>`<svg class="i" viewBox="0 0 24 24"><path d="${P[n]}"/></svg>`;
 if(!S.init){S.init=1;save()}
 const toast=m=>{const t=$('#t');t.innerHTML=`<div class="toast">${esc(m)}</div>`;clearTimeout(toast.k);toast.k=setTimeout(()=>t.innerHTML='',2400)};
@@ -377,15 +286,13 @@ for(let i=0;i<7;i++){const d=addD(ws,i),k=dk(d),es=S.en.filter(e=>e.d===k);tot+=
 rows+=`<button type="button" class="week-entry ${es.length?'recorded':'empty'}" data-a="day" data-d="${k}" aria-label="${DL[i]} ${fd(d)} ${es.length?fh(h[k]):'Ei kirjauksia'}. Avaa tai lisää tunteja."${k===dk(n)?' aria-current="date"':''}><span class="week-day"><b>${DN[i]}</b><small>${fd(d)}</small></span><span class="week-hours ${es.length>1?'multiple-entries':''}">${es.length?(Math.round(h[k]*10)/10).toFixed(1).replace('.',',')+' h':'–'}</span><span class="week-status" aria-hidden="true">${es.length?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="10" stroke="none"/></svg>':''}</span></button>`}
 const m0=new Date(n.getFullYear(),n.getMonth()+mo,1),s0=addD(m0,-wd(m0));let c=DN.map(x=>`<div class="dh">${x}</div>`).join('');
 for(let i=0;i<42;i++){const d=addD(s0,i);if(i>=35&&d.getMonth()!==m0.getMonth())break;const k=dk(d);c+=`<button class="cd ${h[k]?'has':''} ${k===dk(n)?'today':''} ${d.getMonth()!==m0.getMonth()?'out':''}" data-a="day" data-d="${k}"><span>${d.getDate()}</span><b class="${counts[k]>1?'multiple-entries':''}">${h[k]?Math.round(h[k]*10)/10:''}</b></button>`}
-return `<div class="hero"><div class="clk" id="clk">${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}</div><b>${DL[wd(n)]} ${fd(n)}${n.getFullYear()}</b></div>
-
-<div class="card"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><div class="weekdate-field"><input id="weekdate" type="date" value="${dk(ws)}"></div><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div></div>
+return `<div class="card week-controls"><div class="weektools"><label class="visually-hidden" for="weekdate">Valitse viikko</label><div class="weekdate-field"><input id="weekdate" type="date" value="${dk(ws)}"></div><button class="lnk" data-a="now">Tämä viikko</button></div><label class="weekend-toggle" for="show-weekends"><input id="show-weekends" type="checkbox" ${S.set.showWeekends?'checked':''}>la su</label><div class="wk"><button aria-label="Edellinen viikko" class="btn sm" data-a="pw">‹</button><div style="text-align:center"><b>Viikko ${wk(ws)}</b><p style="margin:0">${fd(ws)}–${fd(addD(ws,6))}</p></div><button aria-label="Seuraava viikko" class="btn sm" data-a="nw">›</button></div></div>
 <section class="card week-summary" aria-labelledby="week-summary-heading"><div class="week-summary-heading"><h2 id="week-summary-heading">${wo===0?'Tämän viikon tunnit':'Viikon tunnit'}</h2><strong>${fh(tot)}</strong></div><div class="week-entries">${rows}</div></section>
 <div class="card"><div class="wk"><button class="btn sm" data-a="pm">‹</button><b>${MO[m0.getMonth()]} ${m0.getFullYear()}</b><button class="btn sm" data-a="nm">›</button></div><div class="cal">${c}</div></div>`}
 function projectDays(){const groups=new Map();for(const e of S.en){if(!e.p)continue;const key=e.d+'|'+e.p;if(!groups.has(key))groups.set(key,{p:e.p,d:e.d,h:0});groups.get(key).h+=e.h}const rows=[...groups.values()].sort((a,b)=>b.d.localeCompare(a.d)||pn(a.p).localeCompare(pn(b.p),'fi'));const used=new Set(rows.map(r=>r.p));for(const p of S.pr)if(!used.has(p.id))rows.push({p:p.id,d:'',h:0});return rows}
 let projectDeleteMode=false;const selectedProjects=new Set();
 function projektit(){const rows=projectDays();const seen=new Set();
-return `<h2>Projektit</h2>${rows.map(r=>{const p=S.pr.find(p=>p.id===r.p)||{id:r.p,n:'Poistettu projekti',a:''};const selectable=!seen.has(p.id);seen.add(p.id);return `<div class="card" style="margin-bottom:10px">${projectDeleteMode&&selectable?`<label class="project-delete-choice"><input type="checkbox" data-project-select="${esc(p.id)}" ${selectedProjects.has(p.id)?'checked':''} > Valitse poistettavaksi</label>`:''}${r.d?`<h3 class="project-day-heading">${DN[wd(pd(r.d))]} ${fd(pd(r.d))}${String(pd(r.d).getFullYear()).slice(-2)}</h3>`:'<p>Ei kirjauksia</p>'}<div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div style="min-width:0;overflow-wrap:anywhere"><b>${esc(p.n)}</b><p style="margin:2px 0">📍 ${esc(p.a||'Ei osoitetta')}</p><p style="margin:2px 0">${r.d?'Tunnit: ':''}<b>${fh(r.h)}</b> ${distanceBadge(p.id)}</p></div><div class="project-actions">${r.d?`<button class="btn sm" data-a="day" data-d="${r.d}">Avaa</button>`:`<button class="btn sm" data-a="ep" data-id="${esc(p.id)}">Avaa</button>`}</div></div></div>`}).join('')||'<div class="card"><p>Ei projekteja vielä.</p></div>'}${S.pr.length?`<div class="project-delete-footer">${projectDeleteMode?`<button class="btn" data-a="cancelprojectdelete">Peruuta</button><button class="btn del" data-a="confirmprojectdelete" ${selectedProjects.size?'':'disabled'}>Poista valitut (${selectedProjects.size})</button>`:'<button class="btn del" data-a="startprojectdelete">Poista</button>'}</div>`:''}`}
+return `<h2>Projektit</h2>${rows.map(r=>{const p=S.pr.find(p=>p.id===r.p)||{id:r.p,n:'Poistettu projekti',a:''};const selectable=!seen.has(p.id);seen.add(p.id);return `<div class="card" style="margin-bottom:10px">${projectDeleteMode&&selectable?`<label class="project-delete-choice"><input type="checkbox" data-project-select="${esc(p.id)}" ${selectedProjects.has(p.id)?'checked':''} > Valitse poistettavaksi</label>`:''}${r.d?`<h3 class="project-day-heading">${DN[wd(pd(r.d))]} ${fd(pd(r.d))}${String(pd(r.d).getFullYear()).slice(-2)}</h3>`:'<p>Ei kirjauksia</p>'}<div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div style="min-width:0;overflow-wrap:anywhere"><b>${esc(p.n)}</b><p style="margin:2px 0">📍 ${esc(p.a||'Ei osoitetta')}</p><p style="margin:2px 0">${r.d?'Tunnit: ':''}<b>${fh(r.h)}</b> ${distanceBadge(p.id)}</p></div><div class="project-actions">${r.d?`<button class="btn sm" data-a="day" data-d="${r.d}">Avaa</button>`:`<button class="btn sm" data-a="ep" data-id="${esc(p.id)}">Avaa</button>`}</div></div></div>`}).join('')||'<div class="card"><p>Ei projekteja vielä.</p></div>'}`}
 function aboutApp(){modal(`<h2>Tietoa tuntiX-sovelluksesta</h2><p>Oma työaikapäiväkirja sinulle ja ystävillesi. Kirjaa tunnit, työlajit, projektit, osoitteet ja kommentit. Kalenteri laskee päivä- ja viikkotunnit. Punainen tuntimäärä tarkoittaa, että päivälle on useampi kirjaus.</p><h3>Omat tiedot ja tallennus</h3><p>Tiedot ovat tällä laitteella. Sovelluksessa ei ole käyttäjätiliä, työnantajan palvelinta eikä automaattista synkronointia laitteiden välillä. Työtunteja, kommentteja ja profiilitietoja ei lähetetä sovelluksen palvelimelle.</p><p>Puhelinsovellus tallentaa tiedot paikalliseen verkkonäkymän tallennustilaan ja lisäksi iOS:n UserDefaults- tai Androidin SharedPreferences-tallennukseen. Selaimessa käytetään localStoragea. Tiedoilla ei ole sovelluksen omaa salausta. Laitteen lukitus ja käyttöjärjestelmän suojaus ovat tärkeitä.</p><p>Sovelluksen poistaminen, sovellustietojen tyhjennys tai selaintietojen poistaminen voi hävittää tiedot. Käyttöjärjestelmän varmuuskopiointi riippuu laitteesta ja sovellusversiosta. Älä luota siihen ainoana kopiona.</p><h3>Varmuuskopio ja raportit</h3><p>Asetuksista voit viedä JSON-varmuuskopion ja CSV-tuntiraportin. Tiedostot eivät ole salattuja. Puhelimessa valitset itse järjestelmän jakovalikosta tallennuspaikan tai vastaanottajan. Jos valitset pilvipalvelun tai viestisovelluksen, tiedosto siirtyy kyseiseen palveluun. Varmuuskopio palautetaan erikseen toiselle laitteelle.</p><h3>Milloin internetiä käytetään?</h3><p><b>Osoite-ehdotukset:</b> kun kirjoitat vähintään kolme merkkiä osoitekenttään ja pidät lyhyen tauon, kirjoittamasi hakuteksti lähetetään Photon-palveluun (photon.komoot.io). Lähtöosoitteen tallennus ja projektin osoitteen tarkistus voivat myös käyttää Photonia.</p><p><b>Kilometrien laskenta:</b> kun näkyvällä projektilla on osoite mutta ei voimassa olevaa tallennettua reittiä, sovellus tarkistaa osoitteen Photonilla ja lähettää lähtö- ja kohdekoordinaatit OSRM-palveluun (router.project-osrm.org). Sama voi tapahtua osoitteen muutoksen tai uudelleenyrityksen jälkeen. Kilometrit tallennetaan laitteelle. Kyse on arvioidusta automatkasta yhteen suuntaan, ei GPS-seurannasta.</p><p>Karttapalvelut saavat hakutekstin tai koordinaatit sekä verkkopyyntöön liittyvät tekniset tiedot, kuten IP-osoitteen. Tunteja tai kommentteja ei lisätä näihin pyyntöihin.</p><p><b>Verkkosivusto:</b> GitHub Pages toimittaa sivun ja tarkistaa sovellustiedostojen päivityksiä. Selaimessa fontit ladataan Google Fontsista (fonts.googleapis.com ja fonts.gstatic.com). Palvelut saavat tavanomaiset verkkopyyntöjen tekniset tiedot. APK/IPA sisältää käyttöliittymän, fontit ja TES-tiedostot, eikä lataa käyttöliittymää GitHubista käynnistyessään.</p><p><b>Ulkoiset linkit:</b> OpenStreetMapin tekijänoikeuslinkki avaa palvelun sivun vain painettaessa. TES-PDF avataan tai tallennetaan laitteelle; PDF on mukana sovelluksessa.</p><h3>Ilman verkkoyhteyttä</h3><p>Tuntikirjaukset, muokkaus, kalenteri, raportit ja TES-hintalaskuri toimivat ilman internetiä. Osoitehaku ja uusi reittilaskenta tarvitsevat yhteyden. Puhelinsovelluksen päivitys asennetaan erikseen. Verkkosivun käyttö ilman yhteyttä edellyttää aiempaa onnistunutta latausta.</p><h3>Oikeudet ja yksityisyys</h3><p>Sovelluksessa ei ole mainoksia, analytiikkaa, GPS-seurantaa eikä kameran tai mikrofonin käyttöä. Käyttöjärjestelmä, allekirjoitus- ja asennustyökalut sekä itse valitsemasi muut sovellukset voivat tehdä omia verkkopyyntöjään.</p><h3>TES ja laskelmat</h3><p>TES 2025–2028 ja vuoden 2026 lisäliite ovat luettavissa PDF-tiedostoina. Hintalaskelma on arvio: varmista hinnaston voimassaolo, työn ehdot ja soveltuvat lisät. Sovellus ei ole työnantajan hyväksymä palkka- tai työaikajärjestelmä.</p>`)}
 function asetukset(){return `<h2>Asetukset</h2><div class="card"><button class="btn" data-a="aboutapp">Tietoa sovelluksesta</button></div>${settingsExtra()}`}
 function profiili(){const n=new Date(),y=String(n.getFullYear()),m=dk(n).slice(0,7),mes=S.en.filter(e=>e.d.startsWith(m)),tot=mes.reduce((a,e)=>a+e.h,0),by={};mes.forEach(e=>by[e.t]=(by[e.t]||0)+e.h);
@@ -1492,7 +1399,7 @@ const R={kalenteri,projektit,asetukset,profiili,lisaa};
 let lastRenderedRoute=null;
 function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
 if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:440,easing:'cubic-bezier(.25,.8,.25,1)'});}lastRenderedRoute=a;
-$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['lisaa','more','Laskurit'],['profiili','user','Profiili'],['asetukset','gear','Asetukset']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances();updateSlopeVolume()}
+$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['lisaa','calculator','Laskurit'],['profiili','user','Profiili'],['asetukset','gear','Asetukset']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances();updateSlopeVolume()}
 addEventListener('hashchange',()=>{if($('#m .ov')){if(!allowSheetExit()){history.replaceState(null,'','#'+(lastRenderedRoute||'kalenteri'));return}closeSheet()}projectDeleteMode=false;selectedProjects.clear();render()});
 let modalInputBaseline=[],lastModalDay=null;
 const modal=(h,isDay=false)=>{const previous=$('#m .ov');const replacing=!!previous&&!previous.classList.contains('closing');const currentDay=isDay?ed.d:null;const keepScroll=replacing&&isDay&&lastModalDay===currentDay;const scrollTop=keepScroll?($('.sheet-content')?.scrollTop||0):0;$('#m').innerHTML=`<div class="ov ${replacing?'sheet-swap':'sheet-enter'}" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja"><div class="sheet-toolbar">${isDay?`<button type="button" class="sheet-control" data-a="prevday" aria-label="Edellinen päivä">‹</button><span class="sheet-date">${fd(pd(ed.d))}</span><button type="button" class="sheet-control" data-a="nextday" aria-label="Seuraava päivä">›</button>`:'<span class="sheet-date"></span>'}<button type="button" class="sheet-control sheet-done" data-a="dismisssheet" aria-label="Sulje ikkuna" title="Sulje">✓</button></div><div class="sheet-content">${h}</div></div></div>`;lastModalDay=currentDay;if(keepScroll)$('.sheet-content').scrollTop=scrollTop;modalInputBaseline=[...document.querySelectorAll('.sheet-content input,.sheet-content select')].map(x=>[x.id,x.value]);scheduleFormViewport()};
@@ -1504,13 +1411,14 @@ if(!original)return true;
 if(['t','p','h','c'].some(k=>String(ed[k]??'')!==String(original[k]??'')))return true;
 return Object.entries(ed.projects||{}).some(([id,p])=>{const saved=S.pr.find(x=>x.id===id);return saved&&(p.n!==saved.n||p.a!==saved.a)});
 }
-function saveDayEntry(){
-if(!ed||!$('#fh'))return false;
+function saveDayEntry(fromProject=false){
+if(!ed||(!fromProject&&!$('#fh')))return false;
 const invalid=message=>{toast(message);return false};
 sync();if(!ed.t)return invalid('Valitse työlaji');if(!(Number.isFinite(ed.h)&&ed.h>=0.5&&ed.h<=24))return invalid('Anna tunnit (0,5–24)');if(S.en.filter(e=>e.d===ed.d&&e.id!==ed.id).reduce((a,e)=>a+e.h,0)+ed.h>24)return invalid('Päivän tunnit eivät voi ylittää 24 tuntia');const ab=ABS.includes(ed.t);if(!ab&&!ed.p)return invalid('Lisää ensin projekti');const projectChanges=Object.entries(ed.projects||{}).filter(([id])=>S.pr.some(p=>p.id===id));if(projectChanges.some(([,p])=>!p.n.trim()))return invalid('Anna projektille nimi');const previous=structuredClone(S);for(const [id,p] of projectChanges)Object.assign(S.pr.find(x=>x.id===id),{n:p.n.trim(),a:p.a.trim()});const o={d:ed.d,p:ab?'':ed.p,t:ed.t,h:ed.h,c:(ed.c||'').trim()};
 const entryId=ed.id||'e'+crypto.randomUUID();if(ed.id)Object.assign(S.en.find(z=>z.id===ed.id),o);else S.en.push(Object.assign({id:entryId},o));S.last={t:ed.t,p:ab?S.last.p:ed.p};if(!save()){S=previous;return false}ed.id=entryId;return true;
 }
 function allowSheetExit(){
+if($('#pn'))return saveProjectForm();
 if(ed&&$('#fh')){if(!dayHasChanges())return true;if(!saveDayEntry())return false;render(1);toast('Tallennettu');return true}
 const changed=dayHasChanges()||modalInputBaseline.some(([id,value])=>id&&$('#'+id)&&$('#'+id).value!==value);
 return !changed||confirm('Tallentamattomat muutokset hylätään. Jatketaanko?');
@@ -1547,11 +1455,19 @@ ${ab?'':`<label>Projekti / työmaa</label><input type="hidden" id="fp" value="${
 <label>Tunnit ${!ab&&e.p?distanceBadge(e.p):''}</label><input id="fh" inputmode="decimal" type="number" step="0.25" min="0.5" max="24" value="${e.h}">
 <label>Kommentti</label><input id="fc" value="${esc(e.c)}" placeholder="Valinnainen"><div class="g2" style="margin-top:14px"><button class="btn sm" data-a="canceledit">Peruuta</button><button class="btn sm pri" data-a="sv">Tallenna</button></div>${e.id?`<button class="btn del" data-a="de" data-id="${e.id}">Poista kirjaus</button>`:''}`);refreshDistances()}
 
-function projectPickerRows(){return `<button type="button" class="picker-empty" data-a="chooseproject" data-id="">Valitse projekti</button>${S.pr.map(p=>`<div class="picker-row"><button type="button" class="picker-choice" data-a="chooseproject" data-id="${esc(p.id)}" aria-pressed="${ed.p===p.id}"><span class="picker-check" aria-hidden="true">${ed.p===p.id?'✓':''}</span><span>${esc(p.n)}</span></button><button type="button" class="picker-delete" data-a="deletepickerproject" data-id="${esc(p.id)}" aria-label="Poista projekti ${esc(p.n)}">Poista</button></div>`).join('')||'<p>Ei projekteja. Lisää uusi projekti lomakkeessa.</p>'}`}
+function projectPickerRows(){return `<button type="button" class="picker-empty" data-a="chooseproject" data-id="">Valitse projekti</button>${S.pr.map(p=>`<div class="picker-row"><button type="button" class="picker-choice" data-a="chooseproject" data-id="${esc(p.id)}" aria-pressed="${ed.p===p.id}"><span class="picker-check" aria-hidden="true">${ed.p===p.id?'✓':''}</span><span>${esc(p.n)}</span></button></div>`).join('')||'<p>Ei projekteja. Lisää uusi projekti lomakkeessa.</p>'}`}
 function openProjectPicker(){if(!ed)return;sync();let dialog=$('#project-picker');if(!dialog){dialog=document.createElement('dialog');dialog.id='project-picker';dialog.className='project-picker';dialog.setAttribute('aria-labelledby','project-picker-title');dialog.innerHTML='<div class="picker-heading"><h2 id="project-picker-title">Valitse projekti</h2><button type="button" class="sheet-control sheet-done" data-a="closeprojectpicker" aria-label="Sulje projektivalinta">✓</button></div><div class="picker-list"></div>';document.body.append(dialog);dialog.addEventListener('cancel',ev=>{ev.preventDefault();closeProjectPicker()});dialog.addEventListener('click',ev=>{if(ev.target===dialog)closeProjectPicker()})}dialog.querySelector('.picker-list').innerHTML=projectPickerRows();if(!dialog.open)dialog.showModal()}
 function closeProjectPicker(){const dialog=$('#project-picker');if(dialog){dialog.close();dialog.remove()}$('.project-picker-trigger')?.focus({preventScroll:true})}
 
-function pform(id){const p=id?S.pr.find(x=>x.id===id):{n:'',a:''};modal(`<h2>${id?'Muokkaa projektia':'Uusi projekti'}</h2><label style="margin-top:0">Projektin / työmaan nimi</label><input id="pn" value="${esc(p.n)}"><label>Osoite</label>${addressInput("pa",p.a)}${id?'<p class="status-note">Nimi ja osoite päivittyvät kaikkiin tämän projektin kirjauksiin. Lisää osoitteeseen myös kaupunki kilometrien laskentaa varten.</p>':''}<div class="g2" style="margin-top:14px"><button class="btn sm" data-a="pc">Peruuta</button><button class="btn sm pri" data-a="sp" data-id="${id||''}">Tallenna</button></div>${id&&!ret?`<button class="btn del" data-a="dp" data-id="${id}">Poista projekti</button>`:''}`)}
+function pform(id){const p=id?S.pr.find(x=>x.id===id):{n:'',a:''};modal(`<h2>${id?'Muokkaa projektia':'Uusi projekti'}</h2><label style="margin-top:0">Projektin / työmaan nimi</label><input id="pn" value="${esc(p.n)}"><label>Osoite</label>${addressInput("pa",p.a)}${id?'<p class="status-note">Nimi ja osoite päivittyvät kaikkiin tämän projektin kirjauksiin. Lisää osoitteeseen myös kaupunki kilometrien laskentaa varten.</p>':''}<div class="g2" style="margin-top:14px"><button class="btn sm" data-a="pc">Peruuta</button><button class="btn sm pri" data-a="sp" data-id="${id||''}">Tallenna</button></div>`)}
+function saveProjectForm(){
+const n=$('#pn').value.trim(),address=$('#pa').value.trim();if(!n){toast('Anna projektille nimi');return false}
+const id=$('[data-a="sp"]').dataset.id;const previous=structuredClone(S),draft=ed?structuredClone(ed):null;
+const pid=id||'p'+crypto.randomUUID();if(id)Object.assign(S.pr.find(p=>p.id===id),{n,a:address});else S.pr.push({id:pid,n,a:address});
+if(ret&&ed){ed.p=pid;if(ed.projects)delete ed.projects[pid];if(!saveDayEntry(true)){S=previous;ed=draft;return false}}
+else if(!save()){S=previous;return false}
+render(1);return true;
+}
 const mk=d=>({d,t:'',p:'',h:DEFAULT_HOURS,c:''});
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id;
 if(a==='aboutapp'){aboutApp();return}
@@ -1569,27 +1485,14 @@ else if(a==='prevday'){changeSheetDay(-1)}
 else if(a==='nextday'){changeSheetDay(1)}
 else if(a==='dismisssheet'){if(allowSheetExit())closeSheet()}
 else if(a==='close'){if(ev.target.closest('.sheet'))return;if(allowSheetExit())closeSheet()}
-else if(a==='startprojectdelete'){projectDeleteMode=true;selectedProjects.clear();render(1)}
-else if(a==='cancelprojectdelete'){projectDeleteMode=false;selectedProjects.clear();render(1)}
-else if(a==='confirmprojectdelete'){const ids=new Set([...selectedProjects].filter(id=>S.pr.some(p=>p.id===id)));if(!ids.size)return;const entries=S.en.filter(e=>ids.has(e.p));const names=S.pr.filter(p=>ids.has(p.id)).map(p=>p.n).join(', ');if(!confirm('Poistetaanko valitut projektit ('+ids.size+')?\n'+names+'\nMyös projektien tuntikirjaukset poistetaan: '+entries.length+' kpl, '+fh(entries.reduce((sum,e)=>sum+e.h,0))+'.\nPoistoa ei voi perua.'))return;const previous=S.pr,previousEntries=S.en,previousLast=S.last.p;S.pr=S.pr.filter(p=>!ids.has(p.id));S.en=S.en.filter(e=>!ids.has(e.p));if(ids.has(S.last.p))S.last.p='';if(!save()){S.pr=previous;S.en=previousEntries;S.last.p=previousLast;return}selectedProjects.clear();projectDeleteMode=false;render(1);toast('Projektit ja niiden tuntikirjaukset poistettu')}
 else if(a==='np'){ret=0;pform()}else if(a==='np2'){sync();ret=1;pform()}else if(a==='ep'){ret=0;pform(id)}
 else if(a==='ep2'){sync();ret=1;pform(id)}
 else if(a==='pc'){if(ret&&ed)sheet();else closeSheet()}
-else if(a==='sp'){const n=$('#pn').value.trim();if(!n)return toast('Anna projektille nimi');const a2=$('#pa').value.trim();let pid=id;if(id){Object.assign(S.pr.find(z=>z.id===id),{n,a:a2})}else{pid='p'+crypto.randomUUID();S.pr.push({id:pid,n,a:a2})}save();if(ret&&ed){ed.p=pid;sheet()}else{closeSheet();render(1)}toast('Projekti tallennettu')}
+else if(a==='sp'){if(saveProjectForm()){closeSheet();render(1);toast('Tallennettu')}}
 else if(a==='openprojectpicker'){openProjectPicker()}
-else if(a==='closeprojectpicker'){closeProjectPicker()}
+else if(a==='closeprojectpicker'){closeProjectPicker();sheet();if(saveDayEntry()){closeSheet();render(1);toast('Tallennettu')}}
 else if(a==='chooseproject'){if(!ed)return;if(id&&!S.pr.some(p=>p.id===id))return;sync();ed.p=id||'';closeProjectPicker();sheet();$('.project-picker-trigger')?.focus({preventScroll:true})}
-else if(a==='deletepickerproject'){
-if(!ed)return;sync();const pid=id;const project=S.pr.find(p=>p.id===pid);if(!project)return;
-if(S.en.some(e=>e.p===pid))return toast('Projektilla on tallennettuja tunteja. Projektia ei voi poistaa.');
-if(!confirm('Poistetaanko projekti ”'+project.n+'” valintalistasta?'))return;
-const previous=S.pr,previousLast=S.last.p;
-S.pr=S.pr.filter(p=>p.id!==pid);if(S.last.p===pid)S.last.p='';
-if(!save()){S.pr=previous;S.last.p=previousLast;return}
-if(ed.p===pid)ed.p='';if(ed.projects)delete ed.projects[pid];
-render(1);sheet();openProjectPicker();toast('Projekti poistettu');
-}
-else if(a==='dp'){if(S.en.some(e=>e.p===id))return toast('Projektilla on kirjauksia. Poista kirjaukset ensin.');if(!confirm('Poistetaanko projekti?'))return;S.pr=S.pr.filter(z=>z.id!==id);save();closeSheet();render(1)}
+
 });
 document.addEventListener('change',ev=>{const t=ev.target;if(t.dataset.projectSelect){if(t.checked)selectedProjects.add(t.dataset.projectSelect);else selectedProjects.delete(t.dataset.projectSelect);render(1);return}if(t.id==='show-weekends'){S.set.showWeekends=t.checked;save();render(1);$('#show-weekends')?.focus({preventScroll:true});return}if(t.dataset.s){const v=Number(t.value);if(!Number.isFinite(v)||v<1||v>24){t.value=S.set.goal;return toast('Anna tavoite 1–24 h')}S.set.goal=v;save();render(1)}else if(t.dataset.p){S.pf[t.dataset.p]=t.value;save()}});
 // Refresh a suspended app on a new local day without copying yesterday's form.
@@ -1609,17 +1512,15 @@ addEventListener('pageshow',refreshDayOnReturn);
 addEventListener('focus',refreshDayOnReturn);
 setInterval(()=>{const c=$('#clk');if(c){const d=new Date();c.textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())}},1000);
 applyTheme();
-function isGlass(){return ['aurora','classic'].includes(S.set.design)}
-function glassColors(){return `<label>Väri</label><div class="glass-colors">${[['aurora','Aurora','#087b68,#194cce,#6531d9'],['blue','Sininen','#093765,#174dc2,#078ba7'],['sun','Aurinko','#8e192c,#bd174b,#b54d11'],['pink','Pinkki','#86143f,#bc1268,#7917ac'],['green','Vihreä','#125b36,#18815c,#127e88'],['violet','Violetti','#352078,#6925cb,#9e126f']].map(([v,n,c])=>`<label class="glass-choice"><input type="radio" name="glass-color" value="${v}" ${(S.set.glassColor||'aurora')===v?'checked':''}><span class="glass-swatch" style="--swatch:linear-gradient(135deg,${c})"></span><span>${n}</span></label>`).join('')}</div>`}
-function applyTheme(){const glass=isGlass();document.getElementById('raised-design').media=glass?'not all':'all';document.getElementById('aurora-design').media=glass?'all':'not all';document.documentElement.dataset.glass=S.set.glassColor||'aurora';const theme=S.set.theme||'auto';if(glass||theme==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=theme}
-function settingsExtra(){return `<div class="card"><h3>Työmatka</h3><label for="office-address">Osoite A · lähtöosoite</label><input id="office-address" value="${esc(getOffice().address)}" placeholder="Katu, talonumero ja kaupunki" maxlength="300"><button class="btn" data-a="saveoffice">Tallenna osoite A</button><p id="office-status" role="status" style="font-size:12px"></p><p>Kilometrit näyttävät automatkan osoitteesta A projektiin, yhteen suuntaan. Reitti voi poiketa ajamastasi matkasta.</p><p style="font-size:11px">Osoitehaku: Photon · Reititys: OSRM · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>. Laskenta vaatii internetin ja lähettää lähtöosoitteen ja projektin osoitteen karttapalveluun.</p></div><div class="card"><h3>Ulkoasu</h3><label for="design">Muotoilu</label><select id="design"><option value="raised" ${!isGlass()?'selected':''}>Kohotettu (3D)</option><option value="aurora" ${isGlass()?'selected':''}>Aurora-lasi</option></select>${isGlass()?glassColors():`<label for="theme">Teema</label><select id="theme">${[['auto','Laitteen mukaan'],['light','Vaalea'],['dark','Tumma'],['blue','Sininen'],['red','Punainen'],['green','Vihreä']].map(([v,n])=>`<option value="${v}" ${(S.set.theme||'auto')===v?'selected':''}>${n}</option>`).join('')}</select>`}</div><div class="card"><h3>Varmuuskopio ja vienti</h3><p>Tiedot säilyvät tässä selaimessa. Varmuuskopion avulla voit siirtää ne toiselle laitteelle.</p><button class="btn" data-a="backup">↓ Lataa varmuuskopio (JSON)</button><button class="btn" data-a="import">↑ Palauta varmuuskopio</button><input type="file" id="restore" accept=".json,application/json" hidden><button class="btn" data-a="csv">↓ Vie kaikki tunnit (CSV)</button></div>`}
+function applyTheme(){document.documentElement.dataset.theme='light';delete document.documentElement.dataset.glass}
+function settingsExtra(){return `<div class="card"><h3>Työmatka</h3><label for="office-address">Osoite A · lähtöosoite</label><input id="office-address" value="${esc(getOffice().address)}" placeholder="Katu, talonumero ja kaupunki" maxlength="300"><button class="btn" data-a="saveoffice">Tallenna osoite A</button><p id="office-status" role="status" style="font-size:12px"></p><p>Kilometrit näyttävät automatkan osoitteesta A projektiin, yhteen suuntaan. Reitti voi poiketa ajamastasi matkasta.</p><p style="font-size:11px">Osoitehaku: Photon · Reititys: OSRM · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>. Laskenta vaatii internetin ja lähettää lähtöosoitteen ja projektin osoitteen karttapalveluun.</p></div><div class="card"><h3>Varmuuskopio ja vienti</h3><p>Tiedot säilyvät tässä selaimessa. Varmuuskopion avulla voit siirtää ne toiselle laitteelle.</p><button class="btn" data-a="backup">↓ Lataa varmuuskopio (JSON)</button><button class="btn" data-a="import">↑ Palauta varmuuskopio</button><input type="file" id="restore" accept=".json,application/json" hidden><button class="btn" data-a="csv">↓ Vie kaikki tunnit (CSV)</button></div>`}
 function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}
 function backup(){download('tuntix-'+dk(new Date())+'.json',JSON.stringify({app:'TuntiX',version:2,exportedAt:new Date().toISOString(),data:S},null,2),'application/json')}
 function validateBackup(raw){const state=validateHoursBackup(raw);state.tes=tesValidateState((raw.data||raw).tes);return state}
 function exportCsv(weekly){const start=dk(addD(mon(new Date()),wo*7)),end=dk(addD(pd(start),6));const entries=S.en.filter(e=>!weekly||(e.d>=start&&e.d<=end)).sort((a,b)=>a.d.localeCompare(b.d));const cell=v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';const rows=[['Päivä','Työlaji','Projekti','Tunnit','Kommentti'],...entries.map(e=>[e.d,e.t,pn(e.p),String(e.h).replace('.',','),e.c])];download('tuntix-'+(weekly?start:'kaikki')+'.csv','\ufeff'+rows.map(r=>r.map(cell).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
 function validateHoursBackup(raw){const x=raw.data||raw;const str=v=>typeof v==='string';const ids=a=>new Set(a.map(e=>e.id)).size===a.length;if(!x||!Array.isArray(x.en)||!Array.isArray(x.pr)||!x.set||!x.pf||!x.last||!Number.isFinite(x.set.goal)||x.set.goal<1||x.set.goal>24)throw Error();if(!x.pr.every(p=>str(p.id)&&/^[a-zA-Z0-9_-]+$/.test(p.id)&&str(p.n)&&str(p.a))||!ids(x.pr)||!ids(x.en))throw Error();const totals={};for(const e of x.en){if(!str(e.id)||!/^[a-zA-Z0-9_-]+$/.test(e.id)||!str(e.d)||!/^\d{4}-\d{2}-\d{2}$/.test(e.d)||isNaN(pd(e.d))||dk(pd(e.d))!==e.d||(!str(e.t)||!e.t.trim()||e.t.length>80)||!str(e.p)||!str(e.c)||!Number.isFinite(e.h)||e.h<0.5||e.h>24)throw Error();totals[e.d]=(totals[e.d]||0)+e.h;if(totals[e.d]>24)throw Error()}if(['customTypes','hiddenTypes'].some(k=>x.set[k]!==undefined&&(!Array.isArray(x.set[k])||x.set[k].length>200||!x.set[k].every(v=>str(v)&&v.trim()&&v.length<=80))))throw Error();if(x.set.office!==undefined&&!isOffice(x.set.office))throw Error();if(!['name','emp','role'].every(k=>str(x.pf[k])))throw Error();return {init:1,pr:x.pr.map(p=>({id:p.id,n:p.n,a:p.a,...(validDistance(p,getOffice(x.set))?{route:{...p.route}}:{})})),en:x.en.map(e=>({id:e.id,d:e.d,p:e.p,t:e.t,h:e.h,c:e.c})),set:{goal:x.set.goal,showWeekends:x.set.showWeekends===true,customTypes:[...(x.set.customTypes||[])],hiddenTypes:[...(x.set.hiddenTypes||[])],office:getOffice(x.set),design:['aurora','classic'].includes(x.set.design)?'aurora':'raised',glassColor:['aurora','blue','sun','pink','green','violet'].includes(x.set.glassColor)?x.set.glassColor:'aurora',theme:['light','dark','auto','blue','red','green'].includes(x.set.theme)?x.set.theme:'auto'},pf:{name:x.pf.name,emp:x.pf.emp,role:x.pf.role},last:{t:allWorkTypes(x.set).some(t=>t[0]===x.last.t)&&!(x.set.hiddenTypes||[]).includes(x.last.t)?x.last.t:(allWorkTypes(x.set).find(t=>!(x.set.hiddenTypes||[]).includes(t[0]))||['Laskutyö'])[0],p:x.pr.some(p=>p.id===x.last.p)?x.last.p:''}}}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b)return;switch(b.dataset.a){case 'backup':backup();break;case 'csv':exportCsv(false);break;case 'weekcsv':exportCsv(true);break;case 'import':$('#restore').click();break;case 'now':wo=0;mo=0;render();break}});
-document.addEventListener('change',async ev=>{const t=ev.target;if(t.id==='design'){const previous=S.set.design;S.set.design=t.value==='aurora'?'aurora':'raised';if(!save()){S.set.design=previous;t.value=previous||'raised'}applyTheme();render(1)}if(t.name==='glass-color'){const previous=S.set.glassColor;S.set.glassColor=t.value;if(!save())S.set.glassColor=previous;applyTheme();render(1)}if(t.id==='theme'){S.set.theme=t.value;save();applyTheme()}if(t.id==='weekdate'&&t.value){wo=Math.round((mon(pd(t.value))-mon(new Date()))/604800000);const d=pd(t.value),now=new Date();mo=(d.getFullYear()-now.getFullYear())*12+d.getMonth()-now.getMonth();render(1)}if(t.id==='restore'&&t.files[0]){try{if(t.files[0].size>5000000)throw Error();const next=validateBackup(JSON.parse(await t.files[0].text()));if(!confirm('Korvataanko nykyiset tiedot varmuuskopiolla? Nykyisistä tiedoista ladataan ensin kopio.'))return;backup();const previous=S;S=next;if(!save()){S=previous;return}applyTheme();render(1);toast('Varmuuskopio palautettu')}catch(e){toast('Virheellinen varmuuskopio. Tietoja ei muutettu.')}finally{t.value=''}}});
+document.addEventListener('change',async ev=>{const t=ev.target;if(t.id==='weekdate'&&t.value){wo=Math.round((mon(pd(t.value))-mon(new Date()))/604800000);const d=pd(t.value),now=new Date();mo=(d.getFullYear()-now.getFullYear())*12+d.getMonth()-now.getMonth();render(1)}if(t.id==='restore'&&t.files[0]){try{if(t.files[0].size>5000000)throw Error();const next=validateBackup(JSON.parse(await t.files[0].text()));if(!confirm('Korvataanko nykyiset tiedot varmuuskopiolla? Nykyisistä tiedoista ladataan ensin kopio.'))return;backup();const previous=S;S=next;if(!save()){S=previous;return}applyTheme();render(1);toast('Varmuuskopio palautettu')}catch(e){toast('Virheellinen varmuuskopio. Tietoja ei muutettu.')}finally{t.value=''}}});
 document.addEventListener('keydown',ev=>{if($('#project-picker')?.open||$('#tes-editor')?.open)return;if(ev.key==='Escape'&&$('.ov')){if(allowSheetExit())closeSheet()}if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches('.row[data-a]')){ev.preventDefault();ev.target.click()}});
 const observer=new MutationObserver(()=>{document.querySelectorAll('.row[data-a]').forEach(el=>{el.tabIndex=0;el.setAttribute('role','button')});document.querySelectorAll('label').forEach(el=>{const next=el.nextElementSibling;if(next&&/^(INPUT|SELECT)$/.test(next.tagName)){if(!next.id)next.id='field-'+Math.random().toString(36).slice(2);el.htmlFor=next.id}})});observer.observe($('#app'),{childList:true,subtree:true});observer.observe($('#m'),{childList:true,subtree:true});
 // Office coordinates verified with Photon / OpenStreetMap for Jaakonkatu 2, 01620 Vantaa.
