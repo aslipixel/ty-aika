@@ -248,7 +248,7 @@ function measurementForm(fromCalculator = false, uploaded = false) {
     : '<h2>Mittaustodistus</h2>'}
     ${uploaded ? uploadManager.toolbar() : !window.nativePersist ? '<section class="card"><input type="file" id="user-form-file" hidden><button type="button" class="btn doc-action" data-form-choose>Avaa asiakirja</button><p>Word (.docx), Excel (.xlsx), PDF tai kuva. Tiedostot tallentuvat tähän selaimeen.</p><p id="upload-form-status" role="status"></p><a id="saved-email" hidden>Avaa sähköposti</a></section><section class="card" id="saved-form-list"><h3>Tallennetut tiedostot</h3></section>' : ''}
     <div id="measurement-preview" data-font="${draft.font === 'print' ? 'print' : 'hand'}">${measurementPreview(draft)}</div>
-    <section class="card">
+    <section class="card measurement-signature-entry">
       <button type="button" class="btn doc-action" data-measurement-signature="approvedBy">${measurementSignatures.approvedBy[0]}${draft.signatures?.approvedBy?.length ? ' ✓' : ''}</button>
     </section>
     <section class="card">
@@ -401,7 +401,7 @@ function openMeasurementSignature(key) {
   const dialog = document.createElement('dialog');
   dialog.className = 'tes-dialog measurement-signature-dialog';
   dialog.setAttribute('aria-labelledby', 'measurement-signature-title');
-  dialog.innerHTML = `<h2 id="measurement-signature-title">${title}</h2>
+  dialog.innerHTML = `<h2 id="measurement-signature-title" tabindex="-1" autofocus>${title}</h2>
     <p>Piirrä allekirjoitus sormella, kynällä tai hiirellä.</p>
     <canvas width="650" height="350" aria-label="Allekirjoitusalue"></canvas>
     <div class="measurement-signature-actions">
