@@ -1,5 +1,5 @@
 /* Cache only the TuntiX app shell. No addresses, requests or external APIs. */
-const CACHE='tuntix-shell-signature-layout-58';
+const CACHE='tuntix-shell-signature-layout-59';
 const INDEX=new URL('./index.html',self.registration.scope).href;
 const ASSETS=[INDEX,...['weather.js?v=3','weather.css?v=3','weather-icons/cloudy.svg','measurement.js?v=18','form-upload.js?v=2','office-document.js?v=2','vendor/formats/zip.mjs','vendor/formats/tiff.mjs','vendor/formats/heic.mjs','pdfjs/pdf.min.mjs','pdfjs/pdf.worker.min.mjs','Mittaustodistus_92986_editable.pdf','Mittaustodistus_92986.jpg','vendor/pdf-lib.min.js','vendor/fontkit.umd.min.js','fonts/Caveat-Medium.ttf','fonts/OpenSans-Regular.ttf','fonts/inter-latin.woff2','fonts/inter-cyrillic.woff2']
   .map(path=>new URL(path,self.registration.scope).href)];
