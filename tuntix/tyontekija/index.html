@@ -294,8 +294,6 @@ input,select{background:#f8faff;border:1px solid #dbe3ef;box-shadow:none}input[t
 #office-content table{border-collapse:collapse}#office-content td,#office-content th{border:1px solid var(--line);padding:3px}
 #office-content input{min-width:8em;width:100%;margin:2px 0}#office-content form{display:flex;gap:6px;margin:6px 0}
 #office-content input[readonly]{background:#edf0f4}
-.measurement-table-add{position:absolute;z-index:1;left:50%;top:18.2%;transform:translate(-50%,-100%);display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid #bfd0eb;border-radius:8px;background:#fff;color:#2054bd;font:700 20px/1 var(--font-ui);cursor:pointer}
-.measurement-table-add:hover{background:#e1e9ff}
 .measurement-scroll{overflow:auto;margin-top:8px;border:1px solid #e4eaf4}
 .measurement-photo{position:relative;container-type:inline-size}
 label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-width:830px}
@@ -329,7 +327,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
 <script src="./weather.js?v=3"></script>
-<script src="./measurement.js?v=14"></script>
+<script src="./measurement.js?v=15"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
 const TY=[['Laskutyö','#0B5BD3'],['Sovittu','#14C8B5'],['Urakka','#8B5CF6'],['Koulutus','#d98a00'],['Etumies','#0ea5e9'],['Sää','#64748b'],['Pekkanen','#ec4899'],['Sairasloma','#ef4444'],['Loma','#22a55a']],ABS=['Sää','Pekkanen','Sairasloma','Loma'];

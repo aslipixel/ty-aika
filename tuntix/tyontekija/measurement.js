@@ -185,7 +185,6 @@ function measurementPreview(draft, measurementTemplate = currentMeasurementTempl
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
         <img src="${measurementTemplate.previewUrl || measurementPreviewUrl}" alt="Alkuperäinen mittaustodistus" draggable="false">
-        ${rowKeys.length ? '<button type="button" class="measurement-table-add" data-measurement-action="add" data-measurement-table-add aria-label="Lisää työrivi: Työselitys ja määrä" title="Lisää työrivi">+</button>' : ''}
         ${Object.entries(measurementSignatures).map(([key, [label, position]]) => {
           const strokes = draft.signatures?.[key];
           if (!strokes?.length) return '';
@@ -200,6 +199,8 @@ function measurementPreview(draft, measurementTemplate = currentMeasurementTempl
       <h3>Työrivit – jatkosivu</h3>
       <div class="measurement-scroll"><table><thead><tr><th scope="col">Rivi</th>${rowKeys.map(key => `<th scope="col">${measurementColumns[key][0]}</th>`).join('')}</tr></thead>
       <tbody>${draft.rows.slice(measurementRowCount).map((row, i) => continuationRow(row, measurementRowCount + i, rowKeys)).join('')}</tbody></table></div>
+    </div>
+    <div id="measurement-more-rows"${draft.rows.length < measurementRowCount ? ' hidden' : ''}>
       <button type="button" class="btn doc-action sm" data-measurement-action="add">Lisää työrivi</button>
     </div>` : ''}
   </section>`;
@@ -564,6 +565,7 @@ document.addEventListener('input', event => {
     const index = Number(input.dataset.row);
     while (draft.rows.length <= index) draft.rows.push({});
     draft.rows[index][key] = input.value;
+    if (index === measurementRowCount - 1) $('#measurement-more-rows').hidden = false;
   } else {
     draft[key] = input.value;
   }
