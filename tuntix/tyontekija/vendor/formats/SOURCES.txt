@@ -1,0 +1,7 @@
+heic.mjs: heic-to 1.6.7, dist/csp/heic-to.min.js (includes libheif).
+Source and build instructions: https://github.com/hoppergee/heic-to
+Full corresponding package: https://registry.npmjs.org/heic-to/-/heic-to-1.6.7.tgz
+zip.mjs: fflate 0.8.3, esm/browser.js, https://github.com/101arrowz/fflate
+tiff.mjs: utif2 4.1.0 with pako 1.0.11, bundled with esbuild.
+https://registry.npmjs.org/utif2/-/utif2-4.1.0.tgz
+https://registry.npmjs.org/pako/-/pako-1.0.11.tgz
