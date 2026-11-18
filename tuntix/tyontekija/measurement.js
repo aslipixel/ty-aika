@@ -170,8 +170,9 @@ function measurementPreview(draft, measurementTemplate = currentMeasurementTempl
   function overlay(key, field, position, row) {
     const [label, max, multiline] = field, value = row === undefined ? draft[key] : draft.rows[row]?.[key];
     const attrs = `data-measurement-overlay data-measurement-field="${key}"${row === undefined ? '' : ` data-row="${row}"`}
-      aria-label="${label}${row === undefined ? '' : ', rivi ' + (row + 1)}" maxlength="${max}" style="${style(position)}"`;
-    return multiline ? `<textarea ${attrs}>${esc('\n' + (value || ''))}</textarea>` : `<input ${attrs} value="${esc(value)}">`;
+      aria-label="${label}${row === undefined ? '' : ', rivi ' + (row + 1)}" maxlength="${max}"`;
+    const control = multiline ? `<textarea ${attrs}>${esc('\n' + (value || ''))}</textarea>` : `<input ${attrs} value="${esc(value)}">`;
+    return `<span class="measurement-cell" style="${style(position)}">${control}</span>`;
   }
   return `<section class="card">
     <h3>Täytä suoraan lomakkeeseen</h3>
@@ -181,11 +182,10 @@ function measurementPreview(draft, measurementTemplate = currentMeasurementTempl
       <option value="print"${draft.font === 'print' ? ' selected' : ''}>Tavallinen</option>
     </select>
     ${draft.hiddenFields?.length ? '<button type="button" class="btn doc-action sm" data-measurement-action="restore-fields">Näytä piilotetut kentät</button>' : ''}
-    <label class="weekend-toggle" for="measurement-zoom"><input type="checkbox" id="measurement-zoom"> Suurenna lomaketta</label>
+    <label class="weekend-toggle" for="measurement-zoom"><input type="checkbox" id="measurement-zoom"${document.getElementById('measurement-zoom')?.checked ? ' checked' : ''}> Suurenna lomaketta</label>
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
         <img src="${measurementTemplate.previewUrl || measurementPreviewUrl}" alt="Alkuperäinen mittaustodistus" draggable="false">
-        ${rowKeys.length ? '<button type="button" class="measurement-table-add" data-measurement-action="add" data-measurement-table-add aria-label="Lisää työrivi: Työselitys ja määrä" title="Lisää työrivi">+</button>' : ''}
         ${Object.entries(measurementSignatures).map(([key, [label, position]]) => {
           const strokes = draft.signatures?.[key];
           if (!strokes?.length) return '';
