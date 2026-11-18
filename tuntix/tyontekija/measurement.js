@@ -185,6 +185,7 @@ function measurementPreview(draft, measurementTemplate = currentMeasurementTempl
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
         <img src="${measurementTemplate.previewUrl || measurementPreviewUrl}" alt="Alkuperäinen mittaustodistus" draggable="false">
+        ${rowKeys.length ? '<button type="button" class="measurement-table-add" data-measurement-action="add" data-measurement-table-add aria-label="Lisää työrivi: Työselitys ja määrä" title="Lisää työrivi">+</button>' : ''}
         ${Object.entries(measurementSignatures).map(([key, [label, position]]) => {
           const strokes = draft.signatures?.[key];
           if (!strokes?.length) return '';
@@ -555,6 +556,39 @@ async function exportMeasurement(action) {
   } finally {
     actions.forEach(item => item.disabled = false);
   }
+}
+
+// Some mobile browsers keep the field focused when the keyboard is dismissed.
+if (matchMedia('(any-pointer: coarse)').matches) {
+  const viewport = window.visualViewport;
+  const app = document.getElementById('app');
+  const viewportHeight = () => viewport ? viewport.height * viewport.scale : window.innerHeight;
+  let restingHeight = viewportHeight();
+  let keyboardWasOpen = false;
+
+  function updateKeyboardState() {
+    const height = viewportHeight();
+    if (!document.activeElement?.matches('[data-measurement-field]')) {
+      restingHeight = height;
+      keyboardWasOpen = false;
+      app.classList.remove('measurement-keyboard-closed');
+    } else if (restingHeight - height > 90) {
+      keyboardWasOpen = true;
+      app.classList.remove('measurement-keyboard-closed');
+    } else if (keyboardWasOpen) {
+      app.classList.add('measurement-keyboard-closed');
+    }
+  }
+
+  window.addEventListener('resize', updateKeyboardState);
+  viewport?.addEventListener('resize', updateKeyboardState);
+  document.addEventListener('focusin', () => {
+    if (app.classList.contains('measurement-keyboard-closed')) {
+      keyboardWasOpen = false;
+      app.classList.remove('measurement-keyboard-closed');
+    }
+    updateKeyboardState();
+  });
 }
 
 document.addEventListener('input', event => {

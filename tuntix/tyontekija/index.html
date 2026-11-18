@@ -315,6 +315,11 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 #measurement-continuation th,#measurement-continuation td{padding:4px;text-align:left}
 #measurement-continuation input{min-width:6em;color:#20365b;font:var(--entry-weight) 18px/1.25 var(--entry-font)}
 #measurement-continuation [data-measurement-field="work"]{min-width:14em}
+.measurement-table-add{position:absolute;z-index:1;left:50%;top:18.2%;transform:translate(-50%,-100%);display:grid;place-items:center;width:28px;height:28px;padding:0;border:1px solid #bfd0eb;border-radius:8px;background:#fff;color:#2054bd;font:700 20px/1 var(--font-ui);cursor:pointer}
+.measurement-table-add:hover{background:#e1e9ff}
+@media (any-pointer:coarse){
+  #app:not(.measurement-keyboard-closed):has([data-measurement-field]:focus) > #nav{visibility:hidden}
+}
 .measurement-photo [data-measurement-overlay]{position:absolute;margin:0;padding:0 2px;border:0;border-radius:0;background:transparent;color:#20365b;min-height:0;font:var(--entry-weight) 12px/1 var(--entry-font);font-size:var(--entry-size);resize:none}
 .measurement-photo [data-measurement-overlay]:focus-visible{outline:1px solid #2864e8;outline-offset:0;background:#ffffffb0}
 @media(max-width:400px){.nav a{font-size:10px}.nav a svg{width:20px;height:20px;padding-inline:7px}}
@@ -327,7 +332,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
 <script src="./weather.js?v=3"></script>
-<script src="./measurement.js?v=15"></script>
+<script src="./measurement.js?v=16"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
 const TY=[['Laskutyö','#0B5BD3'],['Sovittu','#14C8B5'],['Urakka','#8B5CF6'],['Koulutus','#d98a00'],['Etumies','#0ea5e9'],['Sää','#64748b'],['Pekkanen','#ec4899'],['Sairasloma','#ef4444'],['Loma','#22a55a']],ABS=['Sää','Pekkanen','Sairasloma','Loma'];
