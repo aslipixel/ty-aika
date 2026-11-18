@@ -7,7 +7,7 @@ const TuntixWeather = (() => {
   const initialPlace = { name: 'Helsinki', country: 'Suomi', latitude: 60.17, longitude: 24.94, timezone: 'Europe/Helsinki' };
   const format = new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 1 });
   const hour = 3600000;
-  let place = initialPlace;
+  let place = history.state?.weatherPlace || initialPlace;
 
   function view() {
     return `<section class="weather" id="weather" aria-labelledby="weather-title">
@@ -17,6 +17,7 @@ const TuntixWeather = (() => {
       <p class="weather-status" role="status"></p>
       <div class="weather-results"></div>
       <h3 class="weather-heading"></h3><p class="weather-hour"></p>
+      ${window.nativePersist ? '' : '<a class="weather-link weather-forecast-link" href="../saa/">Tunti- ja viikkoennuste ›</a>'}
       <div class="weather-grid"></div>
     </section>`;
   }
@@ -156,6 +157,13 @@ const TuntixWeather = (() => {
       place = point;
       const time = new Date(Math.ceil(Date.now() / hour) * hour);
       root.querySelector('.weather-heading').textContent = label(point);
+      const forecastLink = root.querySelector('.weather-forecast-link');
+      if (forecastLink) {
+        const query = new URLSearchParams({ lat: point.latitude, lon: point.longitude, place: label(point) });
+        forecastLink.href = '../saa/?' + query;
+        // Restore this city when returning from the forecast, even after a full page load.
+        history.replaceState({ ...history.state, weatherPlace: point === initialPlace ? null : point }, '');
+      }
       const timeLabel = new Intl.DateTimeFormat('fi-FI', {
         timeZone: point.timezone || 'UTC', dateStyle: 'short', timeStyle: 'short'
       }).format(time);

@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
-<link rel="stylesheet" href="./weather.css">
+<link rel="stylesheet" href="./weather.css?v=2">
 <meta name="tuntix-foreca-endpoint" content="">
 <style>
 @font-face{font-family:'Open Sans';src:url('./fonts/OpenSans-Regular.ttf') format('truetype');font-weight:400;font-display:swap}
@@ -293,7 +293,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./weather.js"></script>
+<script src="./weather.js?v=2"></script>
 <script src="./measurement.js?v=12"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';

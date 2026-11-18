@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://api.open-meteo.com; object-src 'none'; base-uri 'none'">
+  <meta name="theme-color" content="#103d50">
+  <title>Sääennuste · TuntiX</title>
+  <link rel="stylesheet" href="forecast.css">
+  <script src="forecast.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <a id="back" href="../tyontekija/#saa">‹ Takaisin säähän</a>
+      <h1>Sääennuste</h1>
+      <p id="location"></p>
+    </header>
+    <p id="status" role="status">Ladataan ennustetta…</p>
+    <button id="retry" type="button" hidden>Yritä uudelleen</button>
+    <section id="forecast" hidden>
+      <div class="switch" role="group" aria-label="Ennustejakso">
+        <button type="button" id="day-mode" aria-pressed="true">Tunneittain</button>
+        <button type="button" id="week-mode" aria-pressed="false">7 päivää</button>
+      </div>
+      <div id="date-picker"><label for="day">Päivä</label><select id="day"></select></div>
+      <h2 id="period"></h2>
+      <div id="charts"></div>
+      <table>
+        <caption class="sr-only">Lämpötila ja sademäärät</caption>
+        <thead><tr><th scope="col" id="row-label">Klo</th><th scope="col" id="temp-label">Lämpötila</th><th scope="col">Vesi<br>mm</th><th scope="col">Lumi<br>cm</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p id="units"></p>
+    </section>
+    <footer>Ennusteen lähde <a href="https://open-meteo.com/">Open-Meteo</a></footer>
+  </main>
+</body>
+</html>
