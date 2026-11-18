@@ -350,14 +350,19 @@ function openMeasurementSignature(key) {
   dialog.setAttribute('aria-labelledby', 'measurement-signature-title');
   dialog.innerHTML = `<h2 id="measurement-signature-title">${title}</h2>
     <p>Piirrä allekirjoitus sormella, kynällä tai hiirellä.</p>
-    <canvas width="650" height="138" aria-label="Allekirjoitusalue"></canvas>
+    <canvas width="650" height="350" aria-label="Allekirjoitusalue"></canvas>
     <div class="measurement-signature-actions">
       <button type="button" class="btn" data-clear>Tyhjennä</button>
       <button type="button" class="btn" data-cancel>Peruuta</button>
       <button type="button" class="btn pri" data-save>Tallenna</button>
     </div>`;
   const canvas = dialog.querySelector('canvas');
-  let strokes = validateMeasurementSignatures(S.mittaus?.signatures)[key];
+  // Existing signatures use coordinates in the printed 650 × 138 field.
+  const printHeight = 138;
+  const padHeight = canvas.height;
+  let strokes = validateMeasurementSignatures(S.mittaus?.signatures)[key].map(stroke =>
+    stroke.map(([x, y]) => [x, 0.5 + (y - 0.5) * printHeight / padHeight]));
+  let changed = false;
   let points = strokes.reduce((sum, stroke) => sum + stroke.length, 0);
   let active = null;
   const clamp = value => Math.min(1, Math.max(0, value));
@@ -372,6 +377,7 @@ function openMeasurementSignature(key) {
     if (active !== null || event.button !== 0 || points >= signaturePointLimit || strokes.length >= 240) return;
     active = event.pointerId;
     canvas.setPointerCapture(active);
+    changed = true;
     strokes.push([position(event)]);
     points++;
     drawSignature(canvas, strokes);
@@ -388,6 +394,7 @@ function openMeasurementSignature(key) {
     });
   }
   dialog.querySelector('[data-clear]').onclick = () => {
+    changed = true;
     strokes = [];
     points = 0;
     active = null;
@@ -395,12 +402,25 @@ function openMeasurementSignature(key) {
   };
   dialog.querySelector('[data-cancel]').onclick = () => dialog.close();
   dialog.querySelector('[data-save]').onclick = () => {
-    if (!strokes.length && !S.mittaus?.signatures?.[key]?.length) {
+    if (!changed) {
       dialog.close();
       return;
     }
     const previous = S.mittaus, draft = validateMeasurement(S.mittaus);
-    draft.signatures[key] = strokes;
+    // Fit tall strokes inside the printed line without flattening the handwriting.
+    const ys = strokes.flat().map(([, y]) => y * padHeight);
+    if (ys.length) {
+      const top = Math.min(...ys), bottom = Math.max(...ys);
+      const margin = 3;
+      const scale = Math.min(1, (printHeight - 2 * margin) / Math.max(1, bottom - top));
+      const offset = Math.max(margin - top * scale, Math.min(
+        (printHeight - padHeight * scale) / 2, printHeight - margin - bottom * scale));
+      draft.signatures[key] = strokes.map(stroke => stroke.map(([x, y]) => [
+        0.5 + (x - 0.5) * scale, (y * padHeight * scale + offset) / printHeight,
+      ]));
+    } else {
+      draft.signatures[key] = [];
+    }
     S.mittaus = draft;
     if (!save()) {
       S.mittaus = previous;

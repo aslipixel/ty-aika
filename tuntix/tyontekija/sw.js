@@ -1,7 +1,7 @@
 /* Cache only the TuntiX app shell. No addresses, requests or external APIs. */
-const CACHE='tuntix-shell-signature-buttons-47';
+const CACHE='tuntix-shell-signature-pad-48';
 const INDEX=new URL('./index.html',self.registration.scope).href;
-const ASSETS=[INDEX,...['measurement.js?v=11','Mittaustodistus_92986_editable.pdf','Mittaustodistus_92986.jpg','vendor/pdf-lib.min.js','vendor/fontkit.umd.min.js','fonts/Caveat-Medium.ttf','fonts/OpenSans-Regular.ttf','fonts/inter-latin.woff2','fonts/inter-cyrillic.woff2']
+const ASSETS=[INDEX,...['measurement.js?v=12','Mittaustodistus_92986_editable.pdf','Mittaustodistus_92986.jpg','vendor/pdf-lib.min.js','vendor/fontkit.umd.min.js','fonts/Caveat-Medium.ttf','fonts/OpenSans-Regular.ttf','fonts/inter-latin.woff2','fonts/inter-cyrillic.woff2']
   .map(path=>new URL(path,self.registration.scope).href)];
 self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);await Promise.all(ASSETS.map(async url=>{const response=await fetch(url,{cache:'reload'});if(!response.ok)throw Error('App download failed');await cache.put(url,response)}));await self.skipWaiting()})())});
 self.addEventListener('activate',event=>{event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('tuntix-shell-')&&key!==CACHE)await caches.delete(key);await self.clients.claim()})())});

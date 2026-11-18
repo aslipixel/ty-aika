@@ -264,8 +264,13 @@ input,select{background:#f8faff;border:1px solid #dbe3ef;box-shadow:none}input[t
 label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-width:830px}
 .measurement-photo img{display:block;width:100%;height:auto}
 .measurement-photo .measurement-signature-preview{position:absolute;pointer-events:none}
-.measurement-signature-dialog canvas{display:block;width:100%;height:clamp(85px,25vw,120px);border:1px dashed #9aaaca;border-radius:10px;background:#fff;touch-action:none;margin:10px 0}
-.measurement-signature-dialog{padding:16px;overflow:auto}
+.measurement-signature-dialog canvas{display:block;width:100%;height:auto;aspect-ratio:650/350;flex:none;border:1px dashed #9aaaca;border-radius:10px;background:#fff;touch-action:none;margin:10px 0}
+.measurement-signature-dialog{width:calc(100% - 16px);max-width:540px;padding:14px;overflow:auto}
+@media (orientation:landscape) and (max-height:500px){
+  .measurement-signature-dialog{max-width:min(540px,125vh);padding:10px 14px}
+  .measurement-signature-dialog h2,.measurement-signature-dialog p{margin:0 0 4px}
+  .measurement-signature-dialog canvas{margin:4px 0}
+}
 .measurement-signature-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:12px 8px;padding-block:6px}
 .measurement-signature-actions .btn{position:relative;flex:none;width:auto;min-height:32px;margin:0;padding:5px 10px;border-radius:9px;font-size:13px;line-height:20px}
 .measurement-signature-actions .btn::before{content:"";position:absolute;inset:-6px 0}
@@ -286,7 +291,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./measurement.js?v=11"></script>
+<script src="./measurement.js?v=12"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
 const TY=[['Laskutyö','#0B5BD3'],['Sovittu','#14C8B5'],['Urakka','#8B5CF6'],['Koulutus','#d98a00'],['Etumies','#0ea5e9'],['Sää','#64748b'],['Pekkanen','#ec4899'],['Sairasloma','#ef4444'],['Loma','#22a55a']],ABS=['Sää','Pekkanen','Sairasloma','Loma'];
