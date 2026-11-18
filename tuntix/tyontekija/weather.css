@@ -1,0 +1,46 @@
+.nav .weather-nav-icon { box-sizing: content-box; width: 22px; height: 22px; padding: 4px 8px; border-radius: 10px; }
+.nav a.on .weather-nav-icon { background: #e1e9ff; }
+@media (max-width: 420px) {
+  #nav a { min-width: 0; font-size: clamp(8px, 2.5vw, 10px); padding-inline: 1px; }
+  .nav .weather-nav-icon { width: 20px; height: 20px; padding-inline: 7px; }
+}
+.weather {
+  color: #fff;
+  background: linear-gradient(155deg, #096f8a, #124966 55%, #172c50);
+  border-radius: 24px;
+  padding: clamp(14px, 4vw, 24px);
+}
+.weather h2 { margin: 0 0 12px; color: inherit; }
+.weather form { display: flex; gap: 8px; margin-bottom: 8px; }
+.weather form input { flex: 1; min-width: 0; margin: 0; color: #14213c; }
+.weather button, .weather-link {
+  font: inherit;
+  font-weight: 650;
+  color: #fff;
+  background: #143e61;
+  border: 1px solid #a2cede;
+  border-radius: 12px;
+  padding: 8px 10px;
+  min-height: 42px;
+}
+.weather button:focus-visible, .weather a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.weather-results { display: grid; gap: 6px; }
+.weather-results button { text-align: left; }
+.weather-heading { font-size: 20px; margin: 14px 0 2px; overflow-wrap: anywhere; color: inherit; }
+.weather-hour, .weather-status { font-size: 13px; margin: 4px 0 12px; color: #ecfaff; }
+.weather-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.weather-card {
+  background: #10274688;
+  border: 1px solid #a5d9ef55;
+  border-radius: 18px;
+  padding: clamp(10px, 3vw, 16px);
+  min-width: 0;
+}
+.weather-card h4 { font-size: 13px; margin: 0; color: #eaf9ff; overflow-wrap: anywhere; }
+.weather-card p { font-size: 13px; margin: 10px 0; color: inherit; }
+.weather-card img { width: 88px; max-width: 100%; height: 70px; object-fit: contain; display: block; }
+.weather-temp { font-size: clamp(26px, 8vw, 38px); font-weight: 750; font-variant-numeric: tabular-nums; }
+.weather-card dl { font-size: 12px; margin: 8px 0 0; }
+.weather-card dl div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0 6px; margin-top: 5px; }
+.weather-card dd { margin: 0; font-weight: 650; }
+.weather-link { display: inline-flex; align-items: center; font-size: 12px; text-decoration: underline; }

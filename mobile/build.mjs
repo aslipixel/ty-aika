@@ -19,7 +19,7 @@ replaceOnce('function tesOpenPdf(doc){', 'function tesOpenPdf(doc){return window
 html = html.replace(match[0], '<script src="native.js"></script>');
 await writeFile('www/index.html', html);
 await writeFile('www/app.js', app);
-for (const path of ['measurement.js', 'Mittaustodistus_92986_editable.pdf', 'Mittaustodistus_92986.jpg', 'vendor', 'fonts']) {
+for (const path of ['weather.js', 'weather.css', 'weather-icons', 'measurement.js', 'Mittaustodistus_92986_editable.pdf', 'Mittaustodistus_92986.jpg', 'vendor', 'fonts']) {
   await cp('../tuntix/tyontekija/' + path, 'www/' + path, { recursive: true });
 }
 await build({ entryPoints: ['native.js'], bundle: true, outfile: 'www/native.js', target: 'safari15', minify: true });
