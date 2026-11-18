@@ -45,3 +45,34 @@
 .weather-card dd { margin: 0; font-weight: 650; }
 .weather-link { display: inline-flex; align-items: center; font-size: 12px; text-decoration: underline; }
 .weather .weather-forecast-link { margin-bottom: 12px; font-size: 14px; }
+.weather-forecast{background:#fff;color:#163544;border-radius:18px;padding:14px;font-variant-numeric:tabular-nums}
+.weather-forecast .forecast-heading a,.weather-forecast .forecast-source a{color:#075d7a}
+.weather-forecast .forecast-heading h2{margin:12px 0 4px}
+.weather-forecast #forecast-location{margin:0 0 16px}
+.weather-forecast .switch,.weather-forecast #date-picker:not([hidden]){display:grid;gap:3px;margin-bottom:10px}
+.weather-forecast .switch{grid-template-columns:1fr 1fr;background:#eef3f6;padding:4px;border-radius:12px}
+.weather-forecast #date-picker:not([hidden]){grid-template-columns:repeat(7,minmax(0,1fr))}
+.weather-forecast [hidden]{display:none}
+.weather-forecast button{font:inherit;cursor:pointer;color:inherit}
+.weather-forecast .switch button,.weather-forecast #date-picker button{background:#eef3f6;border:0;border-radius:8px;min-height:42px;padding:3px;font-size:14px}
+.weather-forecast #date-picker button{display:grid;align-content:center;justify-items:center;font-size:12px}
+.weather-forecast .switch button[aria-pressed=true],.weather-forecast #date-picker button[aria-pressed=true]{background:#14536a;color:white}
+.weather-forecast figure{margin:10px 0;padding:10px;background:#f3f7fa;border-radius:12px}
+.weather-forecast figcaption{font-size:.85rem;font-weight:650;display:flex;justify-content:space-between;gap:5px}
+.weather-forecast figcaption small{font-weight:400;color:#45616e}
+.weather-forecast .bars,.weather-forecast .ticks{display:grid;grid-template-columns:repeat(var(--count),minmax(0,1fr));gap:2px}
+.weather-forecast .bars{height:44px;align-items:end;margin-top:8px;border-bottom:1px solid #8ca4af}
+.weather-forecast .bar{background:#147eaa;border-radius:2px 2px 0 0}
+.weather-forecast .chance .bar{background:#16806e}
+.weather-forecast .snow .bar{background:repeating-linear-gradient(135deg,#6861a7 0 3px,#9189c5 3px 5px)}
+.weather-forecast .missing{align-self:center;text-align:center}
+.weather-forecast .ticks{font-size:9px;color:#45616e}
+.weather-forecast .week .ticks{text-align:center}
+.weather-forecast table{width:100%;border-collapse:collapse;text-align:right;font-size:clamp(11px,3.4vw,14px)}
+.weather-forecast th,.weather-forecast td{padding:6px 2px;border-bottom:1px solid #e1e9ed}
+.weather-forecast th:first-child{text-align:left}
+.weather-forecast tbody tr:nth-child(even){background:#f6f9fa}
+.weather-forecast tbody button{border:0;background:transparent;color:#075d7a;text-decoration:underline;padding:4px 0}
+.weather-forecast #units,.weather-forecast .forecast-source{font-size:.78rem;color:#4a6371}
+.weather-forecast .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.weather .weather-probability{color:white;font-size:14px;margin:0 0 10px}

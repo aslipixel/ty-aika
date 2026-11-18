@@ -2,11 +2,11 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Mav7u0sYdoEB7dqX/DeqGkMTbqwm0aD0wBNN7EPB42o=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org https://opendata.fmi.fi https://api.met.no https://api.open-meteo.com https://geocoding-api.open-meteo.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-94GCwcayBgLjKRrrCeQgKS8ttFhpVd9qcfNHCxAwtjU=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org https://opendata.fmi.fi https://api.met.no https://api.open-meteo.com https://geocoding-api.open-meteo.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
-<link rel="stylesheet" href="./weather.css?v=2">
+<link rel="stylesheet" href="./weather.css?v=3">
 <meta name="tuntix-foreca-endpoint" content="">
 <style>
 @font-face{font-family:'Open Sans';src:url('./fonts/OpenSans-Regular.ttf') format('truetype');font-weight:400;font-display:swap}
@@ -293,7 +293,7 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./weather.js?v=2"></script>
+<script src="./weather.js?v=3"></script>
 <script src="./measurement.js?v=12"></script>
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
@@ -1448,10 +1448,11 @@ if(a==='resetcatalog'){if(!confirm('Palautetaanko TES 2026 -hinnasto? Omat hinna
 });
 
 const R={kalenteri,projektit,asetukset,profiili,lisaa,lomakkeet:()=>measurementForm(),saa:()=>TuntixWeather.view()};
+if(!window.nativePersist)R['saa-ennuste']=TuntixWeather.forecastView;
 let lastRenderedRoute=null;
 function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
 if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:440,easing:'cubic-bezier(.25,.8,.25,1)'});}lastRenderedRoute=a;
-$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['lisaa','calculator','Laskurit'],['lomakkeet','document','Lomakkeet'],['saa','weather','Sää'],['profiili','user','Profiili'],['asetukset','gear','Asetukset']].map(x=>`<a href="#${x[0]}" class="${a===x[0]?'on':''}">${x[1]==='weather'?'<img class="weather-nav-icon" src="./weather-icons/cloudy.svg" alt="">':ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances();updateSlopeVolume();if(a==='saa')TuntixWeather.mount($("#weather"))}
+$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['lisaa','calculator','Laskurit'],['lomakkeet','document','Lomakkeet'],['saa','weather','Sää'],['profiili','user','Profiili'],['asetukset','gear','Asetukset']].map(x=>`<a href="#${x[0]}" class="${(a==='saa-ennuste'?'saa':a)===x[0]?'on':''}">${x[1]==='weather'?'<img class="weather-nav-icon" src="./weather-icons/cloudy.svg" alt="">':ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances();updateSlopeVolume();if(a==='saa')TuntixWeather.mount($("#weather"));if(a==='saa-ennuste')TuntixWeather.mountForecast($("#weather-forecast"))}
 addEventListener('hashchange',()=>{if($('#m .ov')){if(!allowSheetExit()){history.replaceState(null,'','#'+(lastRenderedRoute||'kalenteri'));return}closeSheet()}projectDeleteMode=false;selectedProjects.clear();render()});
 let modalInputBaseline=[],lastModalDay=null;
 const modal=(h,isDay=false)=>{const previous=$('#m .ov');const replacing=!!previous&&!previous.classList.contains('closing');const currentDay=isDay?ed.d:null;const keepScroll=replacing&&isDay&&lastModalDay===currentDay;const scrollTop=keepScroll?($('.sheet-content')?.scrollTop||0):0;$('#m').innerHTML=`<div class="ov ${replacing?'sheet-swap':'sheet-enter'}" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja"><div class="sheet-toolbar">${isDay?`<button type="button" class="sheet-control" data-a="prevday" aria-label="Edellinen päivä">‹</button><span class="sheet-date">${fd(pd(ed.d))}</span><button type="button" class="sheet-control" data-a="nextday" aria-label="Seuraava päivä">›</button>`:'<span class="sheet-date"></span>'}<button type="button" class="sheet-control sheet-done" data-a="dismisssheet" aria-label="Sulje ikkuna" title="Sulje">✓</button></div><div class="sheet-content">${h}</div></div></div>`;lastModalDay=currentDay;if(keepScroll)$('.sheet-content').scrollTop=scrollTop;modalInputBaseline=[...document.querySelectorAll('.sheet-content input,.sheet-content select')].map(x=>[x.id,x.value]);scheduleFormViewport()};
