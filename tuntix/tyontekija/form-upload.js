@@ -51,10 +51,33 @@ export function saveDraft() {
   }
 }
 
-export function view() {
-  if (officeEditor) return toolbar() + officeEditor.view();
-  if (active) return measurementForm();
+let restoring;
+export function view(id) {
+  if (id && active?.id === id) return officeEditor ? toolbar() + officeEditor.view() : measurementForm(false, true);
+  if (id) {
+    if (restoring !== id) {
+      restoring = id;
+      read('documents', id).then(record => activate(record, () => selectedDocumentId() === id))
+        .catch(() => {
+          if (selectedDocumentId() === id) {
+            clearSelection();
+            render();
+            toast('Tiedostoa ei voitu avata.');
+          }
+        }).finally(() => { if (restoring === id) restoring = null; });
+    }
+    return '<p role="status">Avataan asiakirjaa…</p>';
+  }
   return '<a class="lnk" href="#lomakkeet">‹ Lomakkeet</a><h2>Asiakirjat</h2>' + chooser();
+}
+
+function listButton(label, action) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn sm doc-action';
+  button.textContent = label;
+  button.dataset.listAction = action;
+  return button;
 }
 
 export async function refreshList() {
@@ -62,20 +85,77 @@ export async function refreshList() {
   if (!list) return;
   try {
     const names = await read('names');
-    list.querySelectorAll('.saved-document, .no-documents').forEach(el => el.remove());
+    if (!list.isConnected) return;
+    const heading = list.querySelector('h3');
+    list.replaceChildren(heading);
+    if (!names.length) {
+      list.insertAdjacentHTML('beforeend', '<p>Ei tallennettuja tiedostoja.</p>');
+      return;
+    }
+    const controls = document.createElement('div');
+    controls.className = 'document-actions';
+    const select = listButton('Valitse', 'select'), remove = listButton('Poista valitut', 'delete'),
+      cancel = listButton('Peruuta', 'cancel');
+    controls.append(select, remove, cancel);
+    list.append(controls);
+    const selected = new Set();
+    const boxes = [];
+    function selecting(on) {
+      selected.clear();
+      list.classList.toggle('choosing-files', on);
+      select.hidden = on;
+      remove.hidden = cancel.hidden = !on;
+      remove.disabled = true;
+      remove.textContent = 'Poista valitut';
+      for (const box of boxes) {
+        box.checked = false;
+      }
+    }
     for (const item of names.sort((a, b) => b.created - a.created)) {
       const row = document.createElement('div');
       row.className = 'saved-document';
+      const label = document.createElement('label'), box = document.createElement('input');
+      box.type = 'checkbox';
+      boxes.push(box);
+      box.onchange = () => {
+        if (box.checked) selected.add(item.id); else selected.delete(item.id);
+        remove.disabled = !selected.size;
+        remove.textContent = 'Poista valitut' + (selected.size ? ' (' + selected.size + ')' : '');
+      };
+      label.append(box, item.name);
       const button = document.createElement('button'), send = document.createElement('button');
       button.type = send.type = 'button';
-      button.className = 'lnk'; send.className = 'btn sm';
+      button.className = 'lnk doc-action'; send.className = 'btn sm doc-action';
       button.dataset.savedForm = send.dataset.sendForm = item.id;
       button.textContent = item.name; send.textContent = 'Lähetä';
       send.setAttribute('aria-label', 'Lähetä ' + item.name);
-      row.append(button, send);
+      row.append(label, button, send);
       list.append(row);
     }
-    if (!names.length) list.insertAdjacentHTML('beforeend', '<p class="no-documents">Ei tallennettuja tiedostoja.</p>');
+    selecting(false);
+    select.onclick = () => { selecting(true); boxes[0].focus(); };
+    cancel.onclick = () => { selecting(false); select.focus(); };
+    remove.onclick = async () => {
+      const ids = [...selected];
+      if (!ids.length || !confirm('Poistetaanko valitut tiedostot (' + ids.length + ')?')) return;
+      remove.disabled = cancel.disabled = true;
+      boxes.forEach(box => box.disabled = true);
+      try {
+        const db = await openDatabase();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(['documents', 'names'], 'readwrite');
+          for (const id of ids) {
+            tx.objectStore('documents').delete(id);
+            tx.objectStore('names').delete(id);
+          }
+          tx.oncomplete = resolve;
+          tx.onabort = () => reject(tx.error);
+        });
+        for (const id of ids) localStorage.removeItem(storagePrefix + id);
+        toast('Valitut tiedostot poistettu.');
+      } catch { toast('Poisto epäonnistui.'); }
+      await refreshList();
+    };
   } catch {
     const status = document.getElementById('upload-form-status');
     if (status) status.textContent = 'Selaimen tiedostotallennus ei ole käytettävissä.';
@@ -87,7 +167,7 @@ function chooser() {
   return `<section class="card"><h3>Avaa asiakirja</h3>
     <p>Valitse Word- tai Excel-tiedosto, mittaustodistuksen PDF tai kuva. Tiedosto ja muutokset tallentuvat tähän selaimeen.</p>
     <input type="file" id="user-form-file" accept="${supported}" hidden>
-    <button type="button" class="btn pri" data-form-choose>Valitse tiedosto</button>
+    <button type="button" class="btn doc-action pri" data-form-choose>Valitse tiedosto</button>
     <p>Word (.docx), Excel (.xlsx), PDF ja kuvat, myös HEIC ja TIFF.</p></section>
     <p id="upload-form-status" role="status"></p><a id="saved-email" hidden>Avaa sähköposti</a>
     <section class="card" id="saved-form-list"><h3>Tallennetut tiedostot</h3></section>`;
@@ -95,34 +175,57 @@ function chooser() {
 }
 
 export function toolbar() {
-  return `<section class="card">${active ? '<strong>' + esc(active.name) + '</strong>' : ''}
-    <button type="button" class="btn sm" data-form-close>Tallennetut tiedostot</button></section>`;
+  return `<section class="card document-toolbar"><h3>${esc(active.name)}</h3>
+    <div class="document-actions"><button type="button" class="btn doc-action sm" data-form-close>Tallennetut tiedostot</button>
+    <button type="button" class="btn doc-action sm" data-form-save>Tallenna</button>
+    ${officeEditor ? '<button type="button" class="btn doc-action sm" data-office-share>Lähetä</button>' :
+      '<button type="button" class="btn doc-action sm" data-measurement-action="mail" data-measurement-export>Lähetä</button>'}</div>
+    <p id="upload-form-status" role="status"></p><a id="saved-email" hidden>Avaa sähköposti</a></section>`;
 }
 
-async function activate(record) {
+async function activate(record, stillCurrent) {
+  if (!record) throw Error('Tiedostoa ei löytynyt.');
+  if (!stillCurrent()) return;
   const saved = localStorage.getItem(storagePrefix + record.id);
+  let editor, pdfTemplate, pdfSession;
   if (record.kind === 'office') {
-    const { openOfficeDocument } = await import('./office-document.js?v=1');
-    officeEditor = await openOfficeDocument(record.bytes, record.name, saved ? JSON.parse(saved) : {}, edits => {
-      try { localStorage.setItem(storagePrefix + record.id, JSON.stringify(edits)); }
-      catch { toast('Luonnosta ei voitu tallentaa. Lataa asiakirja.'); }
+    const { openOfficeDocument } = await import('./office-document.js?v=2');
+    editor = await openOfficeDocument(record.bytes, record.name, saved ? JSON.parse(saved) : {}, edits => {
+      try { localStorage.setItem(storagePrefix + record.id, JSON.stringify(edits)); return true; }
+      catch { toast('Luonnosta ei voitu tallentaa. Lataa asiakirja.'); return false; }
     });
   } else {
     const pdf = await PDFLib.PDFDocument.load(record.bytes);
-    template = { bytes: record.bytes, positions: measurementPositions(pdf), filename: pdfName(record.name),
-      previewUrl: record.preview ? URL.createObjectURL(record.preview) : measurementPreviewUrl };
-    session = { mittaus: validateMeasurement(saved ? JSON.parse(saved) : record.initial) };
+    pdfTemplate = { bytes: record.bytes, positions: measurementPositions(pdf), filename: pdfName(record.name) };
+    pdfSession = { mittaus: validateMeasurement(saved ? JSON.parse(saved) : record.initial) };
   }
+  if (!stillCurrent()) return;
+  releaseEditor();
+  if (pdfTemplate) pdfTemplate.previewUrl = record.preview ? URL.createObjectURL(record.preview) : measurementPreviewUrl;
+  template = pdfTemplate;
+  session = pdfSession;
+  officeEditor = editor;
   active = { id: record.id, name: record.name };
-  if (location.hash === '#asiakirjat') render(1);
-  else location.hash = 'asiakirjat';
+  if (selectedDocumentId() !== record.id) {
+    history.pushState({ tuntixDocument: record.id }, '', '#lomakkeet');
+  }
+  render();
+}
+
+function releaseEditor() {
+  if (template?.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(template.previewUrl);
+  session = active = template = officeEditor = null;
+}
+
+function clearSelection() {
+  history.replaceState(null, '', '#lomakkeet');
+  releaseEditor();
 }
 
 function close() {
   if (session && !saveDraft()) return;
-  if (template?.previewUrl?.startsWith('blob:')) URL.revokeObjectURL(template.previewUrl);
-  session = active = template = officeEditor = null;
-  if (location.hash === '#asiakirjat') render(1);
+  if (officeEditor && !officeEditor.save()) return;
+  history.back();
 }
 
 function pdfName(name) { return name.replace(/\.[^.]+$/, '') + '.pdf'; }
@@ -300,7 +403,7 @@ async function importFile(file) {
   let record = await read('documents', id);
   if (!record) {
     if (/\.(docx|xlsx)$/i.test(file.name)) {
-      const { openOfficeDocument } = await import('./office-document.js?v=1');
+      const { openOfficeDocument } = await import('./office-document.js?v=2');
       const editor = await openOfficeDocument(bytes, file.name, {}, () => {});
       record = editor.picture
         ? { ...await prepare(editor.picture, await editor.picture.arrayBuffer()), id, name: file.name }
@@ -319,7 +422,8 @@ async function openFromChooser(operation) {
   status.textContent = 'Avataan lomaketta…';
   try {
     const record = await operation();
-    if (status.isConnected) await activate(record);
+    if (!record) throw Error('Tiedostoa ei löytynyt.');
+    await activate(record, () => status.isConnected);
   } catch (error) {
     console.warn("Asiakirjan avaaminen epäonnistui", error);
     status.textContent = /^(Tallenna|Jos lomake|Tiedostoa ei voitu avata kuvana|Lomakkeen kenttiä|Asiakirjan rakenne|Laskentataulukkoa)/.test(error.message)
@@ -329,7 +433,15 @@ async function openFromChooser(operation) {
 
 document.addEventListener('click', event => {
 
-  if (event.target.closest('[data-form-close]')) close();
+  if (event.target.closest('[data-form-close]') || (selectedDocumentId() && event.target.closest('#nav a[href="#lomakkeet"]'))) {
+    event.preventDefault();
+    close();
+    return;
+  }
+  if (event.target.closest('[data-form-save]') && (officeEditor ? officeEditor.save() : saveDraft())) {
+    document.getElementById('upload-form-status').textContent = 'Muutokset tallennettu.';
+  }
+  if (officeEditor && event.target.closest('[data-office-share]')) sendSaved(active.id);
   const send = event.target.closest('[data-send-form]');
   if (send) sendSaved(send.dataset.sendForm);
   if (officeEditor && event.target.closest('[data-office-download]')) {
@@ -352,8 +464,10 @@ async function sendSaved(id) {
     const record = await read('documents', id);
     const saved = localStorage.getItem(storagePrefix + id);
     let bytes, name = record.name, type;
-    if (record.kind === 'office') {
-      const { openOfficeDocument } = await import('./office-document.js?v=1');
+    if (officeEditor && active?.id === id) {
+      bytes = officeEditor.bytes(); type = officeEditor.mime;
+    } else if (record.kind === 'office') {
+      const { openOfficeDocument } = await import('./office-document.js?v=2');
       const editor = await openOfficeDocument(record.bytes, name, saved ? JSON.parse(saved) : {}, () => {});
       bytes = editor.bytes(); type = editor.mime;
     } else {
@@ -372,4 +486,10 @@ async function sendSaved(id) {
   finally { busy = false; }
 }
 
-window.addEventListener('hashchange', () => { if (location.hash !== '#asiakirjat' && active) close(); });
+window.addEventListener('popstate', () => {
+  if (active && selectedDocumentId() !== active.id) releaseEditor();
+  if (location.hash === '#lomakkeet') render();
+});
+window.addEventListener('hashchange', () => {
+  if (active && selectedDocumentId() !== active.id) releaseEditor();
+});

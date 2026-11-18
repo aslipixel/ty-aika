@@ -129,7 +129,7 @@ export async function openOfficeDocument(bytes, name, edits, persist) {
       sheet.onchange=()=>{sheetIndex=Number(sheet.value);firstRow=firstCol=1;refresh();};
       const go=document.createElement('form');
       const position=document.createElement('input');position.setAttribute('aria-label','Solun osoite');position.value=columnName(firstCol)+firstRow;
-      const button=document.createElement('button');button.className='btn sm';button.textContent='Siirry soluun';
+      const button=document.createElement('button');button.className='btn sm doc-action';button.textContent='Siirry soluun';
       go.onsubmit=e=>{e.preventDefault();const a=address.exec(position.value.trim().toUpperCase());
         if (!a || columnNumber(a[1])>16384 || +a[2]>1048576) {toast('Anna solun osoite, esimerkiksi B12.');return;}
         firstCol=columnNumber(a[1]);firstRow=+a[2];refresh();};
@@ -186,10 +186,11 @@ export async function openOfficeDocument(bytes, name, edits, persist) {
     : sheets.length === 1 && !model(0).cells.size);
   return {
     name,mime,
+    save() { return persist(Object.fromEntries(changes)); },
     picture: hasOnlyPicture ? new File([files[pictures[0]]], pictures[0]) : null,
     view() {
       queueMicrotask(()=>{const container=document.getElementById('office-content');if(container)draw(container);});
-      return '<section class="card"><h3>'+(word?'Muokkaa Word-asiakirjaa':'Muokkaa Excel-taulukkoa')+'</h3><div id="office-content"></div></section><button type="button" class="btn pri" data-office-download>Lataa muokattu tiedosto</button>';
+      return '<section class="card"><h3>'+(word?'Muokkaa Word-asiakirjaa':'Muokkaa Excel-taulukkoa')+'</h3><div id="office-content"></div></section><button type="button" class="btn doc-action pri" data-office-download>Lataa muokattu tiedosto</button>';
     },
     bytes() {
       if(!changes.size)return bytes;

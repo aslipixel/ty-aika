@@ -93,7 +93,7 @@ let uploadManager;
 let loadingUploads;
 
 function measurementState() {
-  return location.hash === '#asiakirjat' && uploadManager?.session || S;
+  return selectedDocumentId() && uploadManager?.session || S;
 }
 
 function saveMeasurement() {
@@ -129,7 +129,7 @@ async function loadMeasurementTemplate() {
   } finally {
     measurementLoading = false;
     const preview = document.getElementById('measurement-preview');
-    if (!preview || location.hash === '#asiakirjat') return;
+    if (!preview || selectedDocumentId()) return;
     preview.innerHTML = measurementPreview(measurementState().mittaus || { rows: [] });
     document.querySelectorAll('[data-measurement-export]').forEach(button => {
       button.disabled = !measurementTemplate;
@@ -161,7 +161,7 @@ function continuationRow(row, index, keys) {
 
 function measurementPreview(draft, measurementTemplate = currentMeasurementTemplate()) {
   if (!measurementTemplate) return measurementLoadError
-    ? '<div class="card"><p role="status">Lomakkeen lataaminen epäonnistui.</p><button type="button" class="btn" data-measurement-action="retry">Yritä uudelleen</button></div>'
+    ? '<div class="card"><p role="status">Lomakkeen lataaminen epäonnistui.</p><button type="button" class="btn doc-action" data-measurement-action="retry">Yritä uudelleen</button></div>'
     : '<div class="card"><p role="status">Ladataan mittaustodistusta…</p></div>';
   const { positions } = measurementTemplate;
   const rowKeys = visibleMeasurementFields(draft, 'rows');
@@ -180,7 +180,7 @@ function measurementPreview(draft, measurementTemplate = currentMeasurementTempl
       <option value="hand"${draft.font !== 'print' ? ' selected' : ''}>Käsinkirjoitettu</option>
       <option value="print"${draft.font === 'print' ? ' selected' : ''}>Tavallinen</option>
     </select>
-    ${draft.hiddenFields?.length ? '<button type="button" class="btn sm" data-measurement-action="restore-fields">Näytä piilotetut kentät</button>' : ''}
+    ${draft.hiddenFields?.length ? '<button type="button" class="btn doc-action sm" data-measurement-action="restore-fields">Näytä piilotetut kentät</button>' : ''}
     <label class="weekend-toggle" for="measurement-zoom"><input type="checkbox" id="measurement-zoom"> Suurenna lomaketta</label>
     <div class="measurement-scroll" tabindex="0" aria-label="Vieritettävä mittaustodistus">
       <div class="measurement-photo">
@@ -200,34 +200,38 @@ function measurementPreview(draft, measurementTemplate = currentMeasurementTempl
       <h3>Työrivit – jatkosivu</h3>
       <div class="measurement-scroll"><table><thead><tr><th scope="col">Rivi</th>${rowKeys.map(key => `<th scope="col">${measurementColumns[key][0]}</th>`).join('')}</tr></thead>
       <tbody>${draft.rows.slice(measurementRowCount).map((row, i) => continuationRow(row, measurementRowCount + i, rowKeys)).join('')}</tbody></table></div>
-      <button type="button" class="btn sm" data-measurement-action="add">+ Lisää työrivi</button>
+      <button type="button" class="btn doc-action sm" data-measurement-action="add">Lisää työrivi</button>
     </div>` : ''}
   </section>`;
 }
 
 function currentMeasurementTemplate() {
-  return location.hash === '#asiakirjat' ? uploadManager?.template : measurementTemplate;
+  return selectedDocumentId() ? uploadManager?.template : measurementTemplate;
 }
 
 function openUploadManager() {
-  return loadingUploads ||= import('./form-upload.js?v=1').then(module => uploadManager = module).catch(error => {
+  return loadingUploads ||= import('./form-upload.js?v=2').then(module => uploadManager = module).catch(error => {
     loadingUploads = null;
     throw error;
   });
 }
 
+function selectedDocumentId() {
+  return location.hash === '#lomakkeet' && history.state?.tuntixDocument;
+}
+
 function documentLibrary() {
-  if (uploadManager) return uploadManager.view();
+  if (uploadManager) return uploadManager.view(selectedDocumentId());
   openUploadManager().then(() => {
     if ($('#upload-loading')) render(1);
   }).catch(() => {
-    if ($('#upload-loading')) $('#upload-loading').innerHTML = '<button class="btn" data-measurement-action="load-uploads">Yritä uudelleen</button>';
+    if ($('#upload-loading')) $('#upload-loading').innerHTML = '<button class="btn doc-action" data-measurement-action="load-uploads">Yritä uudelleen</button>';
   });
   return '<h2>Asiakirjat</h2><p id="upload-loading" role="status">Ladataan…</p>';
 }
 
-function measurementForm(fromCalculator = false) {
-  const uploaded = location.hash === '#asiakirjat';
+function measurementForm(fromCalculator = false, uploaded = false) {
+  if (!uploaded && selectedDocumentId()) return documentLibrary();
   const template = currentMeasurementTemplate();
   if (!uploaded && !template && !measurementLoadError) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadMeasurementTemplate, { once: true });
@@ -238,21 +242,21 @@ function measurementForm(fromCalculator = false) {
     queueMicrotask(() => openUploadManager().then(module => module.refreshList()).catch(() => {}));
   }
   return `${fromCalculator
-    ? '<div class="tes-page-toolbar"><h2>Urakkaselitys</h2><button type="button" class="btn sm" data-tes="calculator">Takaisin</button></div><h3>Mittaustodistus</h3>'
+    ? '<div class="tes-page-toolbar"><h2>Urakkaselitys</h2><button type="button" class="btn doc-action sm" data-tes="calculator">Takaisin</button></div><h3>Mittaustodistus</h3>'
     : '<h2>Mittaustodistus</h2>'}
-    ${uploaded ? uploadManager.toolbar() : !window.nativePersist ? '<section class="card"><input type="file" id="user-form-file" hidden><button type="button" class="btn" data-form-choose>Avaa asiakirja</button><p>Word (.docx), Excel (.xlsx), PDF tai kuva. Tiedostot tallentuvat tähän selaimeen.</p><p id="upload-form-status" role="status"></p><a id="saved-email" hidden>Avaa sähköposti</a></section><section class="card" id="saved-form-list"><h3>Tallennetut tiedostot</h3></section>' : ''}
+    ${uploaded ? uploadManager.toolbar() : !window.nativePersist ? '<section class="card"><input type="file" id="user-form-file" hidden><button type="button" class="btn doc-action" data-form-choose>Avaa asiakirja</button><p>Word (.docx), Excel (.xlsx), PDF tai kuva. Tiedostot tallentuvat tähän selaimeen.</p><p id="upload-form-status" role="status"></p><a id="saved-email" hidden>Avaa sähköposti</a></section><section class="card" id="saved-form-list"><h3>Tallennetut tiedostot</h3></section>' : ''}
     <div id="measurement-preview" data-font="${draft.font === 'print' ? 'print' : 'hand'}">${measurementPreview(draft)}</div>
     <section class="card">
-      <button type="button" class="btn" data-measurement-signature="approvedBy">${measurementSignatures.approvedBy[0]}${draft.signatures?.approvedBy?.length ? ' ✓' : ''}</button>
+      <button type="button" class="btn doc-action" data-measurement-signature="approvedBy">${measurementSignatures.approvedBy[0]}${draft.signatures?.approvedBy?.length ? ' ✓' : ''}</button>
     </section>
     <section class="card">
       <h3>Valmis mittaustodistus</h3>
-      ${!window.nativePersist && !uploaded ? '<button type="button" class="btn" data-measurement-action="save-copy">Tallenna tiedosto</button>' : ''}
-      <button type="button" class="btn pri" data-measurement-action="download" data-measurement-export${template ? '' : ' disabled'}>Lataa täytettävä PDF</button>
-      <button type="button" class="btn" data-measurement-action="mail" data-measurement-export${template ? '' : ' disabled'}>Lähetä sähköpostilla</button>
+      ${!window.nativePersist && !uploaded ? '<button type="button" class="btn doc-action" data-measurement-action="save-copy">Tallenna tiedosto</button>' : ''}
+      <button type="button" class="btn doc-action pri" data-measurement-action="download" data-measurement-export${template ? '' : ' disabled'}>Lataa täytettävä PDF</button>
+      ${uploaded ? '' : `<button type="button" class="btn doc-action" data-measurement-action="mail" data-measurement-export${template ? '' : ' disabled'}>Lähetä sähköpostilla</button>`}
       <p id="measurement-status" role="status" hidden></p>
       <a id="measurement-email" href="mailto:?subject=Mittaustodistus" hidden>Avaa sähköposti</a>
-      <button type="button" class="btn del" data-measurement-action="reset">Tyhjennä lomake</button>
+      <button type="button" class="btn doc-action del" data-measurement-action="reset">Tyhjennä lomake</button>
     </section>`;
 }
 
@@ -399,9 +403,9 @@ function openMeasurementSignature(key) {
     <p>Piirrä allekirjoitus sormella, kynällä tai hiirellä.</p>
     <canvas width="650" height="350" aria-label="Allekirjoitusalue"></canvas>
     <div class="measurement-signature-actions">
-      <button type="button" class="btn" data-clear>Tyhjennä</button>
-      <button type="button" class="btn" data-cancel>Peruuta</button>
-      <button type="button" class="btn pri" data-save>Tallenna</button>
+      <button type="button" class="btn doc-action" data-clear>Tyhjennä</button>
+      <button type="button" class="btn doc-action" data-cancel>Peruuta</button>
+      <button type="button" class="btn doc-action pri" data-save>Tallenna</button>
     </div>`;
   const canvas = dialog.querySelector('canvas');
   // Existing signatures use coordinates in the printed 650 × 138 field.
@@ -507,7 +511,8 @@ function addMeasurementRow() {
 async function exportMeasurement(action) {
   const measurementTemplate = currentMeasurementTemplate();
   if (!measurementTemplate) return;
-  const status = $('#measurement-status'), mail = $('#measurement-email');
+  const toolbar = action === 'mail' ? document.querySelector('.document-toolbar') : null;
+  const status = toolbar?.querySelector('[role=status]') || $('#measurement-status'), mail = toolbar?.querySelector('a') || $('#measurement-email');
   status.hidden = false;
   status.textContent = 'Luodaan PDF-tiedostoa…';
   mail.hidden = true;
@@ -520,7 +525,8 @@ async function exportMeasurement(action) {
       await window.nativeSharePdf(name, bytes);
       status.textContent = 'Valitse tallennus, tulostus tai sähköposti laitteen jakovalikosta.';
     } else if (action === 'mail') {
-      const share = { title: 'Mittaustodistus', files: [new File([bytes], name, { type })] };
+      mail.href = 'mailto:?subject=' + encodeURIComponent(name);
+      const share = { title: name, files: [new File([bytes], name, { type })] };
       if (navigator.canShare?.(share)) {
         try {
           await navigator.share(share);
