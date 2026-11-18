@@ -351,10 +351,10 @@ function openMeasurementSignature(key) {
   dialog.innerHTML = `<h2 id="measurement-signature-title">${title}</h2>
     <p>Piirrä allekirjoitus sormella, kynällä tai hiirellä.</p>
     <canvas width="650" height="138" aria-label="Allekirjoitusalue"></canvas>
-    <button type="button" class="btn sm" data-clear>Tyhjennä</button>
-    <div class="g2">
+    <div class="measurement-signature-actions">
+      <button type="button" class="btn" data-clear>Tyhjennä</button>
       <button type="button" class="btn" data-cancel>Peruuta</button>
-      <button type="button" class="btn pri" data-save>Tallenna allekirjoitus</button>
+      <button type="button" class="btn pri" data-save>Tallenna</button>
     </div>`;
   const canvas = dialog.querySelector('canvas');
   let strokes = validateMeasurementSignatures(S.mittaus?.signatures)[key];
