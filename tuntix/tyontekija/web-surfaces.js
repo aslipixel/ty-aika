@@ -1,0 +1,152 @@
+// Website chrome shared by the existing calculators, document editors and settings.
+(() => {
+  'use strict';
+  const icon = name => window.Teras.icon(name);
+  const routeTitles = {
+    projektit: 'Projektit', lisaa: 'Laskurit', lomakkeet: 'Lomakkeet',
+    asiakirjat: 'Asiakirjat', profiili: 'Profiili', asetukset: 'Asetukset'
+  };
+  const calculatorIcons = {
+    calculator: 'calculator', concrete: 'box', 'slope-volume': 'triangle-right',
+    trapezoid: 'ruler', 'contract-description': 'file-text'
+  };
+  const calculatorButton = (action, label) => `<button type="button" class="btn calculator-link" data-tes="${esc(action)}">
+    <span class="calculator-icon" aria-hidden="true">${icon(calculatorIcons[action])}</span>
+    <span class="calculator-name">${esc(label)}</span><span class="calculator-chevron" aria-hidden="true">${icon('chevron-right')}</span></button>`;
+
+  function toolbarButton(name, text, listener) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'teras-icon-button';
+    button.setAttribute('aria-label', text);
+    button.title = text;
+    button.innerHTML = icon(name);
+    button.addEventListener('click', listener);
+    return button;
+  }
+
+  function goHome() { location.hash = 'kalenteri'; }
+
+  function refresh(route, view) {
+    delete view.dataset.surface;
+    if (!Object.hasOwn(routeTitles, route)) return;
+    view.dataset.surface = route;
+    let bar = view.querySelector('.tes-page-toolbar');
+    if (!bar) {
+      const heading = view.querySelector(':scope > h2') || document.createElement('h2');
+      if (!heading.textContent) heading.textContent = routeTitles[route];
+      bar = document.createElement('div');
+      view.prepend(bar);
+      bar.append(heading);
+    }
+    bar.classList.add('teras-page-toolbar');
+    const existingDone = bar.querySelector('button');
+    if (existingDone) {
+      existingDone.className = 'teras-icon-button teras-done';
+      existingDone.innerHTML = icon('check');
+      existingDone.setAttribute('aria-label', 'Valmis, palaa laskureihin');
+    }
+    bar.insertBefore(toolbarButton('house', 'Etusivu', goHome), existingDone);
+    if (!existingDone) {
+      const done = toolbarButton('check', 'Valmis', () => {
+        if (view.querySelector('.document-toolbar [data-form-close]')) view.querySelector('.document-toolbar [data-form-close]').click();
+        else if (route === 'asiakirjat') location.hash = 'lomakkeet';
+        else goHome();
+      });
+      done.classList.add('teras-done');
+      bar.append(done);
+    }
+  }
+  window.TerasSurfaces = { refresh, init() { calculatorLink = calculatorButton; } };
+
+  const tesActions = {
+    pdf: 'download', catalogue: 'list', newitem: 'plus', edititem: 'pencil', deleteitem: 'trash-2',
+    addline: 'plus', removeline: 'trash-2', clearcalc: 'trash-2', export: 'download',
+    import: 'upload', resetcatalog: 'undo-2', saveitem: 'check', closeeditor: 'check'
+  };
+  const settingsActions = {
+    aboutapp: 'info', saveoffice: 'check', backup: 'download', import: 'upload', csv: 'download',
+    dismisssheet: 'check', retryroute: 'refresh-cw'
+  };
+
+  function decorate(button) {
+    if (button.classList.contains('teras-icon-button') || button.querySelector('svg')) return;
+    const name = tesActions[button.dataset.tes] || settingsActions[button.dataset.a];
+    if (!name) return;
+    const label = button.textContent.trim().replace(/^[+✎↓↑✓×]\s*/, '');
+    if (label) button.textContent = label;
+    else button.textContent = '';
+    button.insertAdjacentHTML('afterbegin', icon(name));
+    button.classList.add('teras-decorated');
+  }
+
+  function finishRateEditor(dialog, home) {
+    // A dismissed confirmation or invalid value leaves the editor open.
+    if (tesEditorValues() !== dialog._baseline) {
+      if (tesEditing && !confirm('Vahvistetaanko hinnan muutokset?')) return;
+      tesSaveItem();
+      if (dialog.isConnected) return;
+    } else tesCloseEditor();
+    if (home) goHome();
+  }
+
+  function decorateDialog(dialog) {
+    if (dialog.matches('.teras-dialog') || dialog.querySelector('.teras-dialog-home')) return;
+    if (dialog.id === 'tes-editor') {
+      const close = dialog.querySelector('[data-tes="closeeditor"]');
+      const check = toolbarButton('check', 'Valmis', () => finishRateEditor(dialog, false));
+      check.classList.add('teras-done');
+      close.replaceWith(check);
+      const home = toolbarButton('house', 'Etusivu', () => finishRateEditor(dialog, true));
+      home.classList.add('teras-dialog-home');
+      check.before(home);
+      dialog.querySelector('[data-tes="saveitem"]')?.remove();
+      const submit = event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        finishRateEditor(dialog, false);
+      };
+      dialog.addEventListener('cancel', submit, true);
+      dialog.addEventListener('submit', submit, true);
+    } else if (dialog.classList.contains('measurement-signature-dialog')) {
+      const heading = dialog.querySelector('h2');
+      const bar = document.createElement('div');
+      bar.className = 'teras-signature-head';
+      heading.before(bar);
+      const home = toolbarButton('house', 'Etusivu', () => {
+        dialog.querySelector('[data-save]').click();
+        if (!dialog.open) goHome();
+      });
+      home.classList.add('teras-dialog-home');
+      bar.append(heading, home);
+    }
+  }
+
+  function decorateSheet(toolbar) {
+    if (toolbar.querySelector('.teras-dialog-home')) return;
+    const close = toolbar.querySelector('[data-a="dismisssheet"]');
+    if (!close) return;
+    const home = toolbarButton('house', 'Etusivu', () => {
+      if (!allowSheetExit()) return;
+      closeSheet();
+      goHome();
+    });
+    home.classList.add('teras-dialog-home');
+    close.before(home);
+  }
+
+  // Imported forms, catalogue search results and dialogs are inserted between page renders.
+  const controls = 'button[data-tes], button[data-a]';
+  function inspect(root) {
+    if (!(root instanceof HTMLElement)) return;
+    if (root.matches('dialog')) decorateDialog(root);
+    if (root.matches('.sheet-toolbar')) decorateSheet(root);
+    root.querySelectorAll('.sheet-toolbar').forEach(decorateSheet);
+    if (root.matches(controls)) decorate(root);
+    root.querySelectorAll(controls).forEach(decorate);
+  }
+  const observer = new MutationObserver(records => {
+    for (const record of records) for (const node of record.addedNodes) inspect(node);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+})();

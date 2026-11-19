@@ -2,12 +2,10 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XU1uJOUx7Z1F3dOn74fmpGY/b6gysYv6piAr1shibMg=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org https://opendata.fmi.fi https://api.met.no https://api.open-meteo.com https://geocoding-api.open-meteo.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-z3n3mk7aBmX739aS9VZ81N6HLfdVa73VhFr0zFF1eUI=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
-<link rel="stylesheet" href="./weather.css?v=3">
-<meta name="tuntix-foreca-endpoint" content="">
 <style>
 @font-face{font-family:'Open Sans';src:url('./fonts/OpenSans-Regular.ttf') format('truetype');font-weight:400;font-display:swap}
 @font-face{font-family:Caveat;src:url('./fonts/Caveat-Medium.ttf') format('truetype');font-style:normal;font-weight:500;font-display:swap}
@@ -340,6 +338,10 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 }
 @media(max-width:400px){.nav a{font-size:10px}.nav a svg{width:20px;height:20px;padding-inline:7px}}
 </style>
+<!-- web-only -->
+<link rel="stylesheet" href="./teras/dashboard.css">
+<link rel="stylesheet" href="./web-surfaces.css">
+<!-- /web-only -->
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14C8B5"/><stop offset=".55" stop-color="#2a8ad8"/><stop offset="1" stop-color="#8B5CF6"/></linearGradient>
@@ -347,8 +349,14 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <div id="app"><main id="v"></main><nav class="nav" id="nav"></nav></div>
 <div id="m"></div><div id="t"></div>
 <script src="./vendor/pdf-lib.min.js" defer></script>
-<script src="./weather.js?v=3"></script>
 <script src="./measurement.js?v=18"></script>
+<!-- web-only -->
+<script src="./teras/icons.js"></script>
+<script src="./teras/calendar.js"></script>
+<script src="./web-projects.js"></script>
+<script src="./web-entry.js"></script>
+<script src="./web-surfaces.js"></script>
+<!-- /web-only -->
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
 const TY=[['Laskutyö','#0B5BD3'],['Sovittu','#14C8B5'],['Urakka','#8B5CF6'],['Koulutus','#d98a00'],['Etumies','#0ea5e9'],['Sää','#64748b'],['Pekkanen','#ec4899'],['Sairasloma','#ef4444'],['Loma','#22a55a']],ABS=['Sää','Pekkanen','Sairasloma','Loma'];
@@ -388,8 +396,8 @@ function profiili(){const n=new Date(),y=String(n.getFullYear()),m=dk(n).slice(0
 const days=t=>new Set(S.en.filter(e=>e.t===t&&e.d.startsWith(y)).map(e=>e.d)).size;
 return `<div class="card" style="text-align:center"><div class="big">${esc((S.pf.name||'T')[0].toUpperCase())}</div><h2 style="margin:0">${esc(S.pf.name||'Oma profiili')}</h2><p>${esc([S.pf.role,S.pf.emp].filter(Boolean).join(' · '))}</p></div>
 <div class="card"><label style="margin-top:0">Nimi</label><input data-p="name" value="${esc(S.pf.name)}" placeholder="Etunimi Sukunimi"><label>Työnantaja</label><input data-p="emp" value="${esc(S.pf.emp)}" placeholder="Yrityksen nimi"><label>Ammatti / tehtävä</label><input data-p="role" value="${esc(S.pf.role)}" placeholder="Esim. kirvesmies"></div>
-<div class="card"><h3>${MO[n.getMonth()]}: ${fh(tot)}</h3>${Object.keys(by).map(t=>`<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(t)}</span><b>${fh(by[t])}</b></div><div class="prog" style="margin:3px 0"><i style="width:${by[t]/tot*100}%;background:${col(t)}"></i></div></div>`).join('')||'<p>Ei kirjauksia tässä kuussa.</p>'}</div>
-<div class="card"><h3>Poissaolot vuonna ${y}</h3><div class="g2">${ABS.map(t=>`<div class="stat"><b>${days(t)} pv</b><span>${esc(t)}</span></div>`).join('')}</div></div>`}
+<div class="card"><h3>${MO[n.getMonth()]}: ${fh(tot)}</h3>${Object.keys(by).map(t=>`<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(window.WebTypes?.label(t) ?? t)}</span><b>${fh(by[t])}</b></div><div class="prog" style="margin:3px 0"><i style="width:${by[t]/tot*100}%;background:${col(t)}"></i></div></div>`).join('')||'<p>Ei kirjauksia tässä kuussa.</p>'}</div>
+<div class="card"><h3>Poissaolot vuonna ${y}</h3><div class="g2">${ABS.map(t=>`<div class="stat"><b>${days(t)} pv</b><span>${esc(window.WebTypes?.label(t) ?? t)}</span></div>`).join('')}</div></div>`}
 /* Offline TES price catalogue. Official base rates remain separate from edits. */
 const TES_BASE={
   "schema": 1,
@@ -1485,15 +1493,24 @@ if(a==='import')$('#tes-import').click();
 if(a==='resetcatalog'){if(!confirm('Palautetaanko TES 2026 -hinnasto? Omat hinnastomuutokset poistuvat, laskelmat säilyvät.'))return;if(tesPersist(s=>s.catalog=null)){tesSelected='';render(1)}}
 });
 
-const R={kalenteri,projektit,asetukset,profiili,lisaa,lomakkeet:()=>measurementForm(),saa:()=>TuntixWeather.view()};
-if(!window.nativePersist){
-  R['saa-ennuste']=TuntixWeather.forecastView;
+const R={kalenteri,projektit,asetukset,profiili,lisaa,lomakkeet:()=>measurementForm()};
+if(window.nativePersist){
+  R.saa=()=>TuntixWeather.view();
+}else{
   R.asiakirjat=documentLibrary;
+  R.kalenteri=Teras.calendar;
+  R.projektit=TuntixProjects.view;
 }
 let lastRenderedRoute=null;
-function render(k){const r=location.hash.slice(1),f=R[r]||kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
+function render(k){const r=location.hash.slice(1),f=R[r]||R.kalenteri,y=scrollY;$('#v').innerHTML=f();const a=R[r]?r:'kalenteri';
 if(lastRenderedRoute!==null&&lastRenderedRoute!==a&&!matchMedia('(prefers-reduced-motion: reduce)').matches){const view=$('#v');view.getAnimations?.().forEach(animation=>animation.cancel());view.animate?.([{opacity:0,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:440,easing:'cubic-bezier(.25,.8,.25,1)'});}lastRenderedRoute=a;
-$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['lisaa','calculator','Laskurit'],['lomakkeet','document','Lomakkeet'],['saa','weather','Sää'],['profiili','user','Profiili'],['asetukset','gear','Asetukset']].map(x=>`<a href="#${x[0]}" class="${(a==='saa-ennuste'?'saa':a==='asiakirjat'?'lomakkeet':a)===x[0]?'on':''}">${x[1]==='weather'?'<img class="weather-nav-icon" src="./weather-icons/cloudy.svg" alt="">':ic(x[1])}${x[2]}</a>`).join('');scrollTo(0,k?y:0);refreshDistances();updateSlopeVolume();if(a==='saa')TuntixWeather.mount($("#weather"));if(a==='saa-ennuste')TuntixWeather.mountForecast($("#weather-forecast"))}
+if(window.nativePersist){
+$('#nav').innerHTML=[['kalenteri','cal','Kalenteri'],['projektit','site','Projektit'],['lisaa','calculator','Laskurit'],['lomakkeet','document','Lomakkeet'],['saa','weather','Sää'],['profiili','user','Profiili'],['asetukset','gear','Asetukset']].map(x=>`<a href="#${x[0]}" class="${(a==='saa-ennuste'?'saa':a==='asiakirjat'?'lomakkeet':a)===x[0]?'on':''}">${x[1]==='weather'?'<img class="weather-nav-icon" src="./weather-icons/cloudy.svg" alt="">':ic(x[1])}${x[2]}</a>`).join('');
+}else{
+  $('#nav').innerHTML=Teras.navigation(a);
+  TerasSurfaces.refresh(a,$('#v'));
+}
+scrollTo(0,k?y:0);refreshDistances();updateSlopeVolume();if(window.nativePersist&&a==='saa')TuntixWeather.mount($('#weather'))}
 addEventListener('hashchange',()=>{if($('#m .ov')){if(!allowSheetExit()){history.replaceState(null,'','#'+(lastRenderedRoute||'kalenteri'));return}closeSheet()}render()});
 let modalInputBaseline=[],lastModalDay=null;
 const modal=(h,isDay=false)=>{const previous=$('#m .ov');const replacing=!!previous&&!previous.classList.contains('closing');const currentDay=isDay?ed.d:null;const keepScroll=replacing&&isDay&&lastModalDay===currentDay;const scrollTop=keepScroll?($('.sheet-content')?.scrollTop||0):0;$('#m').innerHTML=`<div class="ov ${replacing?'sheet-swap':'sheet-enter'}" data-a="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Muokkaa tietoja"><div class="sheet-toolbar">${isDay?`<button type="button" class="sheet-control" data-a="prevday" aria-label="Edellinen päivä">‹</button><span class="sheet-date">${fd(pd(ed.d))}</span><button type="button" class="sheet-control" data-a="nextday" aria-label="Seuraava päivä">›</button>`:'<span class="sheet-date"></span>'}<button type="button" class="sheet-control sheet-done" data-a="dismisssheet" aria-label="Sulje ikkuna" title="Sulje">✓</button></div><div class="sheet-content">${h}</div></div></div>`;lastModalDay=currentDay;if(keepScroll)$('.sheet-content').scrollTop=scrollTop;modalInputBaseline=[...document.querySelectorAll('.sheet-content input,.sheet-content select')].map(x=>[x.id,x.value]);scheduleFormViewport()};
@@ -1612,12 +1629,13 @@ function download(name,text,type){const url=URL.createObjectURL(new Blob([text],
 function backup(){download('tuntix-'+dk(new Date())+'.json',JSON.stringify({app:'TuntiX',version:2,exportedAt:new Date().toISOString(),data:S},null,2),'application/json')}
 function validateBackup(raw){
   const data=raw.data||raw, state=validateHoursBackup(raw);
+  if(window.WebTypes) Object.assign(state.set, WebTypes.restoreLabels(data.set));
   state.tes=tesValidateState(data.tes);
   if(data.mittaus!=null)state.mittaus=validateMeasurement(data.mittaus);
   return state;
 }
-function exportCsv(weekly){const start=dk(addD(mon(new Date()),wo*7)),end=dk(addD(pd(start),6));const entries=S.en.filter(e=>!weekly||(e.d>=start&&e.d<=end)).sort((a,b)=>a.d.localeCompare(b.d));const cell=v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';const rows=[['Päivä','Työlaji','Projekti','Tunnit','Kommentti'],...entries.map(e=>[e.d,e.t,pn(e.p),String(e.h).replace('.',','),e.c])];download('tuntix-'+(weekly?start:'kaikki')+'.csv','\ufeff'+rows.map(r=>r.map(cell).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
-function validateHoursBackup(raw){const x=raw.data||raw;const str=v=>typeof v==='string';const ids=a=>new Set(a.map(e=>e.id)).size===a.length;if(!x||!Array.isArray(x.en)||!Array.isArray(x.pr)||!x.set||!x.pf||!x.last||!Number.isFinite(x.set.goal)||x.set.goal<1||x.set.goal>24)throw Error();if(!x.pr.every(p=>str(p.id)&&/^[a-zA-Z0-9_-]+$/.test(p.id)&&str(p.n)&&str(p.a))||!ids(x.pr)||!ids(x.en))throw Error();const totals={};for(const e of x.en){if(!str(e.id)||!/^[a-zA-Z0-9_-]+$/.test(e.id)||!str(e.d)||!/^\d{4}-\d{2}-\d{2}$/.test(e.d)||isNaN(pd(e.d))||dk(pd(e.d))!==e.d||(!str(e.t)||!e.t.trim()||e.t.length>80)||!str(e.p)||!str(e.c)||!Number.isFinite(e.h)||e.h<0.5||e.h>24)throw Error();totals[e.d]=(totals[e.d]||0)+e.h;if(totals[e.d]>24)throw Error()}if(['customTypes','hiddenTypes'].some(k=>x.set[k]!==undefined&&(!Array.isArray(x.set[k])||x.set[k].length>200||!x.set[k].every(v=>str(v)&&v.trim()&&v.length<=80))))throw Error();if(x.set.office!==undefined&&!isOffice(x.set.office))throw Error();if(!['name','emp','role'].every(k=>str(x.pf[k])))throw Error();return {init:1,pr:x.pr.map(p=>({id:p.id,n:p.n,a:p.a,...(validDistance(p,getOffice(x.set))?{route:{...p.route}}:{})})),en:x.en.map(e=>({id:e.id,d:e.d,p:e.p,t:e.t,h:e.h,c:e.c})),set:{goal:x.set.goal,showWeekends:x.set.showWeekends===true,customTypes:[...(x.set.customTypes||[])],hiddenTypes:[...(x.set.hiddenTypes||[])],office:getOffice(x.set),design:['aurora','classic'].includes(x.set.design)?'aurora':'raised',glassColor:['aurora','blue','sun','pink','green','violet'].includes(x.set.glassColor)?x.set.glassColor:'aurora',theme:['light','dark','auto','blue','red','green'].includes(x.set.theme)?x.set.theme:'auto'},pf:{name:x.pf.name,emp:x.pf.emp,role:x.pf.role},last:{t:allWorkTypes(x.set).some(t=>t[0]===x.last.t)&&!(x.set.hiddenTypes||[]).includes(x.last.t)?x.last.t:(allWorkTypes(x.set).find(t=>!(x.set.hiddenTypes||[]).includes(t[0]))||['Laskutyö'])[0],p:x.pr.some(p=>p.id===x.last.p)?x.last.p:''}}}
+function exportCsv(weekly){const start=dk(addD(mon(new Date()),wo*7)),end=dk(addD(pd(start),6));const entries=S.en.filter(e=>!weekly||(e.d>=start&&e.d<=end)).sort((a,b)=>a.d.localeCompare(b.d));const cell=v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"';const rows=[['Päivä','Työlaji','Projekti','Tunnit','Kommentti'],...entries.map(e=>[e.d,window.WebTypes?.label(e.t) ?? e.t,pn(e.p),String(e.h).replace('.',','),e.c])];download('tuntix-'+(weekly?start:'kaikki')+'.csv','\ufeff'+rows.map(r=>r.map(cell).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
+function validateHoursBackup(raw){const x=raw.data||raw;const str=v=>typeof v==='string';const ids=a=>new Set(a.map(e=>e.id)).size===a.length;if(!x||!Array.isArray(x.en)||!Array.isArray(x.pr)||!x.set||!x.pf||!x.last||!Number.isFinite(x.set.goal)||x.set.goal<1||x.set.goal>24)throw Error();if(!x.pr.every(p=>str(p.id)&&/^[a-zA-Z0-9_-]+$/.test(p.id)&&str(p.n)&&str(p.a))||!ids(x.pr)||!ids(x.en))throw Error();const totals={};for(const e of x.en){if(!str(e.id)||!/^[a-zA-Z0-9_-]+$/.test(e.id)||!str(e.d)||!/^\d{4}-\d{2}-\d{2}$/.test(e.d)||isNaN(pd(e.d))||dk(pd(e.d))!==e.d||(!str(e.t)||!e.t.trim()||e.t.length>80)||!str(e.p)||!str(e.c)||!Number.isFinite(e.h)||e.h<0.5||e.h>24)throw Error();totals[e.d]=(totals[e.d]||0)+e.h;if(totals[e.d]>24)throw Error()}if(['customTypes','hiddenTypes'].some(k=>x.set[k]!==undefined&&(!Array.isArray(x.set[k])||x.set[k].length>200||!x.set[k].every(v=>str(v)&&v.trim()&&v.length<=80))))throw Error();if(x.set.office!==undefined&&!isOffice(x.set.office))throw Error();if(!['name','emp','role'].every(k=>str(x.pf[k])))throw Error();return {init:1,pr:x.pr.map(p=>({id:p.id,n:p.n,a:p.a,...(validDistance(p,getOffice(x.set))?{route:{...p.route}}:{})})),en:x.en.map(e=>({id:e.id,d:e.d,p:e.p,t:e.t,h:e.h,c:e.c,...(window.WebEntries?.restoreShift(e)||{})})),set:{goal:x.set.goal,showWeekends:x.set.showWeekends===true,customTypes:[...(x.set.customTypes||[])],hiddenTypes:[...(x.set.hiddenTypes||[])],office:getOffice(x.set),design:['aurora','classic'].includes(x.set.design)?'aurora':'raised',glassColor:['aurora','blue','sun','pink','green','violet'].includes(x.set.glassColor)?x.set.glassColor:'aurora',theme:['light','dark','auto','blue','red','green'].includes(x.set.theme)?x.set.theme:'auto'},pf:{name:x.pf.name,emp:x.pf.emp,role:x.pf.role},last:{t:allWorkTypes(x.set).some(t=>t[0]===x.last.t)&&!(x.set.hiddenTypes||[]).includes(x.last.t)?x.last.t:(allWorkTypes(x.set).find(t=>!(x.set.hiddenTypes||[]).includes(t[0]))||['Laskutyö'])[0],p:x.pr.some(p=>p.id===x.last.p)?x.last.p:''}}}
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b)return;switch(b.dataset.a){case 'backup':backup();break;case 'csv':exportCsv(false);break;case 'weekcsv':exportCsv(true);break;case 'import':$('#restore').click();break;case 'now':wo=0;mo=0;render();break}});
 document.addEventListener('change',async ev=>{const t=ev.target;if(t.id==='weekdate'&&t.value){wo=Math.round((mon(pd(t.value))-mon(new Date()))/604800000);const d=pd(t.value),now=new Date();mo=(d.getFullYear()-now.getFullYear())*12+d.getMonth()-now.getMonth();render(1)}if(t.id==='restore'&&t.files[0]){try{if(t.files[0].size>5000000)throw Error();const next=validateBackup(JSON.parse(await t.files[0].text()));if(!confirm('Korvataanko nykyiset tiedot varmuuskopiolla? Nykyisistä tiedoista ladataan ensin kopio.'))return;backup();const previous=S;S=next;if(!save()){S=previous;return}applyTheme();render(1);toast('Varmuuskopio palautettu')}catch(e){toast('Virheellinen varmuuskopio. Tietoja ei muutettu.')}finally{t.value=''}}});
 document.addEventListener('keydown',ev=>{if($('#project-picker')?.open||$('#tes-editor')?.open)return;if(ev.key==='Escape'&&$('.ov')){if(allowSheetExit())closeSheet()}if((ev.key==='Enter'||ev.key===' ')&&ev.target.matches('.row[data-a]')){ev.preventDefault();ev.target.click()}});
@@ -1662,6 +1680,7 @@ document.addEventListener('focusin',ev=>{if(!ev.target.closest('.sheet'))return;
 document.addEventListener('focusout',()=>setTimeout(scheduleFormViewport,400));
 scheduleFormViewport();
 
+window.TerasSurfaces?.init();
 render();
 
 function measureNavigation(){const nav=document.getElementById('nav');if(nav){const height=Math.ceil(nav.getBoundingClientRect().height);if(height>0)document.documentElement.style.setProperty('--nav-height',height+'px')}}

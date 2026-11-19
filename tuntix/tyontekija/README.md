@@ -53,21 +53,3 @@ OSRM возвращает длину автомобильного маршрут
 Проверены в браузере автоматический расчёт для Ensi parvi 3, Helsinki (22,7 км на момент проверки) и показ километров при выборе проекта. Отдельно проверены отклонение другого номера/города/индекса, объединение дубликатов, сброс устаревшего результата после смены адреса и сохранение результата в резервной копии.
 
 Адрес А сохраняется в `set.office` (адрес и координаты) и входит в резервную копию. Кэш и ключ очереди учитывают адрес А; результат старого запроса не записывается после его смены. При восстановлении копии маршруты проверяются относительно адреса А из самой копии. Адрес объекта показан под названием проекта в строке дневной записи и под выбором проекта в редакторе.
-
-## Sää
-
-Avaa **Sää** alavalikosta. Näkymä hakee Ilmatieteen laitoksen, MET Norwayn ja DWD ICONin
-(Open-Meteon kautta) ennusteet samalle kellonajalle. Paikkahaku käyttää Open-Meteoa.
-Sademäärä on tunnin kertymä ennusteen kellonajasta eteenpäin.
-Sääkuvakkeet ovat [MET Norwayn Weather Icons](https://github.com/metno/weathericons)
--kokoelmasta (MIT).
-
-Forecan kortti avaa Forecan verkkosivun oletusarvoisesti. Näytä Forecan lukemat
-kortissa asettamalla `tuntix-foreca-endpoint`-metatagin arvoksi oman palvelimen
-HTTPS-päätepiste. Lisää palvelimen origin myös CSP:n `connect-src`-luetteloon ja
-salli palvelimella käyttöliittymän origin CORS-asetuksissa. Päätepiste vastaanottaa
-`latitude`, `longitude` ja UTC-muotoisen `time`-parametrin. Se palauttaa Forecan
-saman tunnin ennusteen muodossa `{"temp":6,"wind":4,"rain":0,"icon":"cloudy"}`.
-Lämpötila on asteina (°C), tuuli metreinä sekunnissa ja tuntikertymä millimetreinä.
-Valinnainen `icon` vastaa `weather-icons`-hakemiston tiedostonimeä ilman päätettä.
-Forecan API-tunnukset säilytetään palvelimella.
