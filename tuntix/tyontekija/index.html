@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-z3n3mk7aBmX739aS9VZ81N6HLfdVa73VhFr0zFF1eUI=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-vJ6aDzrmSTJ4L6lR9lKX7PY8oCZP7SunolgB3PUUgxI=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
@@ -356,6 +356,8 @@ label:has(#measurement-zoom:checked)+.measurement-scroll .measurement-photo{min-
 <script src="./web-projects.js"></script>
 <script src="./web-entry.js"></script>
 <script src="./web-surfaces.js"></script>
+<script src="./laskulappu/paper.js"></script>
+<script src="./laskulappu/editor.js"></script>
 <!-- /web-only -->
 <script>
 const $=s=>document.querySelector(s),K='tuntix.tt1';
@@ -1497,6 +1499,7 @@ const R={kalenteri,projektit,asetukset,profiili,lisaa,lomakkeet:()=>measurementF
 if(window.nativePersist){
   R.saa=()=>TuntixWeather.view();
 }else{
+  R.lomakkeet=()=>selectedDocumentId()?documentLibrary():'<laskulappu-editor></laskulappu-editor>';
   R.asiakirjat=documentLibrary;
   R.kalenteri=Teras.calendar;
   R.projektit=TuntixProjects.view;
