@@ -5,7 +5,7 @@ const LaskulappuPaper = (() => {
     H = 1280;
   const SEC = {
     osa: ['Osamittaus', [22, 104, 168, 128]],
-    loppu: ['Loppumittaus', [169, 104, 342, 128]],
+    loppu: ['Mittaus', [169, 104, 342, 128]],
     asnr: ['ASNR/O', [343, 92, 510, 127]],
     tyonro: ['Työnumero', [513, 92, 914, 119]],
     tilaaja: ['Tilaaja', [513, 121, 914, 146]],
@@ -13,7 +13,7 @@ const LaskulappuPaper = (() => {
     kalv: ['K-ALV 0%', [22, 129, 166, 162]],
     alv: ['ALV 24%', [22, 165, 166, 198]],
     kohde: ['Kohde', [168, 129, 510, 198]],
-    merk: ['Tilaajan merkinnät', [22, 203, 121, 988]],
+    merk: ['Tilaajan merkintä', [22, 203, 121, 988]],
     tyo: ['Työselitys', [123, 216, 511, 929]],
     tunnit: ['Laskutettavat tunnit', [123, 930, 511, 988]],
     maara: ['Määrä', [513, 216, 645, 988]],

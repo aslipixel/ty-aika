@@ -41,7 +41,7 @@
       tt: [''],
       hid: {},
       sig: '',
-      exclusions: { osa: {}, loppu: {} },
+      exclusions: { osa: { merk: true, lask: true }, loppu: {} },
     };
     selectMode(form, 'osa');
     return form;
@@ -140,7 +140,7 @@
             ['osa', 'loppu']
               .map(
                 (mode) =>
-                  `<button type="button" data-action="mode" data-mode="${mode}" aria-pressed="${mode === draft.mode}">${mode === 'osa' ? 'Osamittaus' : 'Loppumittaus'}</button>`,
+                  `<button type="button" data-action="mode" data-mode="${mode}" aria-pressed="${mode === draft.mode}">${mode === 'osa' ? 'Osamittaus' : 'Mittaus'}</button>`,
               )
               .join('') +
             '</div>' +
