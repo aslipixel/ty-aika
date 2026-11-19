@@ -52,7 +52,7 @@
       <h3 class="teras-project-heading">${esc(name)}</h3>
       <p class="teras-project-meta"><time datetime="${esc(entry.d)}">${DN[wd(date)]} ${date.toLocaleDateString('fi-FI')}</time>
       · <b>${formatHours.format(entry.h)} h</b> · ${esc(label(entry.t))}</p>
-      ${project?.a ? `<p class="teras-project-address">${icon('map-pin')}${esc(project.a)} ${distanceBadge(project.id)}</p>` : ''}
+      ${project?.a ? `<p class="teras-project-address">${icon('map-pin')}${esc(project.a)} ${distanceBadge(project.id, !isAbsence(entry.t))}</p>` : ''}
       ${entry.c ? `<p class="teras-project-comment">${esc(entry.c)}</p>` : ''}${actions(entry.id)}</article>`;
   }
 

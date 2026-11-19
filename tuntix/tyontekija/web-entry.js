@@ -338,7 +338,7 @@
     }
   });
   window.WebEntries = {
-    open:start,day,view,remove,
+    open:start,day,view,remove,dailyTravel,
     home() {
       if (dialog) return finish(true);
       location.hash='kalenteri';
