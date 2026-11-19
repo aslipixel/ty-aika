@@ -277,3 +277,24 @@ button[hidden] {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
+
+.mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.mode + input,
+section > input + textarea {
+  margin-top: 6px;
+}
+.mode button[aria-pressed='true'] {
+  background: #ffbd19;
+  color: #10191f;
+  border-color: #ffbd19;
+}
+button:disabled {
+  opacity: 0.55;
+}
+.modal .actions:has([data-action='store']) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}

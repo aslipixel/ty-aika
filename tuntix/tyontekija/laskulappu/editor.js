@@ -11,14 +11,41 @@
     h: { limit: 3, create: () => ({ t: '', h: '' }) },
     tt: { limit: 10, create: () => '' },
   };
-  const blank = () => ({
-    v: {},
-    w: [emptyWork()],
-    h: [rowTypes.h.create()],
-    tt: [''],
-    hid: {},
-    sig: '',
-  });
+  const partialHidden = new Set([
+    'loppu',
+    'asnr',
+    'lasko',
+    'kalv',
+    'alv',
+    'yks',
+    'euro',
+    'yht',
+    't10',
+    't2',
+    'tj',
+  ]);
+  function selectMode(form, mode) {
+    form.mode = mode;
+    form.v.osa = mode === 'osa';
+    form.v.loppu = mode === 'loppu';
+    form.hid = { ...form.exclusions[mode] };
+    delete form.hid.osa;
+    delete form.hid.loppu;
+    if (mode === 'osa') for (const key of partialHidden) form.hid[key] = true;
+  }
+  const blank = () => {
+    const form = {
+      v: {},
+      w: [emptyWork()],
+      h: [rowTypes.h.create()],
+      tt: [''],
+      hid: {},
+      sig: '',
+      exclusions: { osa: {}, loppu: {} },
+    };
+    selectMode(form, 'osa');
+    return form;
+  };
   let draft = blank(),
     name = '';
   const button = (action, glyph, label, title = label) =>
@@ -31,7 +58,9 @@
     save: ['save', 'Tallenna'],
     send: ['send', 'Lähetä'],
     edit: ['pencil', 'Muokkaa'],
-    pdf: ['download', 'PDF', 'Lataa PDF'],
+    export: ['download', 'Vie', 'Vie PDF tai kuva'],
+    pdf: ['file-text', 'PDF', 'Lataa PDF'],
+    photo: ['image', 'Kuva', 'Tallenna kuva'],
     close: ['check', 'Valmis'],
     cancel: ['x', 'Peruuta'],
     clear: ['rotate-ccw', 'Tyhjennä'],
@@ -92,7 +121,7 @@
       this.root.innerHTML = `<link rel="stylesheet" href="${sheet}"><header><h2></h2>${controls('fields')}</header><main></main>
         <footer class="actions document-actions" aria-label="Lomakkeen toiminnot"></footer><p role="status"></p>
         <dialog class="preview"><header><h2></h2>${controls('edit')}</header><div class="paper"><img alt="Laskulapun esikatselu"></div>
-        <footer class="actions">${controls('zoomOut', 'zoomIn', 'sign', 'pdf', 'send')}</footer></dialog>
+        <footer class="actions">${controls('zoomOut', 'zoomIn', 'sign', 'export', 'send')}</footer></dialog>
         <dialog class="modal"></dialog>`;
       this.draw();
     }
@@ -107,8 +136,14 @@
       this.el('main').innerHTML = [
         card(
           'Mittaus',
-          field('osa', 'osa', 'Osamittaus', 'checkbox') +
-            field('loppu', 'loppu', 'Loppumittaus', 'checkbox') +
+          '<div class="mode" role="group" aria-label="Mittaustapa">' +
+            ['osa', 'loppu']
+              .map(
+                (mode) =>
+                  `<button type="button" data-action="mode" data-mode="${mode}" aria-pressed="${mode === draft.mode}">${mode === 'osa' ? 'Osamittaus' : 'Loppumittaus'}</button>`,
+              )
+              .join('') +
+            '</div>' +
             field('asnr', 'asnr', 'ASNR/O'),
         ),
         card(
@@ -118,8 +153,8 @@
         ),
         card(
           'Kohde',
-          field('kohde', 'kohde1', 'Kohde') +
-            field('kohde', 'kohde2', 'Kohteen osoite / lisätiedot', 'area') +
+          field('kohde', 'kohde2', 'Kohteen osoite') +
+            field('kohde', 'kohde1', 'Työskentelypaikka (esim. katto, piha tai talo 5 A)', 'area') +
             grid(field('kalv', 'kalv', 'K-ALV 0%') + field('alv', 'alv', 'ALV 24%')),
         ),
         rows('w', 'Työselitys / Määrä', [
@@ -228,11 +263,21 @@
       const action = b.dataset.action,
         modal = this.el('.modal'),
         preview = this.el('.preview');
-      if (action === 'fields') {
+      if (action === 'mode') {
+        selectMode(draft, b.dataset.mode);
+        this.draw();
+        this.el('[data-mode="' + draft.mode + '"]').focus();
+      } else if (action === 'fields') {
         this.modal(
           'Näytettävät kentät',
           '<div class="choices">' +
             Object.entries(LaskulappuPaper.sections)
+              .filter(
+                ([key]) =>
+                  key !== 'osa' &&
+                  key !== 'loppu' &&
+                  (draft.mode === 'loppu' || !partialHidden.has(key)),
+              )
               .map(
                 ([k, [label]]) =>
                   `<button data-action="toggle" data-field="${k}" aria-pressed="${!draft.hid[k]}">${escape(label)}</button>`,
@@ -244,6 +289,7 @@
       } else if (action === 'toggle') {
         const k = b.dataset.field;
         draft.hid[k] = !draft.hid[k];
+        draft.exclusions[draft.mode][k] = draft.hid[k];
         b.setAttribute('aria-pressed', String(!draft.hid[k]));
         this.draw();
       } else if (action === 'add' || action === 'del') {
@@ -272,7 +318,7 @@
           '<input aria-label="Lomakkeen nimi" id="filename" value="' +
             escape(name) +
             '" placeholder="Laskulappu"><div class="actions">' +
-            controls('cancel', 'store') +
+            controls('cancel', 'store', 'export') +
             '</div>',
         );
       else if (action === 'store') {
@@ -308,6 +354,11 @@
         }
         const stored = JSON.parse(localStorage.getItem('lask:' + n));
         if (!stored || !Array.isArray(stored.w)) return;
+        // Older saved forms stored the two checkboxes and a single visibility map.
+        const legacyPartial = stored.v.osa || (stored.hid?.loppu && !stored.v.loppu);
+        const mode = stored.mode || (legacyPartial && !stored.v.loppu ? 'osa' : 'loppu');
+        stored.exclusions ||= { osa: {}, loppu: {}, [mode]: { ...stored.hid } };
+        selectMode(stored, mode);
         draft = stored;
         name = n;
         modal.close();
@@ -343,14 +394,49 @@
       else if (action === 'zoomIn' || action === 'zoomOut') {
         this.zoom = Math.min(4, Math.max(1, this.zoom + (action === 'zoomIn' ? 0.5 : -0.5)));
         this.el('.paper img').style.width = this.zoom * 100 + '%';
-      } else if (action === 'pdf' || action === 'send') {
-        const canvas = await LaskulappuPaper.render(draft);
-        const file = new File(
-          [LaskulappuPaper.pdfBytes(canvas)],
-          (name || 'Laskulappu').replace(/[/\\]/g, '_') + '.pdf',
-          { type: 'application/pdf' },
+      } else if (action === 'export') {
+        const filename = (this.el('#filename')?.value.trim() || name || 'Laskulappu').replace(
+          /[/\\]/g,
+          '_',
         );
-        if (action === 'send' && navigator.canShare?.({ files: [file] })) {
+        const dialog = this.modal(
+          'Tallenna tiedosto',
+          '<div class="actions">' +
+            controls('pdf', 'photo') +
+            '</div><p class="export-status" role="status">Valmistellaan…</p>' +
+            controls('close'),
+        );
+        const status = dialog.querySelector('.export-status');
+        const options = dialog.querySelectorAll('.actions button');
+        options.forEach((option) => (option.disabled = true));
+        try {
+          const canvas = await LaskulappuPaper.render(draft);
+          const jpeg = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.94));
+          if (!jpeg) throw Error();
+          if (!status.isConnected || !dialog.open) return;
+          this.exports = {
+            pdf: new File([LaskulappuPaper.pdfBytes(canvas)], filename + '.pdf', {
+              type: 'application/pdf',
+            }),
+            photo: new File([jpeg], filename + '.jpg', { type: 'image/jpeg' }),
+          };
+          status.textContent = navigator.canShare?.({ files: [this.exports.photo] })
+            ? 'Valitse Kuva ja tallenna kuva jakovalikosta.'
+            : 'Kuva ladataan JPEG-tiedostona.';
+          options.forEach((option) => (option.disabled = false));
+        } catch {
+          status.textContent = 'Tiedoston luominen epäonnistui. Yritä uudelleen.';
+        }
+      } else if (action === 'pdf' || action === 'photo' || action === 'send') {
+        const file =
+          action === 'send'
+            ? new File(
+                [LaskulappuPaper.pdfBytes(await LaskulappuPaper.render(draft))],
+                (name || 'Laskulappu').replace(/[/\\]/g, '_') + '.pdf',
+                { type: 'application/pdf' },
+              )
+            : this.exports[action];
+        if (action !== 'pdf' && navigator.canShare?.({ files: [file] })) {
           try {
             await navigator.share({ files: [file], title: name || 'Laskulappu' });
             return;

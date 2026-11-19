@@ -99,9 +99,10 @@ const LaskulappuPaper = (() => {
       'tj',
       'lask',
       'huom',
-      'kohde1',
-      'kohde2',
     ].forEach((k) => (o[k] = v[k]));
+    // Existing drafts keep their original keys: kohde2 is the address.
+    o.kohde1 = v.kohde2;
+    o.kohde2 = v.kohde1;
     const la = (v.lasko || '').split('\n');
     o.lasko1 = la[0];
     o.lasko2 = la.slice(1).join(' ');
@@ -194,7 +195,9 @@ const LaskulappuPaper = (() => {
                 x.fillText(l, b[0] + 3, y);
                 y += 17;
               });
-          } else x.fillText(v, b[0] + 3, (b[1] + b[3]) / 2 + 1);
+          } else if (d.id === 'kohde1')
+            x.fillText(v, b[0] + 3, (b[1] + b[3]) / 2 + 1, b[2] - b[0] - 6);
+          else x.fillText(v, b[0] + 3, (b[1] + b[3]) / 2 + 1);
           x.restore();
         });
         if (S.sig && !S.hid.edu) {
