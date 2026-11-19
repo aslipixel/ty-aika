@@ -8,7 +8,7 @@
   const travelRates = [[90,51.42],[80,45.71],[70,40],[60,34.30],[50,28.59],
     [40,22.89],[30,17.17],[20,11.47],[10,5.77],[4,2.33]];
   const money = new Intl.NumberFormat('fi-FI',{style:'currency',currency:'EUR'});
-  const kilometres = new Intl.NumberFormat('fi-FI',{minimumFractionDigits:1,maximumFractionDigits:4});
+  const kilometres = new Intl.NumberFormat('fi-FI',{minimumFractionDigits:1,maximumFractionDigits:1});
   function dailyTravel(km) {
     if (km > 100) return 'Sovitaan erikseen';
     const rate = travelRates.find(([threshold]) => km > threshold);
