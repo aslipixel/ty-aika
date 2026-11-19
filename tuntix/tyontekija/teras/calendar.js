@@ -6,10 +6,7 @@
     ['lisaa','calculator','Laskurit'], ['lomakkeet','file-text','Lomakkeet'],
     ['profiili','user-round','Profiili'], ['asetukset','settings','Asetukset']
   ];
-  const titles = {open:'Avaa', edit:'Muokkaa', delete:'Poista'};
-  let action = null;
   function navigation(route) {
-    if(route !== 'kalenteri') action = null;
     const selected = route === 'asiakirjat' ? 'lomakkeet' : route;
     return tabs.map(([id,glyph,label]) => `<a href="#${id}"${selected === id ? ' class="on" aria-current="page"' : ''}>${icon(glyph)}<span>${label}</span></a>`).join('');
   }
@@ -18,9 +15,12 @@
     const el = document.getElementById('teras-time');
     if (!el) return;
     const now = new Date();
-    if (el.dateTime !== dk(now)) {
+    if (el.dataset.day !== dk(now)) {
       if (!document.querySelector('dialog[open], #m .ov')) render(1);
-    } else if (el.textContent !== clock(now)) el.textContent = clock(now);
+    } else if (el.textContent !== clock(now)) {
+      el.textContent = clock(now);
+      el.dateTime = pad(now.getHours())+':'+pad(now.getMinutes());
+    }
   }
   function iconButton(key,glyph,label) {
     return `<button type="button" class="teras-square" data-a="${key}" title="${label}" aria-label="${label}">${icon(glyph)}</button>`;
@@ -31,7 +31,7 @@
       ${iconButton('pw','chevron-left','Edellinen viikko')}
       <label class="teras-week-picker"><span>Viikko ${wk(start)}</span><input id="weekdate" type="date" aria-label="Valitse viikko" value="${date}"></label>
       ${iconButton('nw','chevron-right','Seuraava viikko')}
-      <button type="button" class="teras-add" data-web-new="${date}">${icon('plus')}Kirjaa tunnit</button>
+      <time id="teras-time" data-day="${dk(today)}" datetime="${pad(today.getHours())}:${pad(today.getMinutes())}">${clock(today)}</time>
     </div>`;
   }
   function weekRow(date, entries, total, today) {
@@ -40,8 +40,7 @@
     const hours = entries.length ? fh(total) : '–';
     const current = key === dk(today);
     const label = [DL[wd(date)], fd(date), entries.length ? hours : 'Ei kirjauksia', ...names].join(' ');
-    const attr = action ? `data-day-action="${key}"` : `data-a="day" data-d="${key}"`;
-    return `<button type="button" class="teras-day${entries.length?' recorded':''}" ${attr}${current?' aria-current="date"':''}${action && action !== 'open' && !entries.length?' disabled':''} aria-label="${esc(label)}">
+    return `<button type="button" class="teras-day${entries.length?' recorded':''}" data-a="day" data-d="${key}"${current?' aria-current="date"':''} aria-label="${esc(label)}">
       <span class="teras-day-date"><b>${DN[wd(date)]}</b><span>${fd(date)}</span></span>
       <span class="teras-hours">${icon('clock')}${hours}</span>
       <span class="teras-day-project" title="${esc(names.join(', '))}"><span>${esc(names[0] || '–')}</span>${names.length>1?`<small>+${names.length-1}</small>`:''}</span>
@@ -69,38 +68,17 @@
     const days = Array.from({length:7},(_,i)=>addD(start,i));
     const byDate = new Map(days.map(d => [dk(d),[]]));
     for(const e of S.en) byDate.get(e.d)?.push(e);
-    const hasRecords = [...byDate.values()].some(entries=>entries.length);
-    if (action && action!=='open' && !hasRecords) action = null;
     return `<section class="teras-dashboard" aria-label="Työtunnit">
-      <header class="teras-bar"><div class="teras-wordmark">Tunti<em>X</em></div><span class="teras-edition">Teräs</span>
-        <div class="teras-shortcuts">${[['open','briefcase-business'],['edit','pencil'],['delete','trash-2']].map(([key,glyph])=>
-          `<button type="button" data-week-action="${key}" aria-pressed="${action===key}"${key!=='open'&&!hasRecords?' disabled':''}>${icon(glyph)}<span>${titles[key]}</span></button>`).join('')}</div>
+      <header class="teras-bar"><div class="teras-wordmark">Tunti<em>X</em></div>
+        <b class="teras-date">${DN[wd(now)]} ${fd(now)}${now.getFullYear()}</b>
       </header>
-      <div class="teras-date"><time id="teras-time" datetime="${dk(now)}">${clock(now)}</time><b>${DN[wd(now)]} ${fd(now)}${now.getFullYear()}</b></div>
       ${weekControls(start,now)}
-      ${action?`<p class="teras-mode" role="status">${action==='delete'?'Valitse poistettava kirjaus.':action==='edit'?'Valitse muokattava kirjaus.':'Valitse avattava päivä.'}<button data-exit-mode type="button" aria-label="Peruuta">${icon('x')}</button></p>`:''}
       <section class="teras-week" aria-label="Viikon kirjaukset">${days.map(d=>weekRow(d,byDate.get(dk(d)),totals[dk(d)]||0,now)).join('')}</section>
       ${month(now,totals)}
     </section>`;
   }
   document.addEventListener('click',event=>{
-    const btn = event.target.closest('[data-week-action],[data-day-action],[data-exit-mode],.teras-week-picker');
-    if (!btn) return;
-    if (btn.hasAttribute('data-exit-mode') || btn.dataset.weekAction) {
-      action = action === btn.dataset.weekAction ? null : btn.dataset.weekAction || null;
-      render(1);
-    } else if (btn.dataset.dayAction){
-      const date=btn.dataset.dayAction, selected=action;
-      action=null; render(1);
-      if (selected==='open') WebEntries.day(date);
-      else {
-        const entries=S.en.filter(e=>e.d===date);
-        if (entries.length===1) {
-          if(selected==='edit') WebEntries.open(date,entries[0].id);
-          else WebEntries.remove(entries[0].id);
-        } else if(entries.length) WebEntries.day(date);
-      }
-    } else if (event.target.tagName==='INPUT'){
+    if (event.target.matches('.teras-week-picker input')){
       try{event.target.showPicker?.();}catch{}
     }
   });

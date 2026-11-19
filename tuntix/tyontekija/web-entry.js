@@ -4,6 +4,17 @@
   if (window.nativePersist) return;
   const NEW_PROJECT = '__new__';
   const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  // TES pays one round-trip amount per day, selected by the one-way distance.
+  const travelRates = [[90,51.42],[80,45.71],[70,40],[60,34.30],[50,28.59],
+    [40,22.89],[30,17.17],[20,11.47],[10,5.77],[4,2.33]];
+  const money = new Intl.NumberFormat('fi-FI',{style:'currency',currency:'EUR'});
+  const kilometres = new Intl.NumberFormat('fi-FI',{minimumFractionDigits:1,maximumFractionDigits:4});
+  function dailyTravel(km) {
+    if (km > 100) return 'Sovitaan erikseen';
+    const rate = travelRates.find(([threshold]) => km > threshold);
+    return money.format(rate ? rate[1] : 0);
+  }
+  let travelRequest, travelTimer;
   const initialShift = {start:'07:00', end:'15:30', breakMinutes:30};
   let dialog, draft, original, projectValues, entryDay, opener, route, goHomeOnBack = false;
   const get = id => dialog?.querySelector('#entry-' + id);
@@ -75,9 +86,11 @@
       <div id="entry-location"></div></div>
       <div id="entry-shift"><div class="teras-field-pair">
       <div><label for="entry-start">Alkaa</label><input id="entry-start" type="time" value="${esc(draft.start)}"></div>
-      <div><label for="entry-end">Päättyy</label><input id="entry-end" type="time" value="${esc(draft.end)}"></div></div>
-      <label for="entry-break">Tauko (min)</label><input id="entry-break" type="number" inputmode="numeric" min="0" max="1439" step="1" value="${esc(draft.breakMinutes)}"></div>
+      <div><label for="entry-end">Päättyy</label><input id="entry-end" type="time" value="${esc(draft.end)}"></div></div></div>
       <label for="entry-hours">Tunnit</label><input id="entry-hours" type="number" inputmode="decimal" min="0.5" max="24" step="0.01" value="${esc(draft.h)}">
+      <section id="entry-travel" aria-labelledby="entry-travel-title"><h3 id="entry-travel-title">Matkakorvaus</h3>
+        <output id="entry-allowance" aria-live="polite"></output>
+        <button type="button" class="teras-action" data-entry-action="retry-travel" hidden>${icon('refresh-cw')}Yritä uudelleen</button></section>
       <label for="entry-comment">Kommentti</label><textarea id="entry-comment" rows="2">${esc(draft.c)}</textarea>
       <p class="entry-error" id="entry-error" role="alert"></p>
       <div id="entry-discard" hidden>${action('discard','Hylkää muutokset','x')}</div>
@@ -90,16 +103,66 @@
   function showLocation() {
     const id = draft.p;
     const destination = get('location');
-    if (!id || (id !== NEW_PROJECT && !project(id))) { destination.replaceChildren(); return; }
+    if (!id || (id !== NEW_PROJECT && !project(id))) { destination.replaceChildren(); updateTravel(); return; }
     const value = projectValues.get(id) || project(id) || {n:'',a:''};
     destination.innerHTML = `<label for="entry-number">Projektinumero</label><input id="entry-number" maxlength="120" value="${esc(value.n)}">
       <label for="entry-address">Työmaan osoite</label>${addressInput('entry-address',value.a)}`;
+    updateTravel();
+  }
+  function updateTravel(retry = false) {
+    const section = get('travel'), output = get('allowance');
+    section.hidden = typeInfo().isAbsence(get('type').value);
+    const address = get('address')?.value.trim(), origin = getOffice();
+    const saved = project(get('project').value);
+    const retryButton = section.querySelector('button');
+    retryButton.hidden = true;
+    if (section.hidden || !address || !/\d/.test(address)) {
+      clearTimeout(travelTimer);
+      travelRequest = null;
+      output.textContent = 'Valitse projekti ja anna työmaan osoite.';
+      return;
+    }
+    const key = JSON.stringify([origin.address,origin.point,addressKey(address)]);
+    function display(result) {
+      output.textContent = kilometres.format(result.km)+' km yhteen suuntaan · '+dailyTravel(result.km)+' / päivä';
+      output.title = origin.address+' → '+result.label;
+    }
+    output.removeAttribute('title');
+    if (saved && validDistance({...saved,a:address},origin)) {
+      clearTimeout(travelTimer);
+      travelRequest = null;
+      display(saved.route);
+      return;
+    }
+    if (!retry && travelRequest?.key === key && travelRequest.output === output) {
+      if (travelRequest.result) display(travelRequest.result);
+      retryButton.hidden = !travelRequest.failed;
+      return;
+    }
+    clearTimeout(travelTimer);
+    const request = {key,output};
+    travelRequest = request;
+    output.textContent = 'Lasketaan etäisyyttä…';
+    travelTimer = setTimeout(async () => {
+      try {
+        const result = await calculateDistance(address,origin);
+        if (request !== travelRequest || !output.isConnected) return;
+        request.result = result;
+        display(result);
+      } catch (error) {
+        if (request !== travelRequest || !output.isConnected) return;
+        request.failed = true;
+        output.textContent = error.message === 'Tarkista katu, talonumero ja kaupunki'
+          ? 'Tarkista katu, talonumero ja kaupunki.' : 'Etäisyyttä ei saatu.';
+        retryButton.hidden = false;
+      }
+    },600);
   }
   function capture() {
     if (!draft || !get('type')) return;
     if (draft.p && get('number')) projectValues.set(draft.p,{n:get('number').value.trim(),a:get('address').value.trim()});
     Object.assign(draft,{d:get('date').value,t:get('type').value,p:get('project').value,
-      start:get('start').value,end:get('end').value,breakMinutes:get('break').value,h:get('hours').value,c:get('comment').value.trim()});
+      start:get('start').value,end:get('end').value,h:get('hours').value,c:get('comment').value.trim()});
   }
   function minute(value) {
     const [h,m] = value.split(':').map(Number);
@@ -107,13 +170,13 @@
   }
   function duration() {
     if (!timePattern.test(get('start').value) || !timePattern.test(get('end').value)) return null;
-    const pause = get('break').valueAsNumber;
+    const pause = draft.breakMinutes;
     if (!Number.isInteger(pause) || pause<0 || pause>1439) return null;
     const span = (minute(get('end').value) - minute(get('start').value) + 1440) % 1440 || 1440;
     return Math.round((span-pause)*100/60)/100;
   }
   function updateEnd() {
-    const h = get('hours').valueAsNumber, pause = get('break').valueAsNumber;
+    const h = get('hours').valueAsNumber, pause = draft.breakMinutes;
     if (!timePattern.test(get('start').value) || !Number.isFinite(h) || h<0.5 || !Number.isInteger(pause) || pause<0 || h*60+pause>1440) return;
     const end = (minute(get('start').value) + Math.round(h*60) + pause) % 1440;
     get('end').value = String(Math.floor(end/60)).padStart(2,'0') + ':' + String(end%60).padStart(2,'0');
@@ -157,6 +220,10 @@
       projectId = 'p'+crypto.randomUUID();
       S.pr.push({id:projectId,...edits});
     } else if (projectChanged) Object.assign(target,edits);
+    const destination = project(projectId);
+    if (destination && travelRequest?.result && validDistance({...destination,route:travelRequest.result})) {
+      destination.route = travelRequest.result;
+    }
     const row = draft.id ? record(draft.id) : {id:'e'+crypto.randomUUID()};
     Object.assign(row,{d:draft.d,t:draft.t,p:projectId,h,c:draft.c});
     if (shift) Object.assign(row,{start:draft.start,end:draft.end,breakMinutes:Number(draft.breakMinutes)});
@@ -167,6 +234,8 @@
     return true;
   }
   function release() {
+    clearTimeout(travelTimer);
+    travelRequest=null;
     dialog.close();
     dialog.remove();
     dialog=null;draft=null;original=null;projectValues=null;
@@ -196,7 +265,7 @@
   function view(id) {
     const row = record(id);if (!row) return;
     draft=null;entryDay=row.d;
-    const info=[['Päivä',dateLabel(row.d)],['Työlaji',typeInfo().label(row.t)],['Projektinumero',pn(row.p)],['Työmaan osoite',pa(row.p)],['Työaika',row.start&&row.end?row.start+'–'+row.end:''],['Tauko',row.breakMinutes!=null?row.breakMinutes+' min':''],['Tunnit',hoursLabel(row.h)],['Kommentti',row.c]];
+    const info=[['Päivä',dateLabel(row.d)],['Työlaji',typeInfo().label(row.t)],['Projektinumero',pn(row.p)],['Työmaan osoite',pa(row.p)],['Työaika',row.start&&row.end?row.start+'–'+row.end:''],['Tunnit',hoursLabel(row.h)],['Kommentti',row.c]];
     layout('Kirjauksen tiedot',`<div class="teras-editor"><dl>${info.filter(([,v])=>v).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="teras-dialog-actions">${action('edit','Muokkaa','pencil',id)}${action('remove','Poista','trash-2',id)}</div></div>`);
   }
   function remove(id) {
@@ -209,7 +278,8 @@
   }
   document.addEventListener('input',e=>{
     if (!dialog?.contains(e.target) || !draft) return;
-    if (['entry-start','entry-end','entry-break'].includes(e.target.id)){
+    if (e.target.id==='entry-address') updateTravel();
+    if (['entry-start','entry-end'].includes(e.target.id)){
       const value=duration();
       get('hours').value=value!==null && value>0?String(value):'';
     } else if(e.target.id==='entry-hours' && !typeInfo().isAbsence(get('type').value)) updateEnd();
@@ -219,20 +289,23 @@
     if (e.target.id==='entry-type') {
       capture();
       get('project-group').hidden=get('shift').hidden=typeInfo().isAbsence(draft.t);
+      updateTravel();
     }
+    if (e.target.id==='entry-address') updateTravel();
     if (e.target.id==='entry-project') { capture();showLocation(); }
   });
   document.addEventListener('click',e=>{
     const button=e.target.closest('button,[data-a="day"]');
     if (!button) return;
-    if (button.hasAttribute('data-web-new') || button.dataset.a==='day') {
+    if (button.dataset.a==='day') {
       e.preventDefault();e.stopImmediatePropagation();
-      if (button.hasAttribute('data-web-new')) start(button.dataset.webNew || dk(new Date()));else day(button.dataset.d);
+      day(button.dataset.d);
       return;
     }
     if (!dialog?.contains(button)) return;
     const cmd=button.dataset.entryAction,id=button.dataset.id;
-    if (cmd==='home') finish(true);
+    if (cmd==='retry-travel') updateTravel(true);
+    else if (cmd==='home') finish(true);
     else if(cmd==='done') finish();
     else if(cmd==='discard' && confirm('Hylätäänkö kirjaamattomat muutokset?')) finish(false,true);
     else if(cmd==='types') {

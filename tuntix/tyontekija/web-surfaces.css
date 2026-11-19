@@ -362,3 +362,9 @@
 .teras .theme-options {display:flex;gap:6px}
 .teras #v .theme-options .btn[aria-pressed="true"] {background:var(--blue);border-color:var(--blue);color:var(--ui-on-accent,#161b1f)}
 .teras .theme-options svg {width:16px;height:16px}
+
+.teras #entry-travel {padding:9px 11px;border:1px solid var(--line);border-radius:8px}
+.teras .teras-dialog #entry-travel h3 {margin:0 0 3px;font-size:17px}
+.teras #entry-allowance {color:var(--ink);font-variant-numeric:tabular-nums}
+.teras #entry-location .address-field {position:relative}
+.teras #entry-location .address-suggestions {position:absolute;inset-inline:0;z-index:2;margin:0}
