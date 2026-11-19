@@ -6,13 +6,16 @@
     projektit: 'Projektit', lisaa: 'Laskurit', lomakkeet: 'Lomakkeet',
     asiakirjat: 'Asiakirjat', profiili: 'Profiili', asetukset: 'Asetukset'
   };
-  const calculatorIcons = {
-    calculator: 'calculator', concrete: 'box', 'slope-volume': 'triangle-right',
+  const webCalculators = {
+    calculator: 'calculator',
     trapezoid: 'ruler', 'contract-description': 'file-text'
   };
-  const calculatorButton = (action, label) => `<button type="button" class="btn calculator-link" data-tes="${esc(action)}">
-    <span class="calculator-icon" aria-hidden="true">${icon(calculatorIcons[action])}</span>
+  function calculatorButton(action, label) {
+    if (!Object.hasOwn(webCalculators, action)) return '';
+    return `<button type="button" class="btn calculator-link" data-tes="${esc(action)}">
+    <span class="calculator-icon" aria-hidden="true">${icon(webCalculators[action])}</span>
     <span class="calculator-name">${esc(label)}</span><span class="calculator-chevron" aria-hidden="true">${icon('chevron-right')}</span></button>`;
+  }
 
   function toolbarButton(name, text, listener) {
     const button = document.createElement('button');

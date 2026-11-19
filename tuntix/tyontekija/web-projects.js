@@ -58,27 +58,14 @@
 
   function view() {
     const projects = new Map(S.pr.map(p => [p.id, p]));
-    const used = new Set(S.en.map(e => e.p));
     const entries = [...S.en].sort((a, b) => b.d.localeCompare(a.d));
     const rows = entries.map(entry => projectRow(entry, projects.get(entry.p)));
-    for (const p of S.pr.filter(p => !used.has(p.id))) {
-      rows.push(`<article class="card teras-project-row">
-        <h3 class="teras-project-heading">${esc(p.n)}</h3>
-        <p class="teras-project-meta">Ei kirjauksia</p>
-        ${p.a ? `<p class="teras-project-address">${icon('map-pin')}${esc(p.a)} ${distanceBadge(p.id)}</p>` : ''}
-        <div class="teras-actions"><button type="button" class="teras-action" data-empty-project="${esc(p.id)}">${icon('pencil')}Muokkaa</button></div></article>`);
-    }
-    return `<h2>Projektit</h2><div class="teras-project-list">${rows.join('') || '<p class="card">Ei projekteja tai tuntikirjauksia.</p>'}</div>`;
+    return `<h2>Projektit</h2><div class="teras-project-list">${rows.join('') || '<p class="card">Ei tuntikirjauksia.</p>'}</div>`;
   }
 
   document.addEventListener('click', event => {
-    const button = event.target.closest('[data-project-record],[data-empty-project]');
+    const button = event.target.closest('[data-project-record]');
     if (!button) return;
-    if (button.hasAttribute('data-empty-project')) {
-      const project = S.pr.find(p => p.id === button.dataset.emptyProject);
-      if (project) editProject(project);
-      return;
-    }
     const entry = S.en.find(e => e.id === button.dataset.entryId);
     if (!entry) { render(1); return; }
     switch (button.dataset.projectRecord) {
@@ -112,28 +99,6 @@
     dialog.addEventListener('close', () => dialog.remove(), {once:true});
     document.body.append(dialog);
     dialog.showModal();
-  }
-
-  function editProject(project) {
-    const dialog = document.createElement('dialog');
-    dialog.className = 'tes-dialog teras-dialog';
-    dialog.setAttribute('aria-label', 'Muokkaa projektia');
-    dialog.innerHTML = toolbar('Muokkaa projektia') + `<div class="teras-dialog-body">
-      <label for="web-project-number">Projektinumero</label><input id="web-project-number" required value="${esc(project.n)}">
-      <label for="web-project-address">Työmaan osoite</label>${addressInput('web-project-address', project.a)}
-      </div>`;
-    show(dialog, () => {
-      const input = dialog.querySelector('#web-project-number');
-      const n = input.value.trim(), a = dialog.querySelector('#web-project-address').value.trim();
-      if (!n) {input.focus(); toast('Anna projektinumero.'); return false;}
-      if (n === project.n && a === project.a) return true;
-      if (!confirm('Muutetaanko projektin tietoja?')) return true;
-      const previous = S.pr;
-      S.pr = previous.map(p => p.id === project.id ? {...p, n, a} : p);
-      if (!save()) {S.pr = previous; return false;}
-      render(1);
-      return true;
-    });
   }
 
   function manage(onDone) {
