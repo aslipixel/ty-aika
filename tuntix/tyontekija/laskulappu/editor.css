@@ -2,7 +2,7 @@
   display: block;
   color: var(--ink);
   font: 400 14px/1.4 var(--font-ui);
-  color-scheme: dark;
+  color-scheme: inherit;
 }
 *,
 *::before,
@@ -31,6 +31,7 @@ h2 {
   line-height: 1.15;
 }
 h3 {
+  color: var(--ui-heading, inherit);
   font-size: 17px;
   line-height: 1.25;
   margin-bottom: 8px;
@@ -38,8 +39,8 @@ h3 {
 section,
 footer,
 dialog {
-  background: #17232c;
-  border: 1px solid #34434e;
+  background: var(--ui-panel, #17232c);
+  border: 1px solid var(--ui-edge, #34434e);
   border-radius: 12px;
   padding: 12px;
 }
@@ -52,9 +53,9 @@ textarea {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid #41515d;
+  border: 1px solid var(--ui-control-edge, #41515d);
   border-radius: 7px;
-  background: #111b22;
+  background: var(--ui-field, #111b22);
   color: var(--ink);
   font: inherit;
   font-size: 16px;
@@ -62,12 +63,12 @@ textarea {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #a9b5bf;
+  color: var(--ui-secondary, #a9b5bf);
 }
 input:focus-visible,
 textarea:focus-visible,
 button:focus-visible {
-  outline: 2px solid #ffbd19;
+  outline: 2px solid var(--blue);
   outline-offset: 1px;
 }
 textarea {
@@ -100,7 +101,7 @@ section > .item + .item {
 .check input {
   width: 17px;
   height: 17px;
-  accent-color: #ffbd19;
+  accent-color: var(--blue);
 }
 button {
   display: inline-flex;
@@ -111,33 +112,33 @@ button {
   min-height: 34px;
   min-width: 0;
   cursor: pointer;
-  color: #e5eef4;
-  background: #22313c;
-  border: 1px solid #4a5b69;
+  color: var(--ui-text, #e5eef4);
+  background: var(--ui-subtle, #22313c);
+  border: 1px solid var(--ui-control-edge, #4a5b69);
   border-radius: 999px;
   font: 600 14px/1 var(--font-display);
 }
 button:hover {
-  background: #30414f;
+  background: var(--ui-hover, #30414f);
 }
 button svg {
   width: 15px;
   height: 15px;
   flex: none;
-  color: #bbcddd;
+  color: var(--ui-secondary, #bbcddd);
 }
 button[data-action='save'] svg,
 button[data-action='store'] svg,
 button[data-action='sign'] svg {
-  color: #ffbd19;
+  color: var(--blue);
 }
 button[data-action='removeSig'] svg,
 button[data-action='delete'] svg {
-  color: #f2a398;
+  color: var(--ui-danger, #f2a398);
 }
 .rowhead {
   margin-bottom: 5px;
-  color: #a9b5bf;
+  color: var(--ui-secondary, #a9b5bf);
   font-size: 12px;
 }
 .rowhead button {
@@ -147,14 +148,14 @@ button[data-action='delete'] svg {
 }
 .item + .item {
   padding-top: 7px;
-  border-top: 1px solid #35434e;
+  border-top: 1px solid var(--ui-edge, #35434e);
 }
 .sig {
   display: grid;
   place-items: center;
   min-height: 44px;
   margin-bottom: 8px;
-  color: #acbac6;
+  color: var(--ui-secondary, #acbac6);
 }
 .sig img {
   height: 65px;
@@ -194,7 +195,7 @@ dialog .actions,
   margin-bottom: 10px;
 }
 .choices [aria-pressed='false'] {
-  color: #a9b5bf;
+  color: var(--ui-secondary, #a9b5bf);
   background: transparent;
   text-decoration: line-through;
 }
@@ -234,7 +235,7 @@ dialog:has(canvas) .actions {
   overflow: auto;
   flex: 1;
   min-height: 0;
-  background: #10191f;
+  background: var(--ui-page, #10191f);
 }
 .paper img {
   display: block;
@@ -251,7 +252,7 @@ dialog:has(canvas) .actions {
   min-width: 30px;
 }
 [role='status'] {
-  color: #c5d4dc;
+  color: var(--ui-secondary, #c5d4dc);
   font-size: 13px;
 }
 @media (max-width: 360px) {
@@ -288,9 +289,9 @@ section > input + textarea {
   margin-top: 6px;
 }
 .mode button[aria-pressed='true'] {
-  background: #ffbd19;
-  color: #10191f;
-  border-color: #ffbd19;
+  background: var(--blue);
+  color: var(--ui-on-accent, #10191f);
+  border-color: var(--blue);
 }
 button:disabled {
   opacity: 0.55;

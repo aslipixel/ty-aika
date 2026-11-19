@@ -106,7 +106,6 @@
   });
   Object.assign(Teras,{calendar,navigation});
   document.documentElement.classList.add('teras');
-  document.querySelector('meta[name="theme-color"]').content='#10191f';
   setInterval(updateClock,15000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateClock();});
 })();

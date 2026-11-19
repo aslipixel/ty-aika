@@ -27,6 +27,32 @@
 
   function goHome() { location.hash = 'kalenteri'; }
 
+  function applyTheme() {
+    const theme = S.set.theme === 'light' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#eff4f9' : '#10191f';
+  }
+
+  function themeSettings() {
+    const options = [['light','sun','Vaalea'], ['dark','moon','Tumma']];
+    const buttons = options.map(([theme,glyph,label]) =>
+      `<button type="button" class="btn" data-web-theme="${theme}" aria-pressed="${theme === document.documentElement.dataset.theme}">${icon(glyph)}${label}</button>`
+    ).join('');
+    return `<section class="card"><h3 id="theme-title">Teema</h3><div class="theme-options" role="group" aria-labelledby="theme-title">${buttons}</div></section>`;
+  }
+
+  document.addEventListener('click', event => {
+    const choice = event.target.closest('button[data-web-theme]');
+    if (!choice || choice.getAttribute('aria-pressed') === 'true') return;
+    const previous = S.set.theme;
+    S.set.theme = choice.dataset.webTheme;
+    if (!save()) { S.set.theme = previous; return; }
+    applyTheme();
+    for (const button of choice.parentElement.querySelectorAll('[data-web-theme]')) {
+      button.setAttribute('aria-pressed', String(button === choice));
+    }
+  });
+
   function refresh(route, view) {
     delete view.dataset.surface;
     if (!Object.hasOwn(routeTitles, route)) return;
@@ -57,7 +83,7 @@
       bar.append(done);
     }
   }
-  window.TerasSurfaces = { refresh, init() { calculatorLink = calculatorButton; } };
+  window.TerasSurfaces = { refresh, themeSettings, applyTheme, init() { calculatorLink = calculatorButton; } };
 
   const tesActions = {
     pdf: 'download', catalogue: 'list', newitem: 'plus', edititem: 'pencil', deleteitem: 'trash-2',

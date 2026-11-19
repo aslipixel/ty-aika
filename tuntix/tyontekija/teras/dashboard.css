@@ -6,9 +6,20 @@ html.teras:root{
   --font-ui:Inter,system-ui,sans-serif;--ink:#f4f7fa;--mut:#aab6c2;--line:#41515d;
   --blue:#ffbd19;--teal:#ffbd19;--vio:#ffbd19;--lil:#25323d;--card:#17232c;
   --bg1:#10191f;--bg2:#10191f;--sh:none;--nav-base:#17232c;
-  background:#0c141a;
+  background:var(--ui-outer, #0c141a);
 }
-.teras body{background:#10191f;color:var(--ink)}
+html.teras[data-theme="light"] {
+  color-scheme:light;
+  --ink:#182d44; --mut:#546a80; --blue:#0967b5; --teal:var(--blue); --vio:var(--blue);
+  --bg1:#eff4f9; --bg2:var(--bg1); --card:#fff; --line:#cbd9e7; --lil:#e6f1fc; --nav-base:var(--card);
+  --ui-page:var(--bg1); --ui-outer:#e8eff6; --ui-panel:var(--card);
+  --ui-field:#f6f9fc; --ui-subtle:#edf4fa; --ui-hover:#e2effa; --ui-hover-edge:#81a7ca;
+  --ui-edge:#d6e2ee; --ui-control-edge:#adc4d8; --ui-divider:#c1d1e0;
+  --ui-text:var(--ink); --ui-secondary:var(--mut); --ui-accent-tint:#e0efff; --ui-on-accent:#fff;
+  --ui-danger:#a63636; --ui-danger-edge:#cf9999; --ui-warn:#805400; --ui-warn-bg:#fff3cf;
+  --ui-heading:var(--blue);
+}
+.teras body{background:var(--ui-page, #10191f);color:var(--ink)}
 .teras #app{max-width:680px;margin:auto;background:var(--bg1)}
 .teras #v{padding:12px 13px calc(var(--nav-height) + 15px)}
 .teras .teras-icon{display:inline-block;vertical-align:middle;width:1.15em;height:1.15em;flex:none}
@@ -22,29 +33,29 @@ html.teras:root{
 .teras-wordmark em{color:var(--blue)}
 .teras-edition{padding:2px 0 2px 8px;border-left:1px solid var(--mut);font-size:15px;font-weight:600}
 .teras-shortcuts{margin-left:auto;gap:5px}
-.teras-shortcuts button{display:inline-flex;gap:4px;align-items:center;justify-content:center;min-height:28px;padding:3px 7px;border:1px solid #aab6c2;border-radius:40px;background:transparent;font-size:13px;font-weight:600}
+.teras-shortcuts button{display:inline-flex;gap:4px;align-items:center;justify-content:center;min-height:28px;padding:3px 7px;border:1px solid var(--ui-control-edge, #aab6c2);border-radius:40px;background:transparent;font-size:13px;font-weight:600}
 .teras-shortcuts button[aria-pressed=true]{color:var(--blue);border-color:currentColor}
 .teras-date{gap:17px;margin:8px 0 8px;line-height:1}
 .teras-date time{font-size:clamp(48px,15vw,67px);font-weight:700;color:var(--blue);letter-spacing:-.035em}
-.teras-date b{border-left:1px solid #6d7983;padding:8px 0 8px 15px;font-size:clamp(22px,6.4vw,32px);white-space:nowrap}
+.teras-date b{border-left:1px solid var(--ui-divider, #6d7983);padding:8px 0 8px 15px;font-size:clamp(22px,6.4vw,32px);white-space:nowrap}
 .teras-week-tools{display:grid;grid-template-columns:36px minmax(70px,1fr) 36px auto;gap:7px;margin-bottom:12px}
-.teras-square,.teras-week-picker,.teras-add{display:inline-flex;align-items:center;justify-content:center;min-height:37px;border:1px solid #8e9ca7;border-radius:11px;background:transparent}
+.teras-square,.teras-week-picker,.teras-add{display:inline-flex;align-items:center;justify-content:center;min-height:37px;border:1px solid var(--ui-control-edge, #8e9ca7);border-radius:11px;background:transparent}
 .teras-square{width:36px}
 .teras-square .teras-icon{width:17px;height:17px;stroke-width:2.8}
 .teras-week-picker{position:relative;margin:0;font:700 clamp(17px,5vw,22px)/1 var(--font-display);color:var(--ink);background:var(--card);overflow:hidden}
 .teras-week-picker input{position:absolute;inset:0;opacity:0;width:100%;height:100%;padding:0;cursor:pointer}
 .teras-week-picker:focus-within{outline:2px solid var(--blue)}
-button.teras-add{border:0;background:var(--blue);color:#151b1c;font-size:clamp(16px,4.7vw,21px);font-weight:700;padding:3px 12px;gap:5px}
+button.teras-add{border:0;background:var(--blue);color:var(--ui-on-accent, #151b1c);font-size:clamp(16px,4.7vw,21px);font-weight:700;padding:3px 12px;gap:5px}
 .teras-week{display:grid;gap:0}
-.teras-day{width:100%;min-height:36px;display:grid;grid-template-columns:34% 28% minmax(0,1fr);align-items:center;border:1px solid #4a5863;border-radius:10px;background:#17222b;text-align:left;padding:3px 10px;font-size:18px;line-height:1.15}
-.teras-day:hover,.teras-month button:hover,.teras-square:hover,.teras-shortcuts button:not(:disabled):hover{border-color:#dae3e9;background:#263640}
+.teras-day{width:100%;min-height:36px;display:grid;grid-template-columns:34% 28% minmax(0,1fr);align-items:center;border:1px solid var(--ui-edge, #4a5863);border-radius:10px;background:var(--ui-panel, #17222b);text-align:left;padding:3px 10px;font-size:18px;line-height:1.15}
+.teras-day:hover,.teras-month button:hover,.teras-square:hover,.teras-shortcuts button:not(:disabled):hover{border-color:var(--ui-hover-edge, #dae3e9);background:var(--ui-hover, #263640)}
 .teras-day-date{display:flex;align-items:center;gap:10px}
 .teras-day-date b{width:1.65em}
 .teras-day[aria-current=date] .teras-day-date b{color:var(--blue)}
-.teras-hours{display:inline-flex;align-items:center;justify-content:center;gap:7px;justify-self:start;min-width:69px;border-radius:9px;padding:4px 8px;color:#98a7b0;background:#1c2b34;font-weight:700;white-space:nowrap}
-.recorded .teras-hours{background:#352f20;color:var(--blue)}
+.teras-hours{display:inline-flex;align-items:center;justify-content:center;gap:7px;justify-self:start;min-width:69px;border-radius:9px;padding:4px 8px;color:var(--ui-secondary, #98a7b0);background:var(--ui-subtle, #1c2b34);font-weight:700;white-space:nowrap}
+.recorded .teras-hours{background:var(--ui-accent-tint, #352f20);color:var(--blue)}
 .teras-hours svg{width:18px;height:18px}
-.teras-day-project{display:flex;align-items:center;gap:4px;border-left:1px solid #63717a;padding-left:clamp(8px,3.25vw,18px);min-width:0;font:500 clamp(12px,3.85vw,17px)/1.25 ui-monospace,monospace}
+.teras-day-project{display:flex;align-items:center;gap:4px;border-left:1px solid var(--ui-divider, #63717a);padding-left:clamp(8px,3.25vw,18px);min-width:0;font:500 clamp(12px,3.85vw,17px)/1.25 ui-monospace,monospace}
 .teras-day-project>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .teras-day-project small{color:var(--mut);font-size:11px;flex:none}
 .teras-mode{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;color:var(--blue)}
@@ -54,19 +65,19 @@ button.teras-add{border:0;background:var(--blue);color:#151b1c;font-size:clamp(1
 .teras-month-tools h2{margin:0;text-align:center;font:700 clamp(21px,5.9vw,28px)/1.1 var(--font-display);letter-spacing:0}
 .teras-month-tools .teras-square{min-height:32px;width:36px}
 .teras-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;text-align:center}
-.teras-weekday{padding:3px 0 6px;color:#dae2e6;font-size:15px;font-weight:600}
-.teras-grid button,.teras-blank{min-height:36px;border:1px solid #354752;border-radius:6px;background:#202e39}
+.teras-weekday{padding:3px 0 6px;color:var(--ui-text, #dae2e6);font-size:15px;font-weight:600}
+.teras-grid button,.teras-blank{min-height:36px;border:1px solid var(--ui-edge, #354752);border-radius:6px;background:var(--ui-field, #202e39)}
 .teras-grid button{padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .teras-grid button b{font-size:17px}
 .teras-grid small{font-size:12px;font-weight:700;color:var(--blue);margin-top:2px}
-.teras-grid button[aria-current=date],.teras-grid button[aria-current=date] small{background:var(--blue);color:#151a1e;border-color:var(--blue)}
-.teras #nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch;gap:0;max-width:680px;background:#17222b;border:0;border-top:1px solid #3a4a55;border-radius:0;box-shadow:none;padding:9px 2px calc(9px + env(safe-area-inset-bottom,0px))}
-.teras #nav a{display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:59px;min-width:0;color:#e8eef2;font:600 clamp(11px,3.4vw,15px)/1.1 var(--font-display);padding:3px 0}
+.teras-grid button[aria-current=date],.teras-grid button[aria-current=date] small{background:var(--blue);color:var(--ui-on-accent, #151a1e);border-color:var(--blue)}
+.teras #nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch;gap:0;max-width:680px;background:var(--ui-panel, #17222b);border:0;border-top:1px solid var(--ui-edge, #3a4a55);border-radius:0;box-shadow:none;padding:9px 2px calc(9px + env(safe-area-inset-bottom,0px))}
+.teras #nav a{display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:59px;min-width:0;color:var(--ui-text, #e8eef2);font:600 clamp(11px,3.4vw,15px)/1.1 var(--font-display);padding:3px 0}
 .teras #nav a .teras-icon{box-sizing:border-box;width:23px;height:23px;padding:0;background:transparent;border-radius:0}
 .teras #nav a.on{color:var(--blue);background:transparent}
 @media(min-width:700px){
- .teras body{background:#0c141a}
- .teras #app{border-inline:1px solid #26343d}
+ .teras body{background:var(--ui-outer, #0c141a)}
+ .teras #app{border-inline:1px solid var(--ui-edge, #26343d)}
  .teras #v{padding-inline:24px}
  .teras-day{min-height:43px}
  .teras-grid button,.teras-blank{min-height:40px}
