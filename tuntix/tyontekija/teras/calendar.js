@@ -39,11 +39,12 @@
     const names = [...new Set(entries.map(e => pn(e.p) || window.WebTypes?.label(e.t) || e.t).filter(Boolean))];
     const hours = entries.length ? fh(total) : '–';
     const current = key === dk(today);
-    const label = [DL[wd(date)], fd(date), entries.length ? hours : 'Ei kirjauksia', ...names].join(' ');
+    const label = [DL[wd(date)], fd(date), entries.length ? hours : 'Ei kirjauksia', ...names].join(' ') + '. Lisää tunteja.';
     return `<button type="button" class="teras-day${entries.length?' recorded':''}" data-a="day" data-d="${key}"${current?' aria-current="date"':''} aria-label="${esc(label)}">
       <span class="teras-day-date"><b>${DN[wd(date)]}</b><span>${fd(date)}</span></span>
       <span class="teras-hours">${icon('clock')}${hours}</span>
       <span class="teras-day-project" title="${esc(names.join(', '))}"><span>${esc(names[0] || '–')}</span>${names.length>1?`<small>+${names.length-1}</small>`:''}</span>
+      <span class="teras-day-add" aria-hidden="true">${icon('plus')}</span>
     </button>`;
   }
   function month(now,totals) {
