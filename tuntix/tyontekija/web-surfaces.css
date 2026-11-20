@@ -368,3 +368,19 @@
 .teras #entry-allowance {color:var(--ink);font-variant-numeric:tabular-nums}
 .teras #entry-location .address-field {position:relative}
 .teras #entry-location .address-suggestions {position:absolute;inset-inline:0;z-index:2;margin:0}
+
+@media (max-width: 680px), (pointer: coarse) {
+  .teras dialog.web-entry-dialog {
+    position: fixed;
+    top: calc(var(--visible-top, 0px) + 8px);
+    bottom: auto;
+    margin: 0 auto;
+    max-height: calc(var(--visible-height, 100vh) - 16px);
+    overflow: hidden;
+  }
+  .teras .web-entry-dialog form.teras-editor {
+    grid-auto-rows: max-content;
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .teras .web-entry-dialog :is(textarea,input,select) { font-size: 16px; }
+}

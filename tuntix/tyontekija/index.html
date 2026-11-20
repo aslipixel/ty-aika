@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-XEnsRLaiRXVlwD7dypvu/WKMd8HOLyf8O52v/Zp2KA0=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nmeuA1y0AMsMh/vmermgbHHpJefQV95X2pGbPDqRhuA=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
@@ -1674,12 +1674,12 @@ document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a="saveo
 
 let formViewportFrame=0;
 function focusedFieldScroll(rect,sheetRect,viewportTop,viewportHeight){const top=Math.max(sheetRect.top,viewportTop)+24;const bottom=Math.min(sheetRect.bottom,viewportTop+viewportHeight)-96;const room=bottom-top;if(room<=0)return rect.top-top;if(rect.bottom>bottom||rect.top<top)return rect.top-(top+Math.max(0,(room-rect.height)/2));return 0}
-function updateFormViewport(){formViewportFrame=0;const viewport=window.visualViewport;const top=viewport?.offsetTop||0,height=viewport?.height||window.innerHeight;document.documentElement.style.setProperty('--visible-top',top+'px');document.documentElement.style.setProperty('--visible-height',height+'px');const field=document.activeElement;if(!field?.matches('input,textarea,select'))return;const sheet=field.closest('.sheet-content,.tes-editor-body');if(!sheet)return;const delta=focusedFieldScroll(field.getBoundingClientRect(),sheet.getBoundingClientRect(),top,height);if(Math.abs(delta)>1)sheet.scrollTop+=delta}
+function updateFormViewport(){formViewportFrame=0;const viewport=window.visualViewport;const top=viewport?.offsetTop||0,height=viewport?.height||window.innerHeight;document.documentElement.style.setProperty('--visible-top',top+'px');document.documentElement.style.setProperty('--visible-height',height+'px');const field=document.activeElement;if(!field?.matches('input,textarea,select'))return;const sheet=field.closest('.sheet-content,.tes-editor-body,.web-entry-dialog form.teras-editor');if(!sheet)return;const delta=focusedFieldScroll(field.getBoundingClientRect(),sheet.getBoundingClientRect(),top,height);if(Math.abs(delta)>1)sheet.scrollTop+=delta}
 function scheduleFormViewport(){if(!formViewportFrame)formViewportFrame=requestAnimationFrame(updateFormViewport)}
 window.visualViewport?.addEventListener('resize',scheduleFormViewport);
 window.visualViewport?.addEventListener('scroll',scheduleFormViewport);
 window.addEventListener('resize',scheduleFormViewport);
-document.addEventListener('focusin',ev=>{if(!ev.target.closest('.sheet'))return;scheduleFormViewport();setTimeout(scheduleFormViewport,150);setTimeout(scheduleFormViewport,400)});
+document.addEventListener('focusin',ev=>{if(!ev.target.closest('.sheet,.web-entry-dialog'))return;scheduleFormViewport();setTimeout(scheduleFormViewport,150);setTimeout(scheduleFormViewport,400)});
 document.addEventListener('focusout',()=>setTimeout(scheduleFormViewport,400));
 scheduleFormViewport();
 
