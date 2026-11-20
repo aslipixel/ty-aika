@@ -385,6 +385,19 @@
   .teras .web-entry-dialog :is(textarea,input,select) { font-size: 16px; }
 }
 
+.teras .web-entry-dialog form.teras-editor {
+  grid-template-columns:minmax(0,1fr);
+}
+.teras .web-entry-dialog :is(#entry-date,#entry-start,#entry-end) {
+  -webkit-appearance:none;
+  appearance:none;
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+}
 .teras #entry-shift {min-width:0}
 .teras #entry-shift .teras-field-pair {
   gap:8px;
@@ -392,9 +405,6 @@
 .teras #entry-shift .teras-field-pair > div {min-width:0}
 .teras .teras-editor #entry-shift label {margin:0 0 3px}
 .teras #entry-shift input[type="time"] {
-  box-sizing:border-box;
-  width:100%;
-  min-width:0;
   height:36px;
   min-height:36px;
   padding:3px 7px;
