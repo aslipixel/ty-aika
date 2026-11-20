@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'tuntix/**'
+      - 'letterpilot/**'
       - 'index.html'
       - 'manifest.webmanifest'
       - 'sw.js'
