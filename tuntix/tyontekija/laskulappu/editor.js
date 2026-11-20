@@ -332,7 +332,18 @@
         stored = null;
       }
       if (!stored || !Array.isArray(stored.w)) {
-        say('Tiedostossa ”' + file.name + '” ei ole lomakkeen tietoja. Valitse TuntiX:llä tallennettu PDF tai kuva.');
+        // A photo or scan of the paper form: offer the Asiakirjat editor, which places
+        // the same form fields on top of the picture.
+        this.pendingFile = file;
+        if (note) {
+          note.innerHTML =
+            'Tiedostossa ”' +
+            escape(file.name) +
+            '” ei ole TuntiX-lomakkeen tietoja. Voit avata sen kuvana ja kirjoittaa kentät kuvan päälle.' +
+            '<span class="files-note-actions">' +
+            button('asDocument', 'image', 'Avaa kuvana', 'Avaa tiedosto kuvana ja täytä kentät') +
+            '</span>';
+        } else say('Tiedostossa ”' + file.name + '” ei ole lomakkeen tietoja.');
         return;
       }
       const n = file.name.replace(/\.[^.]+$/, '').trim().slice(0, 80) || 'Laskulappu';
@@ -496,6 +507,17 @@
         this.status('Tallennettu: ' + n + '. Paina ✓ aloittaaksesi uuden lomakkeen.');
       } else if (action === 'open') this.files();
       else if (action === 'import') this.el('#import-file').click();
+      else if (action === 'asDocument') {
+        const file = this.pendingFile;
+        if (!file) return;
+        this.pendingFile = null;
+        modal.close();
+        location.hash = 'asiakirjat';
+        // Wait until the Asiakirjat page has rendered its status line.
+        for (let i = 0; i < 40 && !document.getElementById('upload-form-status'); i++)
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        await (await openUploadManager()).openFile(file);
+      }
       else if (action === 'load' || action === 'view' || action === 'delete') {
         const n = b.closest('[data-name]').dataset.name;
         if (action === 'delete') {

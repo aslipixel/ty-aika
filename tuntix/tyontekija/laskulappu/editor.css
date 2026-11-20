@@ -242,6 +242,16 @@ dialog .actions,
   margin: 10px 0 0;
   color: var(--ui-secondary, #a9b5bf);
 }
+.files-note-actions {
+  display: flex;
+  margin-top: 8px;
+}
+.files-note-actions button {
+  min-height: 44px;
+}
+.files-note-actions svg {
+  color: var(--blue);
+}
 .confirm {
   width: min(360px, calc(100vw - 32px));
 }
