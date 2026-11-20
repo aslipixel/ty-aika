@@ -306,9 +306,9 @@ button:disabled {
 }
 .document-actions button[data-action='save'],
 .document-actions button[data-action='send'] {
-  background: var(--accent, #f5b919);
-  border-color: var(--accent, #f5b919);
-  color: #10191f;
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--ui-on-accent, #161b1f);
 }
 .document-actions button[data-action='save'] svg,
 .document-actions button[data-action='send'] svg {
