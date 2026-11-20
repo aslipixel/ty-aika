@@ -137,7 +137,7 @@ export async function refreshList() {
     cancel.onclick = () => { selecting(false); select.focus(); };
     remove.onclick = async () => {
       const ids = [...selected];
-      if (!ids.length || !confirm('Poistetaanko valitut tiedostot (' + ids.length + ')?')) return;
+      if (!ids.length || !(await appConfirm('Poistetaanko valitut tiedostot (' + ids.length + ')?', { yes: 'Poista', glyph: 'trash-2', danger: true }))) return;
       remove.disabled = cancel.disabled = true;
       boxes.forEach(box => box.disabled = true);
       try {

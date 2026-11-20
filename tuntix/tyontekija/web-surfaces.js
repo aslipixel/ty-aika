@@ -30,6 +30,33 @@
 
   function goHome() { location.hash = 'kalenteri'; }
 
+  // In-app replacement for window.confirm(). Some browsers and installed apps block
+  // the native dialog and return false at once, so deletes and saves silently failed.
+  function appConfirm(message, { yes = 'Kyllä', glyph = 'check', danger = false } = {}) {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'tes-dialog teras-dialog app-confirm';
+    dialog.setAttribute('role', 'alertdialog');
+    dialog.setAttribute('aria-labelledby', 'app-confirm-text');
+    dialog.innerHTML = `<p id="app-confirm-text"></p><div class="app-confirm-actions">
+      <button type="button" class="btn" data-answer="no">${icon('x')}Peruuta</button>
+      <button type="button" class="btn ${danger ? 'del app-confirm-danger' : 'pri'}" data-answer="yes">${icon(glyph)}${esc(yes)}</button></div>`;
+    dialog.querySelector('p').textContent = message;
+    return new Promise(resolve => {
+      let answer = false;
+      dialog.addEventListener('click', event => {
+        const button = event.target.closest('[data-answer]');
+        if (!button) return;
+        answer = button.dataset.answer === 'yes';
+        dialog.close();
+      });
+      dialog.addEventListener('close', () => { dialog.remove(); resolve(answer); }, { once: true });
+      document.body.append(dialog);
+      dialog.showModal();
+      dialog.querySelector('[data-answer="no"]').focus();
+    });
+  }
+  window.appConfirm = appConfirm;
+
   function applyTheme() {
     const theme = S.set.theme === 'light' ? 'light' : 'dark';
     document.documentElement.dataset.theme = theme;
@@ -111,10 +138,10 @@
     button.classList.add('teras-decorated');
   }
 
-  function finishRateEditor(dialog, home) {
+  async function finishRateEditor(dialog, home) {
     // A dismissed confirmation or invalid value leaves the editor open.
     if (tesEditorValues() !== dialog._baseline) {
-      if (tesEditing && !confirm('Vahvistetaanko hinnan muutokset?')) return;
+      if (tesEditing && !(await appConfirm('Vahvistetaanko hinnan muutokset?', { yes: 'Vahvista' }))) return;
       tesSaveItem();
       if (dialog.isConnected) return;
     } else tesCloseEditor();

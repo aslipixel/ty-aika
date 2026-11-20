@@ -187,7 +187,7 @@
     get(field)?.focus();
     return false;
   }
-  function commit() {
+  async function commit() {
     if (!draft) return true;
     capture();
     const absence = typeInfo().isAbsence(draft.t);
@@ -212,7 +212,7 @@
     if (shift && Math.abs(duration()-h)>0.01) return invalid('Työajan, tauon ja tuntimäärän pitää vastata toisiaan.','hours');
     if (S.en.filter(e=>e.id!==draft.id && e.d===draft.d).reduce((n,e)=>n+e.h,0)+h>24.000001) return invalid('Päivän tunnit eivät voi ylittää 24 tuntia.','hours');
     if (draft.id && !record(draft.id)) return invalid('Kirjausta ei enää löydy.','date');
-    if ((draft.id || (target && projectChanged)) && !confirm(target && projectChanged ? 'Muutetaanko kirjausta ja projektin tietoja? Projektin tiedot päivittyvät kaikkiin sen kirjauksiin.' : 'Tallennetaanko muutokset kirjaukseen?')) return false;
+    if ((draft.id || (target && projectChanged)) && !(await appConfirm(target && projectChanged ? 'Muutetaanko kirjausta ja projektin tietoja? Projektin tiedot päivittyvät kaikkiin sen kirjauksiin.' : 'Tallennetaanko muutokset kirjaukseen?', {yes:'Tallenna', glyph:'save'}))) return false;
 
     const previous = structuredClone(S);
     let projectId = sel;
@@ -243,8 +243,8 @@
     if (opener?.isConnected) opener.focus({preventScroll:true});
     opener=null;
   }
-  function finish(home=false, discard=false) {
-    if (!dialog || (!discard && !commit())) return false;
+  async function finish(home=false, discard=false) {
+    if (!dialog || (!discard && !(await commit()))) return false;
     release();
     if (history.state?.tuntixEntry) {
       goHomeOnBack=home;
@@ -268,9 +268,9 @@
     const info=[['Päivä',dateLabel(row.d)],['Työlaji',typeInfo().label(row.t)],['Projektinumero',pn(row.p)],['Työmaan osoite',pa(row.p)],['Työaika',row.start&&row.end?row.start+'–'+row.end:''],['Tunnit',hoursLabel(row.h)],['Kommentti',row.c]];
     layout('Kirjauksen tiedot',`<div class="teras-editor"><dl>${info.filter(([,v])=>v).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="teras-dialog-actions">${action('edit','Muokkaa','pencil',id)}${action('remove','Poista','trash-2',id)}</div></div>`);
   }
-  function remove(id) {
+  async function remove(id) {
     const row = record(id);
-    if (!row || !confirm('Poistetaanko kirjaus '+dateLabel(row.d)+' ('+hoursLabel(row.h)+')?')) return;
+    if (!row || !(await appConfirm('Poistetaanko kirjaus '+dateLabel(row.d)+' ('+hoursLabel(row.h)+')?', {yes:'Poista', glyph:'trash-2', danger:true}))) return;
     const previous=S.en;
     S.en=S.en.filter(e=>e.id!==id);
     if (!save()) { S.en=previous; return; }
@@ -307,7 +307,7 @@
     if (cmd==='retry-travel') updateTravel(true);
     else if (cmd==='home') finish(true);
     else if(cmd==='done') finish();
-    else if(cmd==='discard' && confirm('Hylätäänkö kirjaamattomat muutokset?')) finish(false,true);
+    else if(cmd==='discard') appConfirm('Hylätäänkö kirjaamattomat muutokset?', {yes:'Hylkää', glyph:'x', danger:true}).then(ok => { if (ok) finish(false,true); });
     else if(cmd==='types') {
       capture();
       typeInfo().manage(()=>{
@@ -330,8 +330,9 @@
         nested.querySelector('[data-dialog-exit="done"]')?.click();
         return;
       }
-      if (commit()) release();
-      else history.pushState({ ...history.state,tuntixEntry:true },'',route || location.pathname+location.search);
+      // Keep the history entry while the save is pending; drop it again once saved.
+      history.pushState({ ...history.state,tuntixEntry:true },'',route || location.pathname+location.search);
+      commit().then(ok => { if (ok) { release(); history.back(); } });
     } else if (goHomeOnBack) {
       goHomeOnBack=false;
       location.hash='kalenteri';

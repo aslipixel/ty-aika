@@ -412,3 +412,11 @@
 
 /* "Mtk" is an abbreviation (title = Matkakorvaus); keep it styled as a heading. */
 .teras #entry-travel abbr { text-decoration: none; }
+
+/* In-app confirmation dialog (replaces window.confirm). */
+.teras dialog.app-confirm { width: min(380px, calc(100vw - 32px)); padding: 18px; }
+.teras .app-confirm p { margin: 0 0 16px; font-size: 17px; line-height: 1.4; }
+.teras .app-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.teras .app-confirm-actions .btn { min-height: 44px; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.teras .app-confirm-actions svg { width: 18px; height: 18px; }
+.teras .app-confirm .app-confirm-danger { background: var(--ui-danger, #f2a398); border-color: var(--ui-danger, #f2a398); color: var(--ui-on-accent, #161b1f) !important; }

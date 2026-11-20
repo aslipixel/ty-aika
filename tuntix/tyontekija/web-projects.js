@@ -136,11 +136,6 @@
         if (options().some(item => item.value !== editing && normalized(item.label) === normalized(name))) {
           toast('Työlaji on jo olemassa.'); input.focus(); return false;
         }
-        if (!confirm(`Muutetaanko työlajin nimi muotoon ”${name}”?`)) {
-          editing = null;
-          renderTypes();
-          return false;
-        }
         const labels = new Map(S.set.workTypeLabels || []);
         labels.set(editing, name);
         if (!updateSettings({workTypeLabels:[...labels]})) return false;
@@ -178,7 +173,7 @@
       event.preventDefault();
       if (finishEdit()) addType();
     });
-    list.addEventListener('click', event => {
+    list.addEventListener('click', async event => {
       const button = event.target.closest('[data-type-action]');
       if (!button) return;
       const key = button.closest('[data-type-key]').dataset.typeKey;
@@ -186,7 +181,7 @@
       if (editing !== null && (editing !== key || button.dataset.typeAction !== 'delete') && !finishEdit()) return;
       if (button.dataset.typeAction === 'edit') { editing = key; renderTypes(); return; }
       if (options().length <= 1) {toast('Säilytä vähintään yksi työlaji.'); return;}
-      if (!confirm(`Poistetaanko työlaji ”${label(key)}” valikosta? Kirjatut tunnit säilyvät.`)) return;
+      if (!(await appConfirm(`Poistetaanko työlaji ”${label(key)}” valikosta? Kirjatut tunnit säilyvät.`, {yes:'Poista', glyph:'trash-2', danger:true}))) return;
       if (updateSettings({hiddenTypes:[...(S.set.hiddenTypes || []), key]})) {editing = null; renderTypes();}
     });
     list.addEventListener('keydown', event => {

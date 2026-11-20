@@ -619,7 +619,7 @@ document.addEventListener('change', event => {
   $('#measurement-preview').dataset.font = input.value;
 });
 
-document.addEventListener('click', event => {
+document.addEventListener('click', async event => {
   const signature = event.target.closest('[data-measurement-signature]');
   if (signature) {
     openMeasurementSignature(signature.dataset.measurementSignature);
@@ -639,7 +639,7 @@ document.addEventListener('click', event => {
     else measurementState().mittaus = previous;
   }
   else if (action === 'reset') {
-    if (!measurementState().mittaus || !confirm('Tyhjennetäänkö tallennettu mittaustodistus?')) return;
+    if (!measurementState().mittaus || !(await appConfirm('Tyhjennetäänkö tallennettu mittaustodistus?', { yes: 'Tyhjennä', glyph: 'rotate-ccw', danger: true }))) return;
     const previous = measurementState().mittaus;
     measurementState().mittaus = { rows: [], font: previous.font, hiddenFields: previous.hiddenFields || [] };
     if (saveMeasurement()) render(1);
