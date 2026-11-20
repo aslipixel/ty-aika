@@ -249,9 +249,9 @@ a{color:var(--p)}
 <dialog id="setDlg">
   <form method="dialog" class="dlg">
     <h2>Настройки</h2>
-    <label class="l" for="apiKey">Ключ Anthropic API</label>
-    <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
-    <p class="note">Ключ хранится только в этом браузере и отправляется напрямую в Anthropic. Получить ключ: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Тексты документов отправляются в Claude для анализа.</p>
+    <label class="l" for="apiKey">Тестовый код доступа LetterPilot</label>
+    <input type="password" id="apiKey" placeholder="Ваш тестовый код доступа" autocomplete="off">
+    <p class="note">Введите только тестовый код доступа к Cloudflare Worker, НЕ ключ Gemini. Код хранится до закрытия вкладки; документы передаются через Worker в Gemini.</p>
     <label class="l" for="effort">Глубина анализа</label>
     <select id="effort">
       <option value="low">Быстро</option>
@@ -268,10 +268,7 @@ a{color:var(--p)}
 </dialog>
 
 <script type="module">
-import Anthropic from "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.5.0/+esm";
 
-const MODEL = "claude-opus-5-5";
-const BETAS = ["server-side-fallback-2026-07-01"];
 const LANGS = ["Русский","Українська","English","Suomi","Svenska","Deutsch","Français","Español","Italiano","Polski","Eesti","Latviešu","Lietuvių","Türkçe","العربية","فارسی","中文","日本語","한국어","Português","Nederlands","Čeština","Română","Magyar","Български","Қазақша","Oʻzbekcha","Հայերեն","ქართული","Azərbaycan"];
 
 const $ = id => document.getElementById(id);
@@ -303,24 +300,48 @@ $("lang").onchange = () => store.set("lang", $("lang").value);
 
 /* ---------- settings ---------- */
 const openSettings = () => {
-  $("apiKey").value = store.get("key", "");
+  $("apiKey").value = sessionStorage.getItem("lp_test_token") || "";
   $("effort").value = store.get("effort", "medium");
   $("saveHist").checked = store.get("saveHist", true);
   $("setDlg").showModal();
 };
 $("setBtn").onclick = openSettings;
 $("saveSet").onclick = () => {
-  store.set("key", $("apiKey").value.trim());
+  sessionStorage.setItem("lp_test_token", $("apiKey").value.trim());
   store.set("effort", $("effort").value);
   store.set("saveHist", $("saveHist").checked);
 };
 $("wipeBtn").onclick = () => { store.del("history"); renderHistory(); };
 
+// Gemini is called through Cloudflare; never expose GEMINI_API_KEY in the browser.
+const WORKER_URL = "https://letterpilot-ai.asl-icopal.workers.dev";
 const client = () => {
-  const apiKey = store.get("key", "");
-  if (!apiKey) { openSettings(); throw new Error("Сначала добавьте ключ Anthropic API в настройках."); }
-  return new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+  const token = sessionStorage.getItem("lp_test_token") || "";
+  if (!token) { openSettings(); throw new Error("Укажите тестовый код доступа в настройках."); }
+  return { beta: { messages: { stream: payload => {
+    let onText = null;
+    return {
+      on(event, fn) { if (event === "text") onText = fn; return this; },
+      async finalMessage() {
+        const res = await fetch(WORKER_URL + "/api", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-LetterPilot-Token": token },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const error = new Error(data.error || "Ошибка HTTP " + res.status);
+          error.status = res.status;
+          throw error;
+        }
+        const out = (data.content || []).filter(p => p.type === "text").map(p => p.text).join("");
+        if (onText) onText(out);
+        return data;
+      }
+    };
+  } } } };
 };
+store.del("key"); // clear legacy Anthropic key from local storage
 
 /* ---------- attachments ---------- */
 let attachments = []; // {name, kind:'image'|'pdf'|'text', media_type, data}
@@ -331,7 +352,7 @@ const readAs = (file, how) => new Promise((res, rej) => {
 });
 async function addFiles(list) {
   for (const f of list) {
-    if (f.size > 20 * 1024 * 1024) { showErr(`Файл «${f.name}» больше 20 МБ.`); continue; }
+    if (f.size > 4 * 1024 * 1024) { showErr(`Файл «${f.name}» больше 4 МБ.`); continue; }
     if (f.type === "text/plain") {
       const t = await readAs(f, "text");
       $("docText").value = ($("docText").value ? $("docText").value + "\n\n" : "") + t;
@@ -374,12 +395,12 @@ function explainError(e) {
   if (s === 401) return "Неверный ключ API. Проверьте его в настройках.";
   if (s === 429) return "Слишком много запросов или исчерпан лимит. Попробуйте чуть позже.";
   if (s === 413) return "Документ слишком большой. Попробуйте меньше страниц.";
-  if (s >= 500) return "Сервис Claude временно недоступен. Попробуйте ещё раз.";
+  if (s >= 500) return "Сервис Gemini временно недоступен. Попробуйте ещё раз.";
   return e?.message || String(e);
 }
 const textOf = msg => msg.content.filter(b => b.type === "text").map(b => b.text).join("");
 function checkStop(msg) {
-  if (msg.stop_reason === "refusal") throw new Error("Claude отказался обрабатывать этот документ.");
+  if (msg.stop_reason === "refusal") throw new Error("Gemini не смог обработать этот документ.");
   if (msg.stop_reason === "max_tokens") throw new Error("Документ слишком длинный — ответ обрезан. Попробуйте разделить его на части.");
 }
 function docContent() {
@@ -453,7 +474,7 @@ async function analyze() {
   try {
     const stream = c.beta.messages.stream({
       model: MODEL,
-      max_tokens: 64000,
+      max_tokens: 12000,
       betas: BETAS,
       fallbacks: "default",
       system: SYSTEM,
@@ -574,7 +595,7 @@ ${notes ? `Что пользователь хочет сказать (его с�
   let full = "";
   try {
     const stream = c.beta.messages.stream({
-      model: MODEL, max_tokens: 16000, betas: BETAS, fallbacks: "default",
+      model: MODEL, max_tokens: 12000, betas: BETAS, fallbacks: "default",
       system: SYSTEM, output_config: { effort: "medium" },
       messages: [{ role: "user", content: [...baseMessages(), { type: "text", text: ask }] }]
     });
