@@ -299,3 +299,24 @@ button:disabled {
 .modal .actions:has([data-action='store']) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
+/* Main actions: 44px touch targets, Tallenna and Lähetä stand out. */
+.document-actions button {
+  min-height: 44px;
+}
+.document-actions button[data-action='save'],
+.document-actions button[data-action='send'] {
+  background: var(--accent, #f5b919);
+  border-color: var(--accent, #f5b919);
+  color: #10191f;
+}
+.document-actions button[data-action='save'] svg,
+.document-actions button[data-action='send'] svg {
+  color: currentColor;
+}
+:host > [role='status']:not(:empty) {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ui-subtle, #22313c);
+}

@@ -47,7 +47,9 @@
     return form;
   };
   let draft = blank(),
-    name = '';
+    name = '',
+    // True while the form has changes that are neither stored nor sent/exported.
+    dirty = false;
   const button = (action, glyph, label, title = label) =>
     `<button type="button" data-action="${action}" title="${escape(title)}" aria-label="${escape(title)}">${icon(glyph)}${label ? '<span>' + escape(label) + '</span>' : ''}</button>`;
   const actions = {
@@ -115,6 +117,7 @@
           if (group === 'tt') draft.tt[index] = input.value;
           else draft[group][index][key] = input.value;
         }
+        dirty = true;
       });
     }
     connectedCallback() {
@@ -130,6 +133,24 @@
     }
     status(message) {
       this.el('[role=status]').textContent = message;
+    }
+    // Start a new, empty form.
+    reset() {
+      draft = blank();
+      name = '';
+      dirty = false;
+      if (this.el('.modal').open) this.el('.modal').close();
+      if (this.el('.preview').open) this.el('.preview').close();
+      this.draw();
+      this.status('Uusi tyhjä lomake.');
+      this.scrollIntoView({ block: 'start' });
+    }
+    // Called by the page's ✓ button. Returns false if the user keeps unsaved changes.
+    finish() {
+      if (dirty && !confirm('Lomaketta ei ole tallennettu tai lähetetty. Tyhjennetäänkö se silti?'))
+        return false;
+      this.reset();
+      return true;
     }
     draw() {
       this.el('header h2').textContent = name || 'Laskulappu';
@@ -194,7 +215,7 @@
         ),
       ].join('');
       this.el('.document-actions').innerHTML =
-        (draft.hid.edu ? '' : controls('sign', 'removeSig')) +
+        (draft.hid.edu ? '' : controls('sign', ...(draft.sig ? ['removeSig'] : []))) +
         controls('preview', 'open', 'save', 'send');
       this.el('.preview [data-action=sign]').hidden = !!draft.hid.edu;
       if (this.el('.sig img')) this.el('.sig img').src = draft.sig;
@@ -265,6 +286,7 @@
         preview = this.el('.preview');
       if (action === 'mode') {
         selectMode(draft, b.dataset.mode);
+        dirty = true;
         this.draw();
         this.el('[data-mode="' + draft.mode + '"]').focus();
       } else if (action === 'fields') {
@@ -291,6 +313,7 @@
         draft.hid[k] = !draft.hid[k];
         draft.exclusions[draft.mode][k] = draft.hid[k];
         b.setAttribute('aria-pressed', String(!draft.hid[k]));
+        dirty = true;
         this.draw();
       } else if (action === 'add' || action === 'del') {
         const { group, index } = b.closest('[data-group]').dataset,
@@ -307,6 +330,7 @@
           rows.splice(i, 1);
           if (!rows.length) rows.push(type.create());
         } else return;
+        dirty = true;
         this.draw();
         this.el(
           `[data-group="${group}"][data-index="${action === 'add' ? i + 1 : Math.min(i, rows.length - 1)}"] [data-key]`,
@@ -335,9 +359,10 @@
           return;
         }
         name = n;
+        dirty = false;
         modal.close();
         this.draw();
-        this.status('Tallennettu: ' + n);
+        this.status('Tallennettu: ' + n + '. Paina ✓ aloittaaksesi uuden lomakkeen.');
       } else if (action === 'open') this.files();
       else if (action === 'load' || action === 'delete') {
         const n = b.closest('[data-name]').dataset.name;
@@ -361,6 +386,7 @@
         selectMode(stored, mode);
         draft = stored;
         name = n;
+        dirty = false;
         modal.close();
         this.draw();
         this.status('Avattu: ' + n);
@@ -376,12 +402,14 @@
           return;
         }
         draft.sig = c.toDataURL();
+        dirty = true;
         modal.close();
         this.draw();
         if (preview.open) await this.refresh();
       } else if (action === 'removeSig') {
         if (draft.sig && confirm('Poistetaanko allekirjoitus?')) {
           draft.sig = '';
+          dirty = true;
           this.draw();
         }
       } else if (action === 'preview') {
@@ -439,6 +467,8 @@
         if (action !== 'pdf' && navigator.canShare?.({ files: [file] })) {
           try {
             await navigator.share({ files: [file], title: name || 'Laskulappu' });
+            dirty = false;
+            this.status('Lähetetty. Paina ✓ aloittaaksesi uuden lomakkeen.');
             return;
           } catch (err) {
             if (err.name === 'AbortError') return;
@@ -450,6 +480,8 @@
         a.download = file.name;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 60000);
+        dirty = false;
+        this.status('Tiedosto ladattu: ' + file.name + '. Paina ✓ aloittaaksesi uuden lomakkeen.');
         if (action === 'send')
           location.href =
             'mailto:?subject=' +

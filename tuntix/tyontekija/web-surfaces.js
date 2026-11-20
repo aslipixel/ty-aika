@@ -78,7 +78,9 @@
     bar.insertBefore(toolbarButton('house', 'Etusivu', goHome), existingDone);
     if (!existingDone) {
       const done = toolbarButton('check', 'Valmis', () => {
-        if (view.querySelector('.document-toolbar [data-form-close]')) view.querySelector('.document-toolbar [data-form-close]').click();
+        const editor = view.querySelector('laskulappu-editor');
+        if (editor?.finish) editor.finish();
+        else if (view.querySelector('.document-toolbar [data-form-close]')) view.querySelector('.document-toolbar [data-form-close]').click();
         else if (route === 'asiakirjat') location.hash = 'lomakkeet';
         else goHome();
       });
