@@ -206,6 +206,39 @@ dialog .actions,
   flex: 1;
   overflow-wrap: anywhere;
 }
+.saved button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  flex: none;
+}
+.saved button svg {
+  width: 18px;
+  height: 18px;
+}
+.saved button[data-action='view'] svg,
+.saved button[data-action='load'] svg {
+  color: var(--blue);
+}
+.confirm {
+  width: min(360px, calc(100vw - 32px));
+}
+.confirm p {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.confirm button {
+  min-height: 44px;
+}
+.confirm .danger {
+  background: var(--ui-danger, #f2a398);
+  border-color: var(--ui-danger, #f2a398);
+  color: var(--ui-on-accent, #161b1f);
+}
+.confirm .danger svg {
+  color: currentColor;
+}
 dialog canvas {
   width: 100%;
   height: clamp(145px, 29vh, 225px);

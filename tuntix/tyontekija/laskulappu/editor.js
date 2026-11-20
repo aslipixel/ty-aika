@@ -125,7 +125,9 @@
         <footer class="actions document-actions" aria-label="Lomakkeen toiminnot"></footer><p role="status"></p>
         <dialog class="preview"><header><h2></h2>${controls('edit')}</header><div class="paper"><img alt="Laskulapun esikatselu"></div>
         <footer class="actions">${controls('zoomOut', 'zoomIn', 'sign', 'export', 'send')}</footer></dialog>
-        <dialog class="modal"></dialog>`;
+        <dialog class="modal"></dialog>
+        <dialog class="confirm" role="alertdialog" aria-labelledby="confirm-text"><p id="confirm-text"></p>
+        <div class="actions"><button type="button" data-answer="no">${icon('x')}<span>Peruuta</span></button><button type="button" data-answer="yes"></button></div></dialog>`;
       this.draw();
     }
     el(s) {
@@ -145,9 +147,42 @@
       this.status('Uusi tyhjä lomake.');
       this.scrollIntoView({ block: 'start' });
     }
-    // Called by the page's ✓ button. Returns false if the user keeps unsaved changes.
-    finish() {
-      if (dirty && !confirm('Lomaketta ei ole tallennettu tai lähetetty. Tyhjennetäänkö se silti?'))
+    // In-app confirmation. The browser's confirm() is blocked or hidden in some
+    // browsers and installed apps, which made delete silently do nothing.
+    ask(message, yes = 'Poista', glyph = 'trash-2', danger = true) {
+      const d = this.el('.confirm'),
+        ok = d.querySelector('[data-answer=yes]');
+      d.querySelector('p').textContent = message;
+      ok.innerHTML = icon(glyph) + '<span>' + escape(yes) + '</span>';
+      ok.classList.toggle('danger', danger);
+      return new Promise((resolve) => {
+        const done = (answer) => {
+          d.onclick = d.oncancel = null;
+          d.close();
+          resolve(answer);
+        };
+        d.onclick = (event) => {
+          const b = event.target.closest('[data-answer]');
+          if (b) done(b.dataset.answer === 'yes');
+        };
+        d.oncancel = (event) => {
+          event.preventDefault();
+          done(false);
+        };
+        d.showModal();
+        d.querySelector('[data-answer=no]').focus();
+      });
+    }
+    // Called by the page's ✓ button. Resolves false if the user keeps unsaved changes.
+    async finish() {
+      if (
+        dirty &&
+        !(await this.ask(
+          'Lomaketta ei ole tallennettu tai lähetetty. Tyhjennetäänkö se silti?',
+          'Tyhjennä',
+          'rotate-ccw',
+        ))
+      )
         return false;
       this.reset();
       return true;
@@ -235,7 +270,7 @@
         list
           .map(
             (k) =>
-              `<div class="saved" data-name="${escape(k.slice(5))}"><strong>${escape(k.slice(5))}</strong>${button('load', 'pencil', 'Muokkaa')}${button('delete', 'trash-2', '', 'Poista lomake')}</div>`,
+              `<div class="saved" data-name="${escape(k.slice(5))}"><strong>${escape(k.slice(5))}</strong>${button('view', 'eye', '', 'Katso lomaketta')}${button('load', 'pencil', '', 'Muokkaa lomaketta')}${button('delete', 'trash-2', '', 'Poista lomake')}</div>`,
           )
           .join('') +
           (list.length ? '' : '<p>Ei tallennettuja lomakkeita.</p>') +
@@ -326,7 +361,7 @@
             return;
           }
           rows.splice(i + 1, 0, type.create());
-        } else if (confirm('Poistetaanko rivi?')) {
+        } else if (await this.ask('Poistetaanko rivi ' + (i + 1) + '?')) {
           rows.splice(i, 1);
           if (!rows.length) rows.push(type.create());
         } else return;
@@ -349,7 +384,7 @@
         const n = this.el('#filename').value.trim() || 'Laskulappu';
         if (
           localStorage.getItem('lask:' + n) !== null &&
-          !confirm('Korvataanko tallennettu lomake?')
+          !(await this.ask('Lomake ”' + n + '” on jo tallennettu. Korvataanko se?', 'Korvaa', 'save'))
         )
           return;
         try {
@@ -364,19 +399,31 @@
         this.draw();
         this.status('Tallennettu: ' + n + '. Paina ✓ aloittaaksesi uuden lomakkeen.');
       } else if (action === 'open') this.files();
-      else if (action === 'load' || action === 'delete') {
+      else if (action === 'load' || action === 'view' || action === 'delete') {
         const n = b.closest('[data-name]').dataset.name;
         if (action === 'delete') {
-          if (confirm('Poistetaanko lomake ”' + n + '”?')) {
+          if (await this.ask('Haluatko varmasti poistaa lomakkeen ”' + n + '”? Tätä ei voi perua.')) {
             localStorage.removeItem('lask:' + n);
             if (name === n) {
               name = '';
+              dirty = true;
               this.draw();
             }
             this.files();
+            this.status('Poistettu: ' + n);
           }
           return;
         }
+        if (
+          dirty &&
+          !(await this.ask(
+            'Nykyistä lomaketta ei ole tallennettu. Avataanko ”' + n + '” silti?',
+            'Avaa',
+            'folder-open',
+            false,
+          ))
+        )
+          return;
         const stored = JSON.parse(localStorage.getItem('lask:' + n));
         if (!stored || !Array.isArray(stored.w)) return;
         // Older saved forms stored the two checkboxes and a single visibility map.
@@ -390,6 +437,7 @@
         modal.close();
         this.draw();
         this.status('Avattu: ' + n);
+        if (action === 'view') await this.act({ dataset: { action: 'preview' } });
       } else if (action === 'sign') this.signature();
       else if (action === 'clear') {
         const c = this.el('canvas');
@@ -407,7 +455,7 @@
         this.draw();
         if (preview.open) await this.refresh();
       } else if (action === 'removeSig') {
-        if (draft.sig && confirm('Poistetaanko allekirjoitus?')) {
+        if (draft.sig && (await this.ask('Poistetaanko allekirjoitus?'))) {
           draft.sig = '';
           dirty = true;
           this.draw();
