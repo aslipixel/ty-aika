@@ -220,6 +220,28 @@ dialog .actions,
 .saved button[data-action='load'] svg {
   color: var(--blue);
 }
+.files-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.files-actions button {
+  min-height: 44px;
+}
+.files-actions [data-action='import'] {
+  width: 44px;
+  padding: 0;
+}
+.files-actions [data-action='import'] svg {
+  width: 18px;
+  height: 18px;
+  color: var(--blue);
+}
+.files-note:not(:empty) {
+  margin: 10px 0 0;
+  color: var(--ui-secondary, #a9b5bf);
+}
 .confirm {
   width: min(360px, calc(100vw - 32px));
 }

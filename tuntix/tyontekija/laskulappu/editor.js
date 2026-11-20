@@ -46,6 +46,37 @@
     selectMode(form, 'osa');
     return form;
   };
+  // Exported PDF and JPG files carry the form data, so they can be opened for editing again.
+  const DATA_TAG = 'TUNTIX-LASKULAPPU-1:';
+  const toBase64 = (text) => {
+    const bytes = new TextEncoder().encode(text);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000)
+      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(binary);
+  };
+  const fromBase64 = (b64) =>
+    new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
+  const packDraft = () => DATA_TAG + toBase64(JSON.stringify(draft));
+  // JPEG comment segments hold at most 65533 bytes, so long data is split over several.
+  async function jpegWithData(blob) {
+    const jpeg = new Uint8Array(await blob.arrayBuffer()),
+      body = packDraft().slice(DATA_TAG.length),
+      segments = [];
+    for (let i = 0; i < body.length; i += 60000) {
+      const text = DATA_TAG + body.slice(i, i + 60000),
+        segment = new Uint8Array(4 + text.length);
+      segment.set([0xff, 0xfe, (text.length + 2) >> 8, (text.length + 2) & 0xff]);
+      for (let j = 0; j < text.length; j++) segment[4 + j] = text.charCodeAt(j);
+      segments.push(segment);
+    }
+    return new Blob([jpeg.subarray(0, 2), ...segments, jpeg.subarray(2)], { type: 'image/jpeg' });
+  }
+  async function readDraftFile(file) {
+    const text = new TextDecoder('latin1').decode(await file.arrayBuffer());
+    const parts = [...text.matchAll(/TUNTIX-LASKULAPPU-1:([A-Za-z0-9+/=]+)/g)].map((m) => m[1]);
+    return parts.length ? JSON.parse(fromBase64(parts.join(''))) : null;
+  }
   let draft = blank(),
     name = '',
     // True while the form has changes that are neither stored nor sent/exported.
@@ -106,6 +137,12 @@
         const b = event.target.closest('[data-action]');
         if (b) this.act(b).catch(() => this.status('Toiminto epäonnistui. Yritä uudelleen.'));
       });
+      this.root.addEventListener('change', (event) => {
+        if (event.target.id !== 'import-file') return;
+        const file = event.target.files[0];
+        event.target.value = '';
+        if (file) this.importFile(file);
+      });
       this.root.addEventListener('input', (event) => {
         const input = event.target,
           key = input.dataset.key;
@@ -126,6 +163,7 @@
         <dialog class="preview"><header><h2></h2>${controls('edit')}</header><div class="paper"><img alt="Laskulapun esikatselu"></div>
         <footer class="actions">${controls('zoomOut', 'zoomIn', 'sign', 'export', 'send')}</footer></dialog>
         <dialog class="modal"></dialog>
+        <input type="file" id="import-file" accept="application/pdf,image/*,.pdf,.jpg,.jpeg" hidden>
         <dialog class="confirm" role="alertdialog" aria-labelledby="confirm-text"><p id="confirm-text"></p>
         <div class="actions"><button type="button" data-answer="no">${icon('x')}<span>Peruuta</span></button><button type="button" data-answer="yes"></button></div></dialog>`;
       this.draw();
@@ -261,6 +299,61 @@
       if (!d.open) d.showModal();
       return d;
     }
+    // Make a stored or imported form the current one. Returns false for invalid data.
+    adopt(stored, n) {
+      if (!stored || typeof stored !== 'object' || !Array.isArray(stored.w)) return false;
+      stored.v = stored.v && typeof stored.v === 'object' ? stored.v : {};
+      if (!Array.isArray(stored.h) || !stored.h.length) stored.h = [rowTypes.h.create()];
+      if (!Array.isArray(stored.tt) || !stored.tt.length) stored.tt = [''];
+      if (!stored.w.length) stored.w = [emptyWork()];
+      stored.hid = stored.hid && typeof stored.hid === 'object' ? stored.hid : {};
+      if (typeof stored.sig !== 'string' || !stored.sig.startsWith('data:image/')) stored.sig = '';
+      // Older saved forms stored the two checkboxes and a single visibility map.
+      const legacyPartial = stored.v.osa || (stored.hid.loppu && !stored.v.loppu);
+      const mode = ['osa', 'loppu'].includes(stored.mode)
+        ? stored.mode
+        : legacyPartial && !stored.v.loppu
+          ? 'osa'
+          : 'loppu';
+      stored.exclusions ||= { osa: {}, loppu: {}, [mode]: { ...stored.hid } };
+      selectMode(stored, mode);
+      draft = stored;
+      name = n;
+      dirty = false;
+      return true;
+    }
+    async importFile(file) {
+      const note = this.el('.modal .files-note');
+      const say = (message) => (note ? (note.textContent = message) : this.status(message));
+      let stored = null;
+      try {
+        stored = await readDraftFile(file);
+      } catch {
+        stored = null;
+      }
+      if (!stored || !Array.isArray(stored.w)) {
+        say('Tiedostossa ”' + file.name + '” ei ole lomakkeen tietoja. Valitse TuntiX:llä tallennettu PDF tai kuva.');
+        return;
+      }
+      const n = file.name.replace(/\.[^.]+$/, '').trim().slice(0, 80) || 'Laskulappu';
+      if (
+        dirty &&
+        !(await this.ask(
+          'Nykyistä lomaketta ei ole tallennettu. Avataanko ”' + n + '” silti?',
+          'Avaa',
+          'folder-open',
+          false,
+        ))
+      )
+        return;
+      if (!this.adopt(stored, n)) {
+        say('Tiedoston lomaketta ei voitu avata.');
+        return;
+      }
+      if (this.el('.modal').open) this.el('.modal').close();
+      this.draw();
+      this.status('Avattu tiedostosta: ' + file.name + '. Tallenna, jos haluat sen listaan.');
+    }
     files() {
       const list = Object.keys(localStorage)
         .filter((k) => k.startsWith('lask:'))
@@ -274,7 +367,10 @@
           )
           .join('') +
           (list.length ? '' : '<p>Ei tallennettuja lomakkeita.</p>') +
-          controls('close'),
+          '<div class="files-actions">' +
+          controls('close') +
+          button('import', 'upload', '', 'Avaa tiedosto galleriasta tai kansiosta') +
+          '</div><p class="files-note" role="status"></p>',
       );
     }
     signature() {
@@ -399,6 +495,7 @@
         this.draw();
         this.status('Tallennettu: ' + n + '. Paina ✓ aloittaaksesi uuden lomakkeen.');
       } else if (action === 'open') this.files();
+      else if (action === 'import') this.el('#import-file').click();
       else if (action === 'load' || action === 'view' || action === 'delete') {
         const n = b.closest('[data-name]').dataset.name;
         if (action === 'delete') {
@@ -424,16 +521,7 @@
           ))
         )
           return;
-        const stored = JSON.parse(localStorage.getItem('lask:' + n));
-        if (!stored || !Array.isArray(stored.w)) return;
-        // Older saved forms stored the two checkboxes and a single visibility map.
-        const legacyPartial = stored.v.osa || (stored.hid?.loppu && !stored.v.loppu);
-        const mode = stored.mode || (legacyPartial && !stored.v.loppu ? 'osa' : 'loppu');
-        stored.exclusions ||= { osa: {}, loppu: {}, [mode]: { ...stored.hid } };
-        selectMode(stored, mode);
-        draft = stored;
-        name = n;
-        dirty = false;
+        if (!this.adopt(JSON.parse(localStorage.getItem('lask:' + n)), n)) return;
         modal.close();
         this.draw();
         this.status('Avattu: ' + n);
@@ -491,10 +579,10 @@
           if (!jpeg) throw Error();
           if (!status.isConnected || !dialog.open) return;
           this.exports = {
-            pdf: new File([LaskulappuPaper.pdfBytes(canvas)], filename + '.pdf', {
+            pdf: new File([LaskulappuPaper.pdfBytes(canvas, packDraft())], filename + '.pdf', {
               type: 'application/pdf',
             }),
-            photo: new File([jpeg], filename + '.jpg', { type: 'image/jpeg' }),
+            photo: new File([await jpegWithData(jpeg)], filename + '.jpg', { type: 'image/jpeg' }),
           };
           status.textContent = navigator.canShare?.({ files: [this.exports.photo] })
             ? 'Valitse Kuva ja tallenna kuva jakovalikosta.'
@@ -507,7 +595,7 @@
         const file =
           action === 'send'
             ? new File(
-                [LaskulappuPaper.pdfBytes(await LaskulappuPaper.render(draft))],
+                [LaskulappuPaper.pdfBytes(await LaskulappuPaper.render(draft), packDraft())],
                 (name || 'Laskulappu').replace(/[/\\]/g, '_') + '.pdf',
                 { type: 'application/pdf' },
               )

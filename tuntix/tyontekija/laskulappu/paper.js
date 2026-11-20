@@ -214,7 +214,8 @@ const LaskulappuPaper = (() => {
       im.src = BG;
     });
   }
-  function pdfBytes(c) {
+  // `data` (optional, ASCII) is stored in its own stream so the editor can reopen the file.
+  function pdfBytes(c, data = '') {
     const jb = Uint8Array.from(atob(c.toDataURL('image/jpeg', 0.92).split(',')[1]), (ch) =>
         ch.charCodeAt(0),
       ),
@@ -232,7 +233,7 @@ const LaskulappuPaper = (() => {
       push(i + ' 0 obj\n' + s + '\nendobj\n');
     };
     push('%PDF-1.4\n');
-    ob(1, '<</Type/Catalog/Pages 2 0 R>>');
+    ob(1, '<</Type/Catalog/Pages 2 0 R' + (data ? '/TuntixLaskulappu 6 0 R' : '') + '>>');
     ob(2, '<</Type/Pages/Kids[3 0 R]/Count 1>>');
     ob(
       3,
@@ -252,10 +253,12 @@ const LaskulappuPaper = (() => {
     push('\nendstream\nendobj\n');
     const ct = 'q 595.28 0 0 841.89 0 0 cm /I Do Q';
     ob(5, '<</Length ' + ct.length + '>>\nstream\n' + ct + '\nendstream');
+    if (data) ob(6, '<</Length ' + data.length + '>>\nstream\n' + data + '\nendstream');
+    const count = data ? 7 : 6;
     const xr = n;
-    push('xref\n0 6\n0000000000 65535 f \n');
-    for (let i = 1; i < 6; i++) push(String(off[i]).padStart(10, '0') + ' 00000 n \n');
-    push('trailer\n<</Size 6/Root 1 0 R>>\nstartxref\n' + xr + '\n%%EOF');
+    push('xref\n0 ' + count + '\n0000000000 65535 f \n');
+    for (let i = 1; i < count; i++) push(String(off[i]).padStart(10, '0') + ' 00000 n \n');
+    push('trailer\n<</Size ' + count + '/Root 1 0 R>>\nstartxref\n' + xr + '\n%%EOF');
     const o = new Uint8Array(n);
     let p = 0;
     parts.forEach((b) => {
