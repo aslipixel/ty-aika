@@ -409,3 +409,6 @@
   min-height:36px;
   padding:3px 7px;
 }
+
+/* "Mtk" is an abbreviation (title = Matkakorvaus); keep it styled as a heading. */
+.teras #entry-travel abbr { text-decoration: none; }

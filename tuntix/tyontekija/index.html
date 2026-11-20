@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nmeuA1y0AMsMh/vmermgbHHpJefQV95X2pGbPDqRhuA=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-DiZsq6SHh1aZ3Tp5KxKlJ308JLZyQHHTN5pb32bfYHg=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
@@ -1317,7 +1317,7 @@ function tesLineTotal(row){return Math.round((row.qty/(row.unit==='10 kpl'?10:1)
 function tesTotal(rows){return rows.reduce((sum,r)=>sum+Math.round(tesLineTotal(r)*100),0)/100}
 function trapezoidCalculator(){
   return `<div class="tes-page-toolbar"><h2>Pinta-alalaskuri</h2><button type="button" class="sheet-control sheet-done tes-menu-return" data-tes="home" aria-label="Takaisin valikkoon">✓</button></div>
-  <section class="card" id="trapezoid"><h3>Puolisuunnikkaan pinta-ala</h3>
+  <section class="card" id="trapezoid"><h3>Trapezium</h3>
   <p>Mittaa leveys kummastakin päästä ja niiden kohtisuora etäisyys.</p>
   <label for="trap-a">Leveys A (m)</label><input id="trap-a" inputmode="decimal" placeholder="2,5">
   <label for="trap-b">Leveys B (m)</label><input id="trap-b" inputmode="decimal" placeholder="3,8">
@@ -1456,9 +1456,9 @@ if(tesTab==='home')body=`<section class="card">
  ${calculatorLink('calculator','Urakkalaskuri','<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8 7h8v4H8zM9 15h.01M15 15h.01M9 18h.01M15 18h.01"/>')}
  ${calculatorLink('concrete','Tilavuuslaskuri','<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9"/>')}
  ${calculatorLink('slope-volume','Kaltevuus- ja tilavuuslaskuri','<path d="M4 19h16V6L4 19z"/>')}
- ${calculatorLink('trapezoid','Puolisuunnikkaan pinta-ala','<path d="M7 6h10l4 12H3L7 6z"/>')}
- </section><section class="card"><h3>Koko TES</h3><p>Rakennusliitto · Kattoliitto<br>Vedeneristysalan TES 2025–2028</p><button class="btn" data-tes="pdf" data-doc="tes">Lataa TES 2025–2028 · PDF</button>${tesNotice}</section>`;
-if(tesTab==='calculator')body=(cat.validUntil&&dk(new Date())>cat.validUntil?'<p class="card tes-warning">Hinnaston voimassaolo on päättynyt.</p>':'')+`<section class="card">${calculatorLink('contract-description','Urakkaselitys','<path d="${P.document}"/>')}</section>`+tesCalculator();
+ ${calculatorLink('trapezoid','Trapezium','<path d="M7 6h10l4 12H3L7 6z"/>')}
+ </section>`;
+if(tesTab==='calculator')body=(cat.validUntil&&dk(new Date())>cat.validUntil?'<p class="card tes-warning">Hinnaston voimassaolo on päättynyt.</p>':'')+`<section class="card">${calculatorLink('contract-description','Urakkaselitys','<path d="${P.document}"/>')}</section>`+tesCalculator()+`<section class="card"><h3>Koko TES</h3><p>Rakennusliitto · Kattoliitto<br>Vedeneristysalan TES 2025–2028</p><button class="btn" data-tes="pdf" data-doc="tes">Lataa TES 2025–2028 · PDF</button>${tesNotice}</section>`;
 if(tesTab==='catalogue')body=`<section class="card"><h3>Työt ja materiaalit</h3><p class="tes-note">${esc(cat.title)} · hinnat ${esc(cat.effective)} alkaen. Omat muutokset merkitään erikseen.</p><button class="btn pri" data-tes="newitem">+ Lisää työ / materiaali</button><label for="tes-search">Hae nimellä tai TES-numerolla</label><input type="search" id="tes-search" value="${esc(tesSearch)}" placeholder="Pintakermit, aluskermit, kaivot…"><div id="tes-list">${tesCatalogueList()}</div></section><section class="card"><h3>Päivitä tai siirrä hinnasto</h3><p>Hinnasto tallentuu tälle laitteelle. Vie tiedosto ja tuo se toisella laitteella.</p><button class="btn" data-tes="export">Vie hinnasto · JSON</button><button class="btn" data-tes="import">Tuo hinnasto · JSON</button><input id="tes-import" type="file" accept="application/json,.json" hidden><button class="btn del" data-tes="resetcatalog">Palauta alkuperäiset TES-hinnat</button></section>`;
 return `${tesTab!=='home'?'<div class="tes-page-toolbar"><h2>Laskurit</h2><button type="button" class="sheet-control sheet-done tes-menu-return" data-tes="home" aria-label="Takaisin valikkoon" title="Takaisin valikkoon">✓</button></div>':'<h2>Laskurit</h2>'}${body}`
 }

@@ -88,7 +88,7 @@
       <div><label for="entry-start">Alkaa</label><input id="entry-start" type="time" value="${esc(draft.start)}"></div>
       <div><label for="entry-end">Päättyy</label><input id="entry-end" type="time" value="${esc(draft.end)}"></div></div></div>
       <label for="entry-hours">Tunnit</label><input id="entry-hours" type="number" inputmode="decimal" min="0.5" max="24" step="0.01" value="${esc(draft.h)}">
-      <section id="entry-travel" aria-labelledby="entry-travel-title"><h3 id="entry-travel-title">Matkakorvaus</h3>
+      <section id="entry-travel" aria-labelledby="entry-travel-title"><h3 id="entry-travel-title"><abbr title="Matkakorvaus">Mtk</abbr></h3>
         <output id="entry-allowance" aria-live="polite"></output>
         <button type="button" class="teras-action" data-entry-action="retry-travel" hidden>${icon('refresh-cw')}Yritä uudelleen</button></section>
       <label for="entry-comment">Kommentti</label><textarea id="entry-comment" rows="2">${esc(draft.c)}</textarea>
@@ -119,7 +119,7 @@
     if (section.hidden || !address || !/\d/.test(address)) {
       clearTimeout(travelTimer);
       travelRequest = null;
-      output.textContent = 'Valitse projekti ja anna työmaan osoite.';
+      output.textContent = '';
       return;
     }
     const key = JSON.stringify([origin.address,origin.point,addressKey(address)]);
