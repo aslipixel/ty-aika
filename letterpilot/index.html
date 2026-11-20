@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LetterPilot AI</title>
+<meta name="description" content="Умный переводчик писем и документов: перевод, объяснение, что от вас хотят и готовый ответ.">
+<meta name="theme-color" content="#4f46e5">
+<style>
+:root{--bg:#f3f4fb;--card:#fff;--text:#16182d;--muted:#666a8a;--line:#e3e5f3;--soft:#eef0fb;
+--p:#4f46e5;--p2:#0ea5e9;--hg:linear-gradient(120deg,#4f46e5,#7c3aed 55%,#0ea5e9);
+--ok:#059669;--warn:#d97706;--bad:#dc2626;--shadow:0 8px 28px rgba(79,70,229,.12);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1022;--card:#191a33;--text:#eef0ff;--muted:#9da1c6;--line:#2c2e52;--soft:#222449;--shadow:0 8px 28px rgba(0,0,0,.4);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1022;--card:#191a33;--text:#eef0ff;--muted:#9da1c6;--line:#2c2e52;--soft:#222449;--shadow:0 8px 28px rgba(0,0,0,.4);color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+.hero{background:var(--hg);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 18px) 16px 22px;border-radius:0 0 24px 24px}
+.wrap{max-width:880px;margin:0 auto}
+.top{display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.brand svg{flex:none}
+.brand h1{margin:0;font-size:22px;letter-spacing:-.01em}
+.brand small{display:block;opacity:.9;font-size:13px;font-weight:500}
+.hb{background:rgba(255,255,255,.18);border:0;color:#fff;border-radius:12px;padding:8px 11px;cursor:pointer;font-size:14px;font-weight:600}
+.hb:hover{background:rgba(255,255,255,.28)}
+.tagline{margin:14px 0 0;font-size:15px;opacity:.95;max-width:620px}
+main{max-width:880px;margin:16px auto 40px;padding:0 16px}
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:17px}
+.muted{color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:180px}
+label.l{display:block;font-size:13px;color:var(--muted);margin:0 0 4px 2px;font-weight:600}
+textarea,input[type=text],input[type=password],select{width:100%;padding:11px 12px;border:2px solid var(--line);border-radius:14px;background:var(--bg);outline:none}
+textarea:focus,input:focus,select:focus{border-color:var(--p)}
+textarea{resize:vertical;min-height:170px;line-height:1.45}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:14px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+.drop.on,.drop:hover{border-color:var(--p);background:var(--soft)}
+.files{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--soft);border-radius:999px;padding:5px 10px;font-size:13px;max-width:100%}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip button{border:0;background:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0}
+.btn{border:0;border-radius:14px;padding:12px 16px;font-weight:700;color:#fff;background:var(--hg);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.g{background:var(--soft);color:var(--text)}
+.btn.s{padding:7px 11px;font-size:14px;border-radius:11px}
+.btn.w{width:100%}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.hidden{display:none!important}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite}
+.btn.g .spin{border-color:var(--line);border-top-color:var(--p)}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err{background:#fde8e8;color:#8a1c1c;border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px}
+:root[data-theme="dark"] .err{background:#3a1620;color:#ffc9c9}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .err{background:#3a1620;color:#ffc9c9}}
+.progress{font-size:14px;color:var(--muted);margin-top:8px}
+/* results */
+.sumhead{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.badge{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;background:var(--soft);color:var(--text);margin:0 6px 6px 0}
+.badge.u-high{background:#fee2e2;color:#991b1b}.badge.u-medium{background:#fef3c7;color:#92400e}.badge.u-low{background:#d1fae5;color:#065f46}
+.big{font-size:18px;font-weight:700;margin:4px 0 6px}
+.want{background:var(--soft);border-left:4px solid var(--p);border-radius:10px;padding:10px 12px;margin:10px 0}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin:-2px 0 12px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:var(--soft);border-radius:999px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap}
+.tab.on{background:var(--p);color:#fff}
+.pane{display:none}.pane.on{display:block}
+.pairs{display:grid;gap:10px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px}
+.pair:last-child{border-bottom:0}
+.pair .o{color:var(--muted)}
+.pair .hint{grid-column:1/-1;font-size:13px;background:var(--soft);border-radius:10px;padding:6px 10px}
+@media (max-width:620px){.pair{grid-template-columns:1fr}}
+.colhead{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px}
+@media (max-width:620px){.colhead{display:none}}
+ul.clean{margin:0;padding-left:20px}ul.clean li{margin:4px 0}
+.term{border-bottom:1px solid var(--line);padding:8px 0}.term:last-child{border-bottom:0}
+.term b{display:block}
+.dl{display:flex;gap:10px;align-items:baseline;padding:8px 10px;background:var(--soft);border-radius:10px;margin-bottom:6px}
+.dl b{white-space:nowrap;color:var(--bad)}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.opt{border:2px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 12px;cursor:pointer;text-align:left;font-size:14px;max-width:100%}
+.opt.on{border-color:var(--p);background:var(--soft)}
+.opt b{display:block}
+.draft{white-space:pre-wrap;background:var(--bg);border:2px solid var(--line);border-radius:14px;padding:12px;min-height:60px}
+.draft:empty::before{content:attr(data-ph);color:var(--muted)}
+.chatlog{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.msg{padding:9px 12px;border-radius:14px;max-width:88%;white-space:pre-wrap}
+.msg.u{align-self:flex-end;background:var(--p);color:#fff;border-bottom-right-radius:4px}
+.msg.a{align-self:flex-start;background:var(--soft);border-bottom-left-radius:4px}
+.chatin{display:flex;gap:8px}.chatin input{flex:1}
+.hist{display:grid;gap:6px}
+.hitem{display:flex;gap:8px;align-items:center;background:var(--soft);border-radius:12px;padding:8px 10px;cursor:pointer;border:0;text-align:left;width:100%}
+.hitem span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hitem small{color:var(--muted);white-space:nowrap}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.feat{background:var(--soft);border-radius:14px;padding:12px}
+.feat b{display:block;margin-bottom:2px}
+.feat p{margin:0;font-size:14px;color:var(--muted)}
+dialog{border:0;border-radius:18px;padding:0;max-width:520px;width:calc(100% - 32px);background:var(--card);color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,10,30,.55)}
+.dlg{padding:18px}
+.dlg h2{margin:0 0 8px;font-size:18px}
+.note{font-size:13px;color:var(--muted);margin:8px 0}
+a{color:var(--p)}
+.copyok{font-size:13px;color:var(--ok);font-weight:600}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="rgba(255,255,255,.2)"/><path d="M9 13.5A2.5 2.5 0 0 1 11.5 11h17a2.5 2.5 0 0 1 2.5 2.5v13a2.5 2.5 0 0 1-2.5 2.5h-17A2.5 2.5 0 0 1 9 26.5z" fill="none" stroke="#fff" stroke-width="2"/><path d="m10 13 10 7.5L30 13" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="m26 21 6-6m0 0h-4m4 0v4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        <div><h1>LetterPilot AI</h1><small>Умный переводчик документов</small></div>
+      </div>
+      <button class="hb" id="themeBtn" title="Светлая / тёмная тема">🌓</button>
+      <button class="hb" id="setBtn">Настройки</button>
+    </div>
+    <p class="tagline">Не просто перевод: объясню, что от вас хотят, какие сроки и что важно, подскажу, как ответить, и напишу ответное письмо.</p>
+  </div>
+</header>
+
+<main>
+  <section class="card" id="inputCard">
+    <h2>1. Документ или письмо</h2>
+    <textarea id="docText" placeholder="Вставьте текст письма, официального документа, счёта, договора… на любом языке"></textarea>
+    <div class="drop" id="drop" tabindex="0" style="margin-top:10px">
+      📎 Или прикрепите фото, скан или PDF (можно несколько страниц) — нажмите или перетащите сюда
+      <input type="file" id="fileIn" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain" multiple hidden>
+    </div>
+    <div class="files" id="files"></div>
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label class="l" for="lang">Перевести и объяснить на</label>
+        <select id="lang"></select>
+      </div>
+      <div>
+        <label class="l" for="ctx">Кто вы / контекст (необязательно)</label>
+        <input type="text" id="ctx" placeholder="Напр.: я арендатор, живу в Финляндии 2 года">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="goBtn">Разобрать документ</button>
+      <button class="btn g" id="demoBtn" type="button">Пример</button>
+      <button class="btn g" id="clearBtn" type="button">Очистить</button>
+    </div>
+    <div class="progress hidden" id="progress"></div>
+    <div class="err hidden" id="err"></div>
+  </section>
+
+  <section class="card" id="welcome">
+    <h2>Что умеет LetterPilot</h2>
+    <div class="features">
+      <div class="feat"><b>🌍 Перевод</b><p>Полный перевод абзац за абзацем, оригинал рядом.</p></div>
+      <div class="feat"><b>🎯 Суть простыми словами</b><p>Кто пишет, зачем и что именно от вас хотят.</p></div>
+      <div class="feat"><b>⏰ Сроки и действия</b><p>Даты, суммы, дедлайны и пошаговый план.</p></div>
+      <div class="feat"><b>📖 Сложные термины</b><p>Юридические и бюрократические слова — с объяснением.</p></div>
+      <div class="feat"><b>💡 Советы</b><p>Как лучше ответить и на что обратить внимание.</p></div>
+      <div class="feat"><b>✍️ Готовый ответ</b><p>Письмо на языке отправителя + перевод для вас.</p></div>
+    </div>
+    <div id="histWrap" class="hidden" style="margin-top:16px">
+      <h2>Недавние документы</h2>
+      <div class="hist" id="hist"></div>
+    </div>
+  </section>
+
+  <section id="results" class="hidden">
+    <div class="card">
+      <div id="badges"></div>
+      <div class="big" id="docTitle"></div>
+      <div class="muted" id="docFrom"></div>
+      <div class="want"><b>Что от вас хотят:</b> <span id="docWant"></span></div>
+      <p id="docSummary" style="margin:0"></p>
+    </div>
+
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab on" data-tab="translation">Перевод</button>
+        <button class="tab" data-tab="actions">Что делать</button>
+        <button class="tab" data-tab="terms">Термины</button>
+        <button class="tab" data-tab="tips">Советы</button>
+        <button class="tab" data-tab="reply">✍️ Ответить</button>
+        <button class="tab" data-tab="ask">Спросить</button>
+      </div>
+
+      <div class="pane on" id="p-translation">
+        <div class="actions" style="margin:0 0 10px">
+          <button class="btn g s" id="copyTr">Копировать перевод</button>
+          <span class="copyok hidden" id="copyTrOk">Скопировано</span>
+        </div>
+        <div class="colhead"><div>Оригинал</div><div>Перевод</div></div>
+        <div class="pairs" id="pairs"></div>
+      </div>
+
+      <div class="pane" id="p-actions">
+        <div id="deadlinesWrap"><h2>⏰ Сроки и важные даты</h2><div id="deadlines"></div></div>
+        <div id="amountsWrap"><h2 style="margin-top:14px">💶 Суммы и реквизиты</h2><ul class="clean" id="amounts"></ul></div>
+        <h2 style="margin-top:14px">✅ Что нужно сделать</h2>
+        <ul class="clean" id="steps"></ul>
+        <div id="riskWrap"><h2 style="margin-top:14px">⚠️ Если ничего не делать</h2><p id="risk" style="margin:0"></p></div>
+      </div>
+
+      <div class="pane" id="p-terms"><div id="terms"></div></div>
+
+      <div class="pane" id="p-tips">
+        <h2>💡 Как лучше ответить</h2>
+        <ul class="clean" id="tips"></ul>
+        <div id="toneWrap"><h2 style="margin-top:14px">🗣 Тон письма</h2><p id="tone" style="margin:0"></p></div>
+      </div>
+
+      <div class="pane" id="p-reply">
+        <label class="l">Вариант ответа</label>
+        <div class="opts" id="replyOpts"></div>
+        <label class="l" for="replyNotes">Что вы хотите сказать (своими словами, на любом языке)</label>
+        <textarea id="replyNotes" style="min-height:90px" placeholder="Напр.: согласен, но прошу перенести срок до конца месяца, потому что…"></textarea>
+        <div class="row" style="margin-top:10px">
+          <div><label class="l" for="replyLang">Язык ответа</label><select id="replyLang"></select></div>
+          <div><label class="l" for="replyTone">Стиль</label>
+            <select id="replyTone">
+              <option value="официальный, вежливый">Официальный</option>
+              <option value="вежливый, нейтральный">Нейтральный</option>
+              <option value="дружелюбный, простой">Дружелюбный</option>
+              <option value="твёрдый, но вежливый (отстаивать свою позицию)">Твёрдый</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions"><button class="btn" id="draftBtn">Написать ответ</button></div>
+        <h2 style="margin-top:16px">Письмо</h2>
+        <div class="draft" id="draftOut" data-ph="Здесь появится готовое письмо"></div>
+        <div class="actions"><button class="btn g s" id="copyDraft">Копировать письмо</button><span class="copyok hidden" id="copyDraftOk">Скопировано</span></div>
+        <div id="draftTrWrap"><h2 style="margin-top:12px">Перевод вашего письма (для проверки)</h2>
+        <div class="draft" id="draftTr" data-ph="Перевод письма на ваш язык"></div></div>
+        <div class="err hidden" id="draftErr"></div>
+      </div>
+
+      <div class="pane" id="p-ask">
+        <p class="muted" style="margin-top:0">Задайте любой вопрос об этом документе: «Это обязательно?», «Можно ли оспорить?», «Что значит эта фраза?»</p>
+        <div class="chatlog" id="chatlog"></div>
+        <form class="chatin" id="chatForm"><input type="text" id="chatIn" placeholder="Ваш вопрос…" autocomplete="off"><button class="btn" id="chatBtn">→</button></form>
+        <div class="err hidden" id="chatErr"></div>
+      </div>
+    </div>
+    <p class="note" style="text-align:center">LetterPilot помогает понять документ, но не заменяет юриста. Важные решения проверяйте у специалиста.</p>
+  </section>
+</main>
+
+<dialog id="setDlg">
+  <form method="dialog" class="dlg">
+    <h2>Настройки</h2>
+    <label class="l" for="apiKey">Ключ Anthropic API</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
+    <p class="note">Ключ хранится только в этом браузере и отправляется напрямую в Anthropic. Получить ключ: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. Тексты документов отправляются в Claude для анализа.</p>
+    <label class="l" for="effort">Глубина анализа</label>
+    <select id="effort">
+      <option value="low">Быстро</option>
+      <option value="medium" selected>Обычно</option>
+      <option value="high">Тщательно (дольше)</option>
+    </select>
+    <label class="chk" style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px"><input type="checkbox" id="saveHist" checked> Сохранять историю документов в этом браузере</label>
+    <div class="actions">
+      <button class="btn" value="save" id="saveSet">Сохранить</button>
+      <button class="btn g" value="cancel" formnovalidate>Отмена</button>
+      <button class="btn g" type="button" id="wipeBtn">Удалить историю</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+import Anthropic from "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.5.0/+esm";
+
+const MODEL = "claude-opus-5-5";
+const BETAS = ["server-side-fallback-2026-07-01"];
+const LANGS = ["Русский","Українська","English","Suomi","Svenska","Deutsch","Français","Español","Italiano","Polski","Eesti","Latviešu","Lietuvių","Türkçe","العربية","فارسی","中文","日本語","한국어","Português","Nederlands","Čeština","Română","Magyar","Български","Қазақша","Oʻzbekcha","Հայերեն","ქართული","Azərbaycan"];
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try { const v = localStorage.getItem("lp_" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v){ try { localStorage.setItem("lp_" + k, JSON.stringify(v)); } catch {} },
+  del(k){ try { localStorage.removeItem("lp_" + k); } catch {} }
+};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- theme ---------- */
+const applyTheme = t => { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; };
+applyTheme(store.get("theme", null));
+$("themeBtn").onclick = () => {
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const cur = store.get("theme", null) || (dark ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  store.set("theme", next); applyTheme(next);
+};
+
+/* ---------- languages ---------- */
+const guessLang = () => {
+  const n = (navigator.language || "ru").slice(0, 2);
+  return ({ru:"Русский",uk:"Українська",en:"English",fi:"Suomi",sv:"Svenska",de:"Deutsch",fr:"Français",es:"Español",pl:"Polski",et:"Eesti",tr:"Türkçe"})[n] || "Русский";
+};
+$("lang").innerHTML = LANGS.map(l => `<option>${esc(l)}</option>`).join("");
+$("lang").value = store.get("lang", guessLang());
+$("lang").onchange = () => store.set("lang", $("lang").value);
+
+/* ---------- settings ---------- */
+const openSettings = () => {
+  $("apiKey").value = store.get("key", "");
+  $("effort").value = store.get("effort", "medium");
+  $("saveHist").checked = store.get("saveHist", true);
+  $("setDlg").showModal();
+};
+$("setBtn").onclick = openSettings;
+$("saveSet").onclick = () => {
+  store.set("key", $("apiKey").value.trim());
+  store.set("effort", $("effort").value);
+  store.set("saveHist", $("saveHist").checked);
+};
+$("wipeBtn").onclick = () => { store.del("history"); renderHistory(); };
+
+const client = () => {
+  const apiKey = store.get("key", "");
+  if (!apiKey) { openSettings(); throw new Error("Сначала добавьте ключ Anthropic API в настройках."); }
+  return new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
+};
+
+/* ---------- attachments ---------- */
+let attachments = []; // {name, kind:'image'|'pdf'|'text', media_type, data}
+const readAs = (file, how) => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result); r.onerror = () => rej(r.error);
+  how === "text" ? r.readAsText(file) : r.readAsDataURL(file);
+});
+async function addFiles(list) {
+  for (const f of list) {
+    if (f.size > 20 * 1024 * 1024) { showErr(`Файл «${f.name}» больше 20 МБ.`); continue; }
+    if (f.type === "text/plain") {
+      const t = await readAs(f, "text");
+      $("docText").value = ($("docText").value ? $("docText").value + "\n\n" : "") + t;
+      continue;
+    }
+    const url = await readAs(f, "url");
+    const data = url.slice(url.indexOf(",") + 1);
+    if (f.type === "application/pdf") attachments.push({ name: f.name, kind: "pdf", media_type: f.type, data });
+    else if (f.type.startsWith("image/")) attachments.push({ name: f.name, kind: "image", media_type: f.type, data });
+    else showErr(`Формат файла «${f.name}» не поддерживается.`);
+  }
+  renderFiles();
+}
+function renderFiles() {
+  $("files").innerHTML = attachments.map((a, i) =>
+    `<span class="chip">${a.kind === "pdf" ? "📄" : "🖼"} <span>${esc(a.name)}</span><button data-i="${i}" aria-label="Убрать">×</button></span>`).join("");
+}
+$("files").onclick = e => { const i = e.target.dataset.i; if (i !== undefined) { attachments.splice(+i, 1); renderFiles(); } };
+const drop = $("drop");
+drop.onclick = () => $("fileIn").click();
+drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("fileIn").click(); } };
+$("fileIn").onchange = e => { addFiles(e.target.files); e.target.value = ""; };
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("on"); };
+drop.ondragleave = () => drop.classList.remove("on");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("on"); addFiles(e.dataTransfer.files); };
+document.addEventListener("paste", e => {
+  const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith("image/"));
+  if (imgs.length) { e.preventDefault(); addFiles(imgs); }
+});
+
+/* ---------- helpers ---------- */
+function showErr(msg, el = "err") { const b = $(el); b.textContent = msg; b.classList.remove("hidden"); }
+function hideErr(el = "err") { $(el).classList.add("hidden"); }
+function busy(btn, on, label) {
+  if (on) { btn.dataset.l = btn.innerHTML; btn.innerHTML = `<span class="spin"></span>${label || ""}`; btn.disabled = true; }
+  else { btn.innerHTML = btn.dataset.l || btn.innerHTML; btn.disabled = false; }
+}
+function explainError(e) {
+  const s = e?.status;
+  if (s === 401) return "Неверный ключ API. Проверьте его в настройках.";
+  if (s === 429) return "Слишком много запросов или исчерпан лимит. Попробуйте чуть позже.";
+  if (s === 413) return "Документ слишком большой. Попробуйте меньше страниц.";
+  if (s >= 500) return "Сервис Claude временно недоступен. Попробуйте ещё раз.";
+  return e?.message || String(e);
+}
+const textOf = msg => msg.content.filter(b => b.type === "text").map(b => b.text).join("");
+function checkStop(msg) {
+  if (msg.stop_reason === "refusal") throw new Error("Claude отказался обрабатывать этот документ.");
+  if (msg.stop_reason === "max_tokens") throw new Error("Документ слишком длинный — ответ обрезан. Попробуйте разделить его на части.");
+}
+function docContent() {
+  const blocks = [];
+  for (const a of attachments) {
+    if (a.kind === "pdf") blocks.push({ type: "document", source: { type: "base64", media_type: a.media_type, data: a.data } });
+    else blocks.push({ type: "image", source: { type: "base64", media_type: a.media_type, data: a.data } });
+  }
+  const t = $("docText").value.trim();
+  if (t) blocks.push({ type: "text", text: `<document_text>\n${t}\n</document_text>` });
+  return blocks;
+}
+
+/* ---------- analysis ---------- */
+const str = { type: "string" };
+const arr = items => ({ type: "array", items });
+const obj = props => ({ type: "object", properties: props, required: Object.keys(props), additionalProperties: false });
+const SCHEMA = obj({
+  source_language: str,
+  document_type: str,
+  title: str,
+  sender: str,
+  urgency: { type: "string", enum: ["low", "medium", "high"] },
+  what_they_want: str,
+  summary: str,
+  paragraphs: arr(obj({ original: str, translation: str, note: str })),
+  deadlines: arr(obj({ date: str, what: str })),
+  amounts: arr(str),
+  action_steps: arr(str),
+  if_ignored: str,
+  terms: arr(obj({ term: str, meaning: str })),
+  reply_tips: arr(str),
+  tone: str,
+  reply_options: arr(obj({ label: str, description: str })),
+  reply_needed: { type: "boolean" }
+});
+
+const SYSTEM = `Ты — LetterPilot, помощник для людей, которые получили письмо или документ на непонятном или неродном языке (часто от государственных органов, работодателей, арендодателей, банков, школ, врачей).
+Твоя задача — не только перевести, но и сделать документ понятным: кто пишет, чего хочет, какие сроки, что делать и чем грозит бездействие.
+
+Правила:
+- Все пояснения пиши на языке пользователя, который он укажет. Просто и человечно, без канцелярита.
+- paragraphs: разбей ВЕСЬ документ на смысловые абзацы, ничего не пропуская; original — точный текст оригинала, translation — точный полный перевод (не пересказ). note — короткое пояснение, если абзац содержит скрытый смысл, требование или юридическое последствие; иначе пустая строка.
+- Если документ уже на языке пользователя, translation повторяет оригинал, а акцент делай на объяснении.
+- deadlines: все даты и сроки, с пояснением что к ним сделать. Даты пиши как в документе, плюс ясный формат. Если сроков нет — пустой массив.
+- amounts: суммы, номера счетов, референсы, номера дел, телефоны, адреса — всё, что понадобится для ответа или оплаты.
+- action_steps: конкретный пошаговый план.
+- terms: сложные, юридические или бюрократические термины оригинала с объяснением.
+- reply_tips: практические советы, как ответить (что упомянуть, что приложить, чего не писать, нужно ли отвечать вообще).
+- tone: тон и степень формальности письма отправителя.
+- reply_options: 2–4 типичных варианта ответа (например «Согласиться», «Попросить отсрочку», «Оспорить», «Запросить уточнение»); label — 1–3 слова, description — одно предложение.
+- urgency: high — если есть срок в ближайшие 2 недели, штраф или юридические последствия.
+- Если что-то неразборчиво на фото — так и напиши в note, не выдумывай.
+- Сегодняшняя дата: ${new Date().toISOString().slice(0, 10)}.`;
+
+let current = null; // {id, date, lang, ctx, input, result, chat}
+
+$("goBtn").onclick = analyze;
+async function analyze() {
+  hideErr();
+  const content = docContent();
+  if (!content.length) return showErr("Вставьте текст или прикрепите файл.");
+  let c; try { c = client(); } catch (e) { return showErr(e.message); }
+  const lang = $("lang").value, ctx = $("ctx").value.trim();
+  content.push({ type: "text", text: `Язык пользователя: ${lang}.${ctx ? `\nКонтекст пользователя: ${ctx}` : ""}\nРазбери документ.` });
+
+  const btn = $("goBtn"); busy(btn, true, "Читаю документ…");
+  const prog = $("progress"); prog.classList.remove("hidden");
+  const t0 = Date.now(); let chars = 0;
+  const tick = setInterval(() => { prog.textContent = `Анализирую… ${Math.round((Date.now() - t0) / 1000)} с${chars ? ` · ${chars} символов` : ""}`; }, 500);
+  try {
+    const stream = c.beta.messages.stream({
+      model: MODEL,
+      max_tokens: 64000,
+      betas: BETAS,
+      fallbacks: "default",
+      system: SYSTEM,
+      output_config: { effort: store.get("effort", "medium"), format: { type: "json_schema", schema: SCHEMA } },
+      messages: [{ role: "user", content }]
+    });
+    stream.on("text", d => { chars += d.length; });
+    const msg = await stream.finalMessage();
+    checkStop(msg);
+    const result = JSON.parse(textOf(msg));
+    current = {
+      id: Date.now(), date: new Date().toISOString(), lang, ctx,
+      input: { text: $("docText").value.trim(), files: attachments.map(a => ({ ...a })) },
+      result, chat: []
+    };
+    saveHistory(current);
+    render();
+  } catch (e) {
+    showErr(explainError(e));
+  } finally {
+    clearInterval(tick); prog.classList.add("hidden"); busy(btn, false);
+  }
+}
+
+/* ---------- render ---------- */
+function list(el, items, fmt = esc) { $(el).innerHTML = (items || []).map(i => `<li>${fmt(i)}</li>`).join(""); }
+function render() {
+  const r = current.result;
+  $("welcome").classList.add("hidden");
+  $("results").classList.remove("hidden");
+  const u = { high: "Срочно", medium: "Есть сроки", low: "Не срочно" }[r.urgency] || "";
+  $("badges").innerHTML = `<span class="badge u-${esc(r.urgency)}">${esc(u)}</span><span class="badge">${esc(r.document_type)}</span><span class="badge">${esc(r.source_language)} → ${esc(current.lang)}</span>${r.reply_needed ? '<span class="badge">Нужен ответ</span>' : ""}`;
+  $("docTitle").textContent = r.title;
+  $("docFrom").textContent = r.sender ? "От: " + r.sender : "";
+  $("docWant").textContent = r.what_they_want;
+  $("docSummary").textContent = r.summary;
+
+  $("pairs").innerHTML = (r.paragraphs || []).map(p =>
+    `<div class="pair"><div class="o" dir="auto">${esc(p.original)}</div><div dir="auto">${esc(p.translation)}</div>${p.note ? `<div class="hint">💡 ${esc(p.note)}</div>` : ""}</div>`).join("");
+
+  $("deadlinesWrap").classList.toggle("hidden", !r.deadlines?.length);
+  $("deadlines").innerHTML = (r.deadlines || []).map(d => `<div class="dl"><b>${esc(d.date)}</b><span>${esc(d.what)}</span></div>`).join("");
+  $("amountsWrap").classList.toggle("hidden", !r.amounts?.length);
+  list("amounts", r.amounts);
+  list("steps", r.action_steps);
+  $("riskWrap").classList.toggle("hidden", !r.if_ignored);
+  $("risk").textContent = r.if_ignored;
+
+  $("terms").innerHTML = r.terms?.length
+    ? r.terms.map(t => `<div class="term"><b dir="auto">${esc(t.term)}</b><span>${esc(t.meaning)}</span></div>`).join("")
+    : `<p class="muted">Сложных терминов не найдено.</p>`;
+  list("tips", r.reply_tips);
+  $("toneWrap").classList.toggle("hidden", !r.tone);
+  $("tone").textContent = r.tone;
+
+  selectedOpt = null;
+  $("replyOpts").innerHTML = (r.reply_options || []).map((o, i) =>
+    `<button class="opt" data-i="${i}"><b>${esc(o.label)}</b>${esc(o.description)}</button>`).join("");
+  const rl = [r.source_language, ...LANGS.filter(l => l !== r.source_language)];
+  $("replyLang").innerHTML = rl.map(l => `<option>${esc(l)}</option>`).join("");
+  $("draftOut").textContent = current.draft || "";
+  $("draftTr").textContent = current.draftTr || "";
+  $("replyNotes").value = "";
+  hideErr("draftErr"); hideErr("chatErr");
+  renderChat();
+  setTab("translation");
+  $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setTab(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.tab === name));
+  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === "p-" + name));
+}
+document.querySelector(".tabs").onclick = e => { const t = e.target.closest(".tab"); if (t) setTab(t.dataset.tab); };
+
+let selectedOpt = null;
+$("replyOpts").onclick = e => {
+  const b = e.target.closest(".opt"); if (!b) return;
+  selectedOpt = selectedOpt === +b.dataset.i ? null : +b.dataset.i;
+  document.querySelectorAll(".opt").forEach(o => o.classList.toggle("on", +o.dataset.i === selectedOpt));
+};
+
+/* ---------- reusable conversation prefix ---------- */
+function baseMessages() {
+  const blocks = [];
+  for (const a of current.input.files) {
+    blocks.push(a.kind === "pdf"
+      ? { type: "document", source: { type: "base64", media_type: a.media_type, data: a.data } }
+      : { type: "image", source: { type: "base64", media_type: a.media_type, data: a.data } });
+  }
+  if (current.input.text) blocks.push({ type: "text", text: `<document_text>\n${current.input.text}\n</document_text>` });
+  blocks.push({ type: "text", text: `Вот документ, который получил пользователь. Язык пользователя: ${current.lang}.${current.ctx ? `\nКонтекст пользователя: ${current.ctx}` : ""}\n\nТвой разбор (JSON):\n${JSON.stringify(current.result)}` });
+  return blocks;
+}
+
+/* ---------- reply drafting ---------- */
+const SEP = "=====TRANSLATION=====";
+$("draftBtn").onclick = async () => {
+  hideErr("draftErr");
+  let c; try { c = client(); } catch (e) { return showErr(e.message, "draftErr"); }
+  const r = current.result;
+  const opt = selectedOpt !== null ? r.reply_options[selectedOpt] : null;
+  const notes = $("replyNotes").value.trim();
+  if (!opt && !notes) return showErr("Выберите вариант ответа или напишите, что хотите сказать.", "draftErr");
+  const replyLang = $("replyLang").value, tone = $("replyTone").value;
+  const same = replyLang === current.lang;
+  const ask = `Напиши ответное письмо отправителю.
+Язык письма: ${replyLang}. Стиль: ${tone}.
+${opt ? `Выбранная позиция: ${opt.label} — ${opt.description}` : ""}
+${notes ? `Что пользователь хочет сказать (его словами): ${notes}` : ""}
+Требования: правильные обращение и подпись, принятые в этой стране и для этого типа письма; укажи номера дел/счетов/референсы из документа, если они нужны; вместо неизвестных данных поставь понятные заглушки в квадратных скобках, например [Ваше имя]. Не выдумывай факты, которых пользователь не сообщал.
+Сначала выведи только текст письма (с темой письма первой строкой, если это e-mail).${same ? "" : `\nЗатем на отдельной строке выведи ровно ${SEP} и после неё — точный перевод письма на ${current.lang}, чтобы пользователь понял, что отправляет.`}
+Никаких пояснений до или после.`;
+
+  const btn = $("draftBtn"); busy(btn, true, "Пишу…");
+  $("draftOut").textContent = ""; $("draftTr").textContent = "";
+  $("draftTrWrap").classList.toggle("hidden", same);
+  let full = "";
+  try {
+    const stream = c.beta.messages.stream({
+      model: MODEL, max_tokens: 16000, betas: BETAS, fallbacks: "default",
+      system: SYSTEM, output_config: { effort: "medium" },
+      messages: [{ role: "user", content: [...baseMessages(), { type: "text", text: ask }] }]
+    });
+    stream.on("text", d => {
+      full += d;
+      const [a, b = ""] = full.split(SEP);
+      $("draftOut").textContent = a.trim();
+      $("draftTr").textContent = b.trim();
+    });
+    const msg = await stream.finalMessage();
+    checkStop(msg);
+    const [a, b = ""] = textOf(msg).split(SEP);
+    current.draft = a.trim(); current.draftTr = b.trim();
+    $("draftOut").textContent = current.draft; $("draftTr").textContent = current.draftTr;
+    saveHistory(current);
+  } catch (e) {
+    showErr(explainError(e), "draftErr");
+  } finally { busy(btn, false); }
+};
+
+/* ---------- Q&A chat ---------- */
+function renderChat() {
+  $("chatlog").innerHTML = current.chat.map(m => `<div class="msg ${m.role === "user" ? "u" : "a"}" dir="auto">${esc(m.content)}</div>`).join("");
+}
+$("chatForm").onsubmit = async e => {
+  e.preventDefault();
+  hideErr("chatErr");
+  const q = $("chatIn").value.trim(); if (!q) return;
+  let c; try { c = client(); } catch (err) { return showErr(err.message, "chatErr"); }
+  $("chatIn").value = "";
+  current.chat.push({ role: "user", content: q });
+  renderChat();
+  const bubble = document.createElement("div"); bubble.className = "msg a"; bubble.setAttribute("dir", "auto"); bubble.textContent = "…";
+  $("chatlog").appendChild(bubble);
+  const btn = $("chatBtn"); busy(btn, true);
+  const history = current.chat.map((m, i) => i === 0
+    ? { role: "user", content: [...baseMessages(), { type: "text", text: `Ответь на вопрос пользователя о документе кратко и по делу, на языке ${current.lang}, обычным текстом без markdown.\n\nВопрос: ${m.content}` }] }
+    : { role: m.role, content: m.content });
+  let txt = "";
+  try {
+    const stream = c.beta.messages.stream({
+      model: MODEL, max_tokens: 8000, betas: BETAS, fallbacks: "default",
+      system: SYSTEM, output_config: { effort: "low" }, messages: history
+    });
+    stream.on("text", d => { txt += d; bubble.textContent = txt; });
+    const msg = await stream.finalMessage();
+    checkStop(msg);
+    current.chat.push({ role: "assistant", content: textOf(msg) });
+    saveHistory(current);
+  } catch (err) {
+    current.chat.pop(); bubble.remove(); renderChat();
+    showErr(explainError(err), "chatErr");
+  } finally { busy(btn, false); }
+};
+
+/* ---------- copy ---------- */
+async function copy(text, okEl) {
+  try { await navigator.clipboard.writeText(text); $(okEl).classList.remove("hidden"); setTimeout(() => $(okEl).classList.add("hidden"), 1500); } catch {}
+}
+$("copyTr").onclick = () => copy(current.result.paragraphs.map(p => p.translation).join("\n\n"), "copyTrOk");
+$("copyDraft").onclick = () => copy($("draftOut").textContent, "copyDraftOk");
+
+/* ---------- history (this browser only) ---------- */
+function saveHistory(item) {
+  if (!store.get("saveHist", true)) return;
+  let h = store.get("history", []).filter(x => x.id !== item.id);
+  h.unshift(item);
+  h = h.slice(0, 15);
+  const fits = () => { try { localStorage.setItem("lp_history", JSON.stringify(h)); return true; } catch { return false; } };
+  // Storage is small: drop attachments of older items first, then the oldest items.
+  if (!fits()) {
+    h = h.map((x, i) => i === 0 ? x : { ...x, input: { ...x.input, files: [] } });
+    while (!fits() && h.length > 1) h.pop();
+    if (!fits()) { h = [{ ...item, input: { ...item.input, files: [] } }]; fits(); }
+  }
+  renderHistory();
+}
+function renderHistory() {
+  const h = store.get("history", []);
+  $("histWrap").classList.toggle("hidden", !h.length);
+  $("hist").innerHTML = h.map(x => `<button class="hitem" data-id="${x.id}"><span>${esc(x.result.title)}</span><small>${new Date(x.date).toLocaleDateString()}</small></button>`).join("");
+}
+$("hist").onclick = e => {
+  const b = e.target.closest(".hitem"); if (!b) return;
+  const x = store.get("history", []).find(i => i.id === +b.dataset.id);
+  if (x) { current = x; current.chat ||= []; render(); }
+};
+renderHistory();
+
+/* ---------- misc ---------- */
+$("clearBtn").onclick = () => {
+  $("docText").value = ""; $("ctx").value = ""; attachments = []; renderFiles(); hideErr();
+  $("results").classList.add("hidden"); $("welcome").classList.remove("hidden"); current = null;
+};
+$("demoBtn").onclick = () => {
+  $("docText").value = `Hyvä vuokralainen,
+
+Ilmoitamme, että taloyhtiön putkiremontti alkaa asunnossanne 3.2.2027. Remontin aikana asunnossa ei voi asua, ja sen arvioitu kesto on kuusi (6) viikkoa.
+
+Vuokranantaja maksaa vuokranalennuksena 50 % kuukausivuokrasta remontin ajalta. Mikäli tarvitsette väliaikaista asuntoa, pyydämme ilmoittamaan siitä viimeistään 15.12.2026 sähköpostitse osoitteeseen asuminen@esimerkki.fi. Ilmoitukseen tulee liittää vuokrasopimuksen numero (VS-48213).
+
+Huomioittehan, että asunto on tyhjennettävä irtaimistosta kylpyhuoneen ja keittiön osalta ennen remontin alkua.
+
+Ystävällisin terveisin
+Esimerkki Asunnot Oy
+Asiakaspalvelu, puh. 09 123 4567`;
+};
+</script>
+</body>
+</html>
