@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-vgiRp9Kdq1sxzDfsWSfGOvvA8YG2MH598FnGLVWayvc=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-xEsdYyp6+uLhan/wobYNyYlFtnVqpH+0BnCtNXB5LcQ=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
@@ -366,7 +366,7 @@ const TD={'Laskutyö':'Tuntityö, joka laskutetaan','Sovittu':'Erikseen sovittu 
 const DEFAULT_HOURS=8;
 let S={init:0,pr:[],en:[],set:{goal:DEFAULT_HOURS},pf:{name:'',emp:'',role:''},last:{t:'Laskutyö',p:''}},wo=0,mo=0,ed=null,ret=0;
 try{const r=localStorage.getItem(K);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S));return true}catch(e){alert('Tallennus epäonnistui. Lataa varmuuskopio ennen sivun sulkemista.');return false}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S));return true}catch(e){toast('Tallennus epäonnistui. Lataa varmuuskopio ennen sivun sulkemista.');return false}};
 const pad=n=>String(n).padStart(2,'0'),wd=d=>(new Date(d).getDay()+6)%7,dk=d=>{d=new Date(d);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const pd=s=>new Date(s+'T00:00'),addD=(d,n)=>{d=new Date(d);d.setDate(d.getDate()+n);return d},mon=d=>{d=new Date(d);d.setHours(0,0,0,0);return addD(d,-wd(d))};
 const fh=h=>(Math.round(h*10)/10).toString().replace('.',',')+' h',fd=d=>{d=new Date(d);return d.getDate()+'.'+(d.getMonth()+1)+'.'};

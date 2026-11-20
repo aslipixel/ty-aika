@@ -30,32 +30,48 @@
 
   function goHome() { location.hash = 'kalenteri'; }
 
-  // In-app replacement for window.confirm(). Some browsers and installed apps block
-  // the native dialog and return false at once, so deletes and saves silently failed.
-  function appConfirm(message, { yes = 'Kyllä', glyph = 'check', danger = false } = {}) {
+  // In-app replacements for window.confirm() and window.prompt(). Some browsers and
+  // installed apps block the native dialogs and answer "no" at once, so deletes, saves
+  // and file names silently failed.
+  // Resolves true/false, or for a prompt the entered text (null when cancelled).
+  function appDialog(message, { yes = 'Kyllä', glyph = 'check', danger = false, value = null, label = '' } = {}) {
+    const asking = value !== null;
     const dialog = document.createElement('dialog');
     dialog.className = 'tes-dialog teras-dialog app-confirm';
-    dialog.setAttribute('role', 'alertdialog');
+    dialog.setAttribute('role', asking ? 'dialog' : 'alertdialog');
     dialog.setAttribute('aria-labelledby', 'app-confirm-text');
-    dialog.innerHTML = `<p id="app-confirm-text"></p><div class="app-confirm-actions">
+    dialog.innerHTML = `<form method="dialog"><p id="app-confirm-text"></p>
+      ${asking ? `<input class="app-confirm-input" maxlength="120" aria-label="${esc(label || message)}">` : ''}
+      <div class="app-confirm-actions">
       <button type="button" class="btn" data-answer="no">${icon('x')}Peruuta</button>
-      <button type="button" class="btn ${danger ? 'del app-confirm-danger' : 'pri'}" data-answer="yes">${icon(glyph)}${esc(yes)}</button></div>`;
+      <button type="submit" class="btn ${danger ? 'del app-confirm-danger' : 'pri'}" data-answer="yes">${icon(glyph)}${esc(yes)}</button></div></form>`;
     dialog.querySelector('p').textContent = message;
+    const input = dialog.querySelector('input');
+    if (input) input.value = value;
     return new Promise(resolve => {
       let answer = false;
       dialog.addEventListener('click', event => {
-        const button = event.target.closest('[data-answer]');
-        if (!button) return;
-        answer = button.dataset.answer === 'yes';
+        if (event.target.closest('[data-answer="no"]')) dialog.close();
+      });
+      dialog.querySelector('form').addEventListener('submit', event => {
+        event.preventDefault();
+        if (input && !input.value.trim()) { input.focus(); return; }
+        answer = true;
         dialog.close();
       });
-      dialog.addEventListener('close', () => { dialog.remove(); resolve(answer); }, { once: true });
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        resolve(asking ? (answer ? input.value.trim() : null) : answer);
+      }, { once: true });
       document.body.append(dialog);
       dialog.showModal();
-      dialog.querySelector('[data-answer="no"]').focus();
+      if (input) { input.focus(); input.select(); }
+      else dialog.querySelector('[data-answer="no"]').focus();
     });
   }
-  window.appConfirm = appConfirm;
+  window.appConfirm = (message, options) => appDialog(message, options);
+  window.appPrompt = (message, value = '', options = {}) =>
+    appDialog(message, { yes: 'Tallenna', glyph: 'save', ...options, value: String(value) });
 
   function applyTheme() {
     const theme = S.set.theme === 'light' ? 'light' : 'dark';

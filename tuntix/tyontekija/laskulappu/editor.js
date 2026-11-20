@@ -494,7 +494,7 @@
         try {
           localStorage.setItem('lask:' + n, JSON.stringify(draft));
         } catch {
-          alert('Tallennus epäonnistui. Tarkista vapaa tallennustila.');
+          this.status('Tallennus epäonnistui. Tarkista vapaa tallennustila.');
           return;
         }
         name = n;

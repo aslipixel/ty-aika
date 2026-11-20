@@ -231,7 +231,7 @@ function close() {
 function pdfName(name) { return name.replace(/\.[^.]+$/, '') + '.pdf'; }
 
 export async function saveOriginal() {
-  const name = prompt('Tiedoston nimi', 'Mittaustodistus ' + new Date().toLocaleDateString('fi-FI'));
+  const name = await appPrompt('Tiedoston nimi', 'Mittaustodistus ' + new Date().toLocaleDateString('fi-FI'));
   if (!name?.trim()) return;
   const response = await fetch(measurementPdfUrl);
   if (!response.ok) throw Error('Lataus epäonnistui.');
