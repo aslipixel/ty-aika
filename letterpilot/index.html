@@ -314,6 +314,10 @@ $("saveSet").onclick = () => {
 $("wipeBtn").onclick = () => { store.del("history"); renderHistory(); };
 
 // Gemini is called through Cloudflare; never expose GEMINI_API_KEY in the browser.
+// Compatibility constants for existing analysis, reply and chat calls.
+// The actual Gemini model is selected inside the Cloudflare Worker.
+const MODEL = "gemini-2.5-flash";
+const BETAS = [];
 const WORKER_URL = "https://letterpilot-ai.asl-icopal.workers.dev";
 const client = () => {
   const token = sessionStorage.getItem("lp_test_token") || "";
