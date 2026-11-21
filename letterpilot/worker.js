@@ -1,11 +1,13 @@
-// LetterPilot Cloudflare Worker: forwards page requests to APInex.
+// LetterPilot Cloudflare Worker: forwards page requests to Google Gemini (and APInex as a backup).
 // Secrets (Cloudflare → Worker → Settings → Variables and Secrets):
-//   APINEX_API_KEY          key from apinex.bond
+//   GEMINI_API_KEY          key from aistudio.google.com (used first)
+//   APINEX_API_KEY          optional backup, key from apinex.bond
 //   LETTERPILOT_TEST_TOKEN  access code given to testers (24+ characters)
 const ORIGIN = "https://aslipixel.github.io";
-// Tried in order; the next one is used when APInex refuses a model (payment, missing, rate limit).
-// The free/ models below unlock after a one-time $5 top-up at APInex (25M free tokens a day).
-const MODELS = ["free/gpt-6-luna", "free/gemini-4-hydrogen", "free/gemini-3.8-flash"];
+// Tried in order; the next one is used when a model is refused (missing, payment, rate limit, overloaded).
+const GEMINI_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"];
+// The APInex free/ models unlock after a one-time $5 top-up there.
+const APINEX_MODELS = ["free/gpt-6-luna", "free/gemini-4-hydrogen", "free/gemini-3.8-flash"];
 const MAX_BODY = 7 * 1024 * 1024;
 
 function headers(origin) {
@@ -52,6 +54,48 @@ function convertPart(part) {
   throw new Error("Unsupported message part");
 }
 
+async function callApinex(key, model, base) {
+  const res = await fetch("https://api.apinex.bond/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ ...base, model })
+  });
+  if (!res.ok) return { ok: false, status: res.status, text: (await res.text().catch(() => "")).slice(0, 600) };
+  const data = await res.json().catch(() => null);
+  const content = Array.isArray(data?.content) ? data.content.filter(p => p?.type === "text" && typeof p.text === "string") : [];
+  if (data?.stop_reason !== "refusal" && !content.some(p => p.text.trim())) return { ok: false, status: 502, text: "empty answer" };
+  return { ok: true, content, stop_reason: data.stop_reason || "end_turn" };
+}
+
+// Converts the page's message format to Gemini's generateContent format and back.
+async function callGemini(key, model, base) {
+  const contents = base.messages.map(m => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: m.content.map(p => p.type === "text"
+      ? { text: p.text }
+      : { inline_data: { mime_type: p.source.media_type, data: p.source.data } })
+  }));
+  const body = {
+    contents,
+    generationConfig: { temperature: base.temperature, maxOutputTokens: Math.max(base.max_tokens, 8192) },
+    ...(base.system ? { systemInstruction: { parts: [{ text: base.system }] } } : {})
+  };
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) return { ok: false, status: res.status, text: (await res.text().catch(() => "")).slice(0, 600) };
+  const data = await res.json().catch(() => null);
+  if (data?.promptFeedback?.blockReason) return { ok: true, content: [], stop_reason: "refusal" };
+  const cand = data?.candidates?.[0];
+  const text = (cand?.content?.parts || []).filter(p => typeof p.text === "string" && !p.thought).map(p => p.text).join("");
+  const fr = cand?.finishReason;
+  if (fr === "SAFETY" || fr === "PROHIBITED_CONTENT" || fr === "BLOCKLIST") return { ok: true, content: [], stop_reason: "refusal" };
+  if (!text.trim()) return { ok: false, status: 502, text: "empty answer (" + (fr || "no reason") + ")" };
+  return { ok: true, content: [{ type: "text", text }], stop_reason: fr === "MAX_TOKENS" ? "max_tokens" : "end_turn" };
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin") || "";
@@ -66,7 +110,9 @@ export default {
       return respond({
         ok: true,
         service: "letterpilot-apinex",
-        models: MODELS,
+        geminiModels: GEMINI_MODELS,
+        apinexModels: APINEX_MODELS,
+        geminiKeySet: !!env.GEMINI_API_KEY,
         apinexKeySet: !!env.APINEX_API_KEY,
         testTokenSet: !!env.LETTERPILOT_TEST_TOKEN
       }, 200, origin);
@@ -77,8 +123,8 @@ export default {
     }
     if (origin !== ORIGIN) return respond({ error: "Origin not allowed" }, 403, origin);
 
-    if (!env.APINEX_API_KEY || !env.LETTERPILOT_TEST_TOKEN) {
-      const missing = [!env.APINEX_API_KEY && "APINEX_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
+    if ((!env.GEMINI_API_KEY && !env.APINEX_API_KEY) || !env.LETTERPILOT_TEST_TOKEN) {
+      const missing = [!env.GEMINI_API_KEY && !env.APINEX_API_KEY && "GEMINI_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
       console.log("Missing secrets:", missing);
       return respond({ error: "Server secrets not configured: " + missing }, 503, origin);
     }
@@ -126,48 +172,35 @@ export default {
         ...(system ? { system } : {})
       };
 
-      let response = null, last = null;
-      for (const model of MODELS) {
+      let last = null;
+      const attempts = [
+        ...(env.GEMINI_API_KEY ? GEMINI_MODELS.map(model => ({ provider: "gemini", model })) : []),
+        ...(env.APINEX_API_KEY ? APINEX_MODELS.map(model => ({ provider: "apinex", model })) : [])
+      ];
+      for (const { provider, model } of attempts) {
+        let r;
         try {
-          response = await fetch("https://api.apinex.bond/v1/messages", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": env.APINEX_API_KEY, "anthropic-version": "2023-06-01" },
-            body: JSON.stringify({ ...base, model })
-          });
+          r = provider === "gemini" ? await callGemini(env.GEMINI_API_KEY, model, base) : await callApinex(env.APINEX_API_KEY, model, base);
         } catch (e) {
-          console.log("Could not reach APInex:", String(e?.message || e));
-          return respond({ error: "Could not reach APInex" }, 502, origin);
+          console.log("Could not reach", provider, String(e?.message || e));
+          last = { provider, model, status: 502, text: "network error" };
+          continue;
         }
-        if (response.ok) break;
-        const status = response.status;
-        const text = (await response.text().catch(() => "")).slice(0, 600);
-        console.log("APInex error", model, status, text);
-        last = { status, text, model };
-        response = null;
-        if (![402, 403, 404, 429].includes(status)) break; // other errors: don't hammer the next model
+        if (r.ok) return respond({ content: r.content, stop_reason: r.stop_reason }, 200, origin);
+        console.log("Model error", provider, model, r.status, r.text);
+        last = { provider, model, status: r.status, text: r.text };
+        if (![402, 403, 404, 429, 500, 503].includes(r.status)) break; // e.g. 400: the request itself is wrong
       }
 
-      if (!response) {
-        const { status, text, model } = last;
-        const reason =
-          status === 401 || status === 403 ? "APInex rejected the API key" :
-          status === 402 ? "APInex: payment required (a one-time $5 top-up unlocks the free models)" :
-          status === 404 ? "APInex: model or endpoint not found (" + model + ")" :
-          status === 429 ? "APInex: rate limit reached" :
-          "APInex request failed";
-        const clientStatus = [400, 413, 429].includes(status) ? status : 502;
-        return respond({ error: reason, status, model, detail: text.slice(0, 300) }, clientStatus, origin);
-      }
-
-      const data = await response.json().catch(() => null);
-      const content = Array.isArray(data?.content)
-        ? data.content.filter(part => part?.type === "text" && typeof part.text === "string")
-        : [];
-      if (data?.stop_reason !== "refusal" && !content.some(part => part.text.trim())) {
-        console.log("APInex returned no text:", JSON.stringify(data).slice(0, 600));
-        return respond({ error: "APInex returned no text" }, 502, origin);
-      }
-      return respond({ content, stop_reason: data.stop_reason || "end_turn" }, 200, origin);
+      const { provider, model, status, text } = last || { provider: "-", model: "-", status: 502, text: "" };
+      const reason =
+        status === 401 || status === 403 ? provider + " rejected the API key" :
+        status === 402 ? "APInex: payment required" :
+        status === 404 ? provider + ": model not found (" + model + ")" :
+        status === 429 ? provider + ": rate limit reached, try again in a minute" :
+        provider + " request failed";
+      const clientStatus = [400, 413, 429].includes(status) ? status : 502;
+      return respond({ error: reason, status, model, detail: String(text).slice(0, 300) }, clientStatus, origin);
     } catch (err) {
       console.log("Invalid request:", String(err?.message || err));
       return respond({ error: "Invalid request: " + String(err?.message || "unknown").slice(0, 100) }, 400, origin);
