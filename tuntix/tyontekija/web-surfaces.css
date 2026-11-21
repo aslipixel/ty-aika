@@ -202,7 +202,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #20365b;
+  color: var(--entry-ink, #1538a0);
   box-shadow: none;
 }
 .teras #v[data-surface] .measurement-photo [data-measurement-overlay]:focus { outline: 0; }
@@ -416,9 +416,13 @@
 /* In-app confirmation dialog (replaces window.confirm). */
 .teras dialog.app-confirm { width: min(380px, calc(100vw - 32px)); padding: 18px; }
 .teras .app-confirm p { margin: 0 0 16px; font-size: 17px; line-height: 1.4; }
+/* The question is the main text, not secondary: beats the muted `.teras :is(#v…) p` rule. */
+.teras dialog.app-confirm p#app-confirm-text { color: var(--ui-text, var(--ink)); font-weight: 500; }
 .teras .app-confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .teras .app-confirm-actions .btn { min-height: 44px; margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .teras .app-confirm-actions svg { width: 18px; height: 18px; }
 .teras .app-confirm .app-confirm-danger { background: var(--ui-danger, #f2a398); border-color: var(--ui-danger, #f2a398); color: var(--ui-on-accent, #161b1f) !important; }
+/* Apple mode tints buttons by action; the confirm's Poista stays solid red so its white label is readable. */
+.teras .app-confirm .app-confirm-danger[data-tone] { background: #d70015 !important; border-color: #d70015 !important; color: #fff !important; }
 .teras .app-confirm form { margin: 0; }
 .teras .app-confirm .app-confirm-input { width: 100%; min-height: 44px; margin: 0 0 14px; font-size: 16px; }

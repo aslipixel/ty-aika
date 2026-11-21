@@ -47,6 +47,8 @@ const measurementRowCount = 39;
 const measurementHoursRow = 36;
 const measurementPdfUrl = './Mittaustodistus_92986_editable.pdf';
 const measurementPreviewUrl = './Mittaustodistus_92986.jpg';
+// Blue ballpoint ink for typed and handwritten entries (#1538a0).
+const measurementInk = [0.082, 0.22, 0.627];
 const measurementPdfNames = {
   customerNumber: 'asnr_o', jobNumber: 'tyonumero', site: 'kohde_1', siteExtra: 'kohde_2',
   customer: 'tilaaja', billing: 'laskutusosoite_1', billingExtra: 'laskutusosoite_2',
@@ -267,6 +269,15 @@ async function makeMeasurementPdf(draft, template) {
   const pdf = await PDFDocument.load(template.bytes, { updateMetadata: false });
   const page = pdf.getPage(0), form = pdf.getForm();
   const { width, height } = page.getSize();
+  // The bundled blank: draw the sharper scan over the old page background.
+  // Form fields are annotations, so they stay on top and remain editable.
+  if (template === measurementTemplate) {
+    const blank = await fetch(measurementPreviewUrl);
+    if (blank.ok) {
+      const box = page.getMediaBox();
+      page.drawImage(await pdf.embedJpg(await blank.arrayBuffer()), { x: box.x, y: box.y, width, height });
+    }
+  }
   await import('./vendor/fontkit.umd.min.js');
   pdf.registerFontkit(window.fontkit);
   const printed = draft.font === 'print';
@@ -279,7 +290,7 @@ async function makeMeasurementPdf(draft, template) {
   // Keep the selected font when a blank field is filled in a PDF reader.
   for (const field of form.getFields()) {
     if (field instanceof PDFLib.PDFTextField) {
-      field.acroField.setDefaultAppearance(`/${font.name} ${fontSize} Tf 0.125 0.212 0.357 rg`);
+      field.acroField.setDefaultAppearance(`/${font.name} ${fontSize} Tf ${measurementInk.join(' ')} rg`);
     }
   }
   function fill(name, value, narrow = false) {
@@ -329,6 +340,16 @@ async function makeMeasurementPdf(draft, template) {
     addMeasurementContinuation(pdf, form, font, draft.rows.slice(measurementRowCount), width, height, rowKeys, labelFont, fontSize);
   }
   form.updateFieldAppearances(font);
+  // Ballpoint look: fill + thin outline in the same blue makes the glyphs slightly bolder.
+  const { defaultTextFieldAppearanceProvider, setTextRenderingMode, TextRenderingMode, setLineWidth, setStrokingRgbColor } = PDFLib;
+  const pen = [setTextRenderingMode(TextRenderingMode.FillAndOutline), setLineWidth(printed ? 0.18 : 0.26), setStrokingRgbColor(...measurementInk)];
+  const penAppearance = (field, widget, f) => {
+    const normal = defaultTextFieldAppearanceProvider(field, widget, f);
+    return Array.isArray(normal) ? [...pen, ...normal] : { ...normal, normal: [...pen, ...normal.normal] };
+  };
+  for (const field of form.getFields()) {
+    if (field instanceof PDFLib.PDFTextField && field.getText()) field.updateAppearances(font, penAppearance);
+  }
   return pdf.save();
 }
 
@@ -357,7 +378,7 @@ function addMeasurementContinuation(pdf, form, font, rows, width, height, rowKey
         field.setMaxLength(max);
         field.addToPage(page, {
           x: x + 1, y: y + 1, width: w - 2, height: rowHeight - 2,
-          borderWidth: 0, borderColor: undefined, backgroundColor: undefined, textColor: ink, font,
+          borderWidth: 0, borderColor: undefined, backgroundColor: undefined, textColor: PDFLib.rgb(...measurementInk), font,
         });
         const value = row[key] || '';
         field.setText(value);

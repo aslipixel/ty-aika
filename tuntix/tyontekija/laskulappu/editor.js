@@ -77,6 +77,56 @@
     const parts = [...text.matchAll(/TUNTIX-LASKULAPPU-1:([A-Za-z0-9+/=]+)/g)].map((m) => m[1]);
     return parts.length ? JSON.parse(fromBase64(parts.join(''))) : null;
   }
+  const ensure = (group, index) => {
+    const rows = draft[group];
+    if (index >= rowTypes[group].limit) return null;
+    while (rows.length <= index) rows.push(rowTypes[group].create());
+    return rows[index];
+  };
+  const money = (whole, cents) => (whole || cents ? (whole || '0') + (cents ? ',' + cents : '') : '');
+  function setPaperField(id, value) {
+    const v = draft.v,
+      plain = ['asnr', 'tyonro', 'tilaaja', 'kalv', 'alv', 't10', 't2', 'paikka', 'tj', 'lask', 'huom'];
+    if (plain.includes(id)) return void (v[id] = value);
+    // Existing drafts keep their original keys: kohde2 is the address.
+    if (id === 'kohde1') return void (v.kohde2 = value);
+    if (id === 'kohde2') return void (v.kohde1 = value);
+    if (id === 'lasko1' || id === 'lasko2') {
+      const lines = (v.lasko || '').split('\n');
+      const first = id === 'lasko1' ? value : lines[0] || '',
+        rest = id === 'lasko2' ? value : lines.slice(1).join(' ');
+      return void (v.lasko = rest ? first + '\n' + rest : first);
+    }
+    if (id === 'pvm') {
+      const m = value.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+      return void (v.pvm = m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : '');
+    }
+    const tt = id.match(/^tt(\d+)$/);
+    if (tt) {
+      if (ensure('tt', +tt[1]) !== null) draft.tt[+tt[1]] = value;
+      return;
+    }
+    const cell = id.match(/^(tyo|maara|yks|merk|euro|s1|yht|s2)(\d+)$/);
+    if (!cell) return;
+    const [, col, n] = cell,
+      r = +n;
+    if (r >= 36 && (col === 'tyo' || col === 'maara')) {
+      const row = ensure('h', r - 36);
+      if (row) row[col === 'tyo' ? 't' : 'h'] = value;
+      return;
+    }
+    const row = ensure('w', r);
+    if (!row) return;
+    const shown = LaskulappuPaper.values(draft);
+    if (col === 'tyo') row.t = value;
+    else if (col === 'maara') row.m = value;
+    else if (col === 'yks') row.u = value;
+    else if (col === 'merk') row.n = value;
+    else if (col === 'euro') row.p = money(value, shown['s1' + r]);
+    else if (col === 's1') row.p = money(shown['euro' + r], value);
+    else if (col === 'yht') row.y = money(value, shown['s2' + r]);
+    else if (col === 's2') row.y = money(shown['yht' + r], value);
+  }
   let draft = blank(),
     name = '',
     // True while the form has changes that are neither stored nor sent/exported.
@@ -100,6 +150,7 @@
     accept: ['check', 'Valmis'],
     store: ['save', 'Tallenna'],
     fields: ['list', 'Kentät'],
+    textStyle: ['type', 'Teksti', 'Tekstin ulkoasu: käsin tai tavallinen, lihava tai normaali'],
     zoomIn: ['plus', '', 'Suurenna'],
     zoomOut: ['minus', '', 'Pienennä'],
   };
@@ -160,13 +211,83 @@
     connectedCallback() {
       this.root.innerHTML = `<link rel="stylesheet" href="${sheet}"><header><h2></h2>${controls('fields')}</header><main></main>
         <footer class="actions document-actions" aria-label="Lomakkeen toiminnot"></footer><p role="status"></p>
-        <dialog class="preview"><header><h2></h2>${controls('edit')}</header><div class="paper"><img alt="Laskulapun esikatselu"></div>
-        <footer class="actions">${controls('zoomOut', 'zoomIn', 'sign', 'export', 'send')}</footer></dialog>
+        <dialog class="preview"><header><h2></h2>${controls('edit')}</header><div class="paper"><img alt="Laskulapun esikatselu" title="Kaksoisnapauta kenttää muokataksesi"></div>
+        <div class="paper-style" id="paper-style" aria-label="Tekstin ulkoasu" hidden>
+          <div class="seg" role="group" aria-label="Fontti"><button type="button" data-action="font" data-font="hand">Käsin</button><button type="button" data-action="font" data-font="print">Tavallinen</button></div>
+          <div class="seg" role="group" aria-label="Tekstin paksuus"><button type="button" data-action="weight" data-weight="bold">Lihava</button><button type="button" data-action="weight" data-weight="normal">Normaali</button></div>
+        </div>
+        <footer class="actions">${controls('zoomOut', 'zoomIn', 'sign', 'export', 'send', 'textStyle')}<div class="ink" role="group" aria-label="Tekstin väri">${LaskulappuPaper.inks
+          .map(([ink, label, color]) => `<button type="button" data-action="ink" data-ink="${ink}" title="${label}" aria-label="${label}" style="--swatch:${color}"></button>`)
+          .join('')}</div></footer></dialog>
         <dialog class="modal"></dialog>
         <input type="file" id="import-file" accept="application/pdf,image/*,.pdf,.jpg,.jpeg" hidden>
         <dialog class="confirm" role="alertdialog" aria-labelledby="confirm-text"><p id="confirm-text"></p>
         <div class="actions"><button type="button" data-answer="no">${icon('x')}<span>Peruuta</span></button><button type="button" data-answer="yes"></button></div></dialog>`;
       this.draw();
+      this.el('.paper').addEventListener('dblclick', (event) => {
+        if (event.target.matches('img'))
+          this.editOnPaper(event).catch(() => this.status('Muokkaus epäonnistui.'));
+      });
+    }
+    // Double-click a field on the previewed form to type into it directly.
+    async editOnPaper(event) {
+      const img = this.el('.paper img'),
+        [W, H] = LaskulappuPaper.size,
+        rect = img.getBoundingClientRect(),
+        d = LaskulappuPaper.fieldAt(
+          draft,
+          ((event.clientX - rect.left) / rect.width) * W,
+          ((event.clientY - rect.top) / rect.height) * H,
+        );
+      if (!d || d.t === 'c') return;
+      if (!this.paperEditOk) {
+        if (!(await this.ask('Haluatko varmasti muokata lomaketta?', 'Muokkaa', 'pencil', false))) return;
+        this.paperEditOk = true;
+      }
+      this.el('.paper .paper-edit')?.remove();
+      const scale = img.clientWidth / W,
+        [fontSpec, boldness] = LaskulappuPaper.fontOf(draft),
+        size = parseFloat(fontSpec.match(/([\d.]+)px/)[1]) * scale,
+        b = d.b,
+        multi = d.t === 'm',
+        input = document.createElement(multi ? 'textarea' : 'input');
+      input.style.color = LaskulappuPaper.inkOf(draft)[2];
+      input.className = 'paper-edit' + (draft.font === 'print' ? '' : ' hand') + (boldness ? ' bold' : '');
+      input.value = LaskulappuPaper.values(draft)[d.id] || '';
+      input.setAttribute('aria-label', LaskulappuPaper.sections[d.sec][0]);
+      Object.assign(input.style, {
+        left: img.offsetLeft + b[0] * scale - 2 + 'px',
+        top: img.offsetTop + b[1] * scale - 2 + 'px',
+        width: Math.max((b[2] - b[0]) * scale + 4, 90) + 'px',
+        height: Math.max((b[3] - b[1]) * scale + 4, size * 1.6) + 'px',
+        fontSize: Math.max(size, 16) + 'px',
+      });
+      let done = false;
+      const finish = async (keep) => {
+        if (done) return;
+        done = true;
+        if (keep && input.value !== (LaskulappuPaper.values(draft)[d.id] || '')) {
+          setPaperField(d.id, input.value);
+          dirty = true;
+          this.draw();
+        }
+        input.remove();
+        await this.refresh();
+      };
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          finish(false);
+        } else if (e.key === 'Enter' && (!multi || e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          finish(true);
+        }
+      });
+      input.addEventListener('blur', () => finish(true));
+      this.el('.paper').append(input);
+      input.focus();
+      input.select?.();
     }
     el(s) {
       return this.root.querySelector(s);
@@ -291,6 +412,12 @@
         (draft.hid.edu ? '' : controls('sign', ...(draft.sig ? ['removeSig'] : []))) +
         controls('preview', 'open', 'save', 'send');
       this.el('.preview [data-action=sign]').hidden = !!draft.hid.edu;
+      const font = draft.font === 'print' ? 'print' : 'hand',
+        weight = draft.weight === 'normal' ? 'normal' : 'bold';
+      this.root.querySelectorAll('[data-action=font]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.font === font)));
+      this.root.querySelectorAll('[data-action=weight]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.weight === weight)));
+      const ink = LaskulappuPaper.inkOf(draft)[0];
+      this.root.querySelectorAll('[data-action=ink]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.ink === ink)));
       if (this.el('.sig img')) this.el('.sig img').src = draft.sig;
     }
     modal(title, html) {
@@ -308,6 +435,9 @@
       if (!stored.w.length) stored.w = [emptyWork()];
       stored.hid = stored.hid && typeof stored.hid === 'object' ? stored.hid : {};
       if (typeof stored.sig !== 'string' || !stored.sig.startsWith('data:image/')) stored.sig = '';
+      stored.font = stored.font === 'print' ? 'print' : 'hand';
+      stored.weight = stored.weight === 'normal' ? 'normal' : 'bold';
+      stored.ink = LaskulappuPaper.inkOf(stored)[0];
       // Older saved forms stored the two checkboxes and a single visibility map.
       const legacyPartial = stored.v.osa || (stored.hid.loppu && !stored.v.loppu);
       const mode = ['osa', 'loppu'].includes(stored.mode)
@@ -423,7 +553,20 @@
       const action = b.dataset.action,
         modal = this.el('.modal'),
         preview = this.el('.preview');
-      if (action === 'mode') {
+      if (action === 'font' || action === 'weight' || action === 'ink') {
+        if (action === 'font') draft.font = b.dataset.font === 'print' ? 'print' : 'hand';
+        else if (action === 'weight') draft.weight = b.dataset.weight === 'normal' ? 'normal' : 'bold';
+        else draft.ink = LaskulappuPaper.inkOf({ ink: b.dataset.ink })[0];
+        dirty = true;
+        this.draw();
+        b.focus();
+        if (preview.open) await this.refresh();
+      } else if (action === 'textStyle') {
+        const panel = this.el('#paper-style'),
+          open = panel.hidden;
+        panel.hidden = !open;
+        b.setAttribute('aria-pressed', String(open));
+      } else if (action === 'mode') {
         selectMode(draft, b.dataset.mode);
         dirty = true;
         this.draw();
@@ -557,8 +700,11 @@
           this.draw();
         }
       } else if (action === 'preview') {
+        this.paperEditOk = false;
         this.zoom = 1;
         this.el('.paper img').style.width = '100%';
+        this.el('#paper-style').hidden = true;
+        this.el('[data-action=textStyle]').setAttribute('aria-pressed', 'false');
         this.el('.preview h2').textContent = name || 'Laskulappu';
         preview.showModal();
         await this.refresh();

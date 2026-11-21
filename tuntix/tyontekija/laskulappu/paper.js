@@ -137,7 +137,28 @@ const LaskulappuPaper = (() => {
     S.tt.forEach((n, i) => (o['tt' + i] = n));
     return o;
   }
-  function render(S) {
+  // Ballpoint ink colours (S.ink, blue by default); 'hand' = handwriting (Caveat), 'print' = plain text (Open Sans).
+  const INKS = [
+    ['blue', 'Sininen', '#1538a0'],
+    ['black', 'Musta', '#1a1a1a'],
+    ['red', 'Punainen', '#c8102e'],
+  ];
+  const inkOf = (S) => INKS.find(([key]) => key === S.ink) || INKS[0];
+  // [font, outline width (0 = plain), line gap]; S.weight 'normal' turns the bold outline off.
+  const FONTS = {
+    hand: { bold: ['600 19px Caveat', 0.55, 18], normal: ['500 19px Caveat', 0, 18] },
+    print: { bold: ['600 13.5px "Open Sans"', 0.3, 17], normal: ['400 13.5px "Open Sans"', 0, 17] },
+  };
+  const fontOf = (S) => FONTS[S.font === 'print' ? 'print' : 'hand'][S.weight === 'normal' ? 'normal' : 'bold'];
+  // Field under a point in form coordinates (939 x 1280), skipping hidden sections.
+  function fieldAt(S, px, py) {
+    return F.find((d) => !S.hid[d.sec] && px >= d.b[0] && px <= d.b[2] && py >= d.b[1] && py <= d.b[3]) || null;
+  }
+  async function render(S) {
+    const [fontSpec] = fontOf(S);
+    try {
+      await document.fonts.load(fontSpec);
+    } catch {}
     return new Promise((res, reject) => {
       const im = new Image();
       im.onerror = reject;
@@ -156,10 +177,19 @@ const LaskulappuPaper = (() => {
             x.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
           }
         });
-        x.fillStyle = '#0d1f5c';
-        x.strokeStyle = '#0d1f5c';
+        const [font, weight, lineGap] = fontOf(S);
+        const ink = inkOf(S)[2];
+        x.fillStyle = ink;
+        x.strokeStyle = ink;
         x.textBaseline = 'middle';
-        x.font = '14px Helvetica,Arial,sans-serif';
+        x.font = font;
+        // Fill plus a thin same-colour outline makes the strokes a little bolder.
+        const put = (t, tx, ty, max) => {
+          x.fillText(t, tx, ty, max);
+          if (!weight) return;
+          x.lineWidth = weight;
+          x.strokeText(t, tx, ty, max);
+        };
         const V = values(S);
         F.forEach((d) => {
           if (S.hid[d.sec]) return;
@@ -171,7 +201,7 @@ const LaskulappuPaper = (() => {
           x.rect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
           x.clip();
           if (d.t == 'c') {
-            x.lineWidth = 2;
+            x.lineWidth = 2.2;
             x.beginPath();
             x.moveTo(b[0] + 3, b[1] + 3);
             x.lineTo(b[2] - 3, b[3] - 3);
@@ -186,18 +216,18 @@ const LaskulappuPaper = (() => {
                 let l = '';
                 p.split(' ').forEach((w) => {
                   if (x.measureText(l + w).width > b[2] - b[0] - 6) {
-                    x.fillText(l, b[0] + 3, y);
-                    y += 17;
+                    put(l, b[0] + 3, y);
+                    y += lineGap;
                     l = '';
                   }
                   l += w + ' ';
                 });
-                x.fillText(l, b[0] + 3, y);
-                y += 17;
+                put(l, b[0] + 3, y);
+                y += lineGap;
               });
           } else if (d.id === 'kohde1')
-            x.fillText(v, b[0] + 3, (b[1] + b[3]) / 2 + 1, b[2] - b[0] - 6);
-          else x.fillText(v, b[0] + 3, (b[1] + b[3]) / 2 + 1);
+            put(v, b[0] + 3, (b[1] + b[3]) / 2 + 1, b[2] - b[0] - 6);
+          else put(v, b[0] + 3, (b[1] + b[3]) / 2 + 1, b[2] - b[0] - 4);
           x.restore();
         });
         if (S.sig && !S.hid.edu) {
@@ -267,5 +297,5 @@ const LaskulappuPaper = (() => {
     });
     return o;
   }
-  return { sections: SEC, render, pdfBytes };
+  return { sections: SEC, fields: F, size: [W, H], values, fieldAt, fontOf, inks: INKS, inkOf, render, pdfBytes };
 })();

@@ -1,0 +1,143 @@
+/* Apple-style (iOS) design experiment. Active only when <html> has class "apple".
+   Remove the <link>/<script> for apple-design.* in index.html to drop it entirely. */
+
+/* ---------- Palette: iOS system colors ---------- */
+html.teras.apple:root{
+  color-scheme:dark;
+  --font-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --font-num:ui-rounded,"SF Pro Rounded",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --ink:#ffffff; --mut:#98989f; --line:#38383a;
+  --blue:#0a84ff; --teal:#0a84ff; --vio:#0a84ff; --lil:#0a84ff26;
+  --card:#1c1c1e; --bg1:#000000; --bg2:#000000; --sh:none; --nav-base:#1c1c1ecc;
+  --ui-page:#000; --ui-outer:#000; --ui-panel:#1c1c1e; --ui-field:#2c2c2e; --ui-subtle:#2c2c2e;
+  --ui-hover:#2c2c2e; --ui-hover-edge:transparent; --ui-edge:transparent; --ui-control-edge:transparent;
+  --ui-divider:#38383a; --ui-text:#fff; --ui-secondary:#98989f; --ui-accent-tint:#0a84ff26;
+  --ui-on-accent:#fff; --ui-danger:#ff453a; --ui-warn:#ff9f0a; --ui-warn-bg:#ff9f0a26; --ui-heading:#fff;
+  --sep:#54545899; --fill:#7676803d; --green:#30d158; --orange:#ff9f0a; --red:#ff453a; --indigo:#5e5ce6; --pink:#ff375f; --gray:#8e8e93;
+  --bar:rgba(22,22,24,.78);
+}
+html.teras.apple[data-theme="light"]{
+  color-scheme:light;
+  --ink:#000000; --mut:#8a8a8e; --line:#c6c6c8;
+  --blue:#007aff; --teal:#007aff; --vio:#007aff; --lil:#007aff1f;
+  --card:#ffffff; --bg1:#f2f2f7; --bg2:#f2f2f7; --nav-base:#f9f9f9cc;
+  --ui-page:#f2f2f7; --ui-outer:#f2f2f7; --ui-panel:#fff; --ui-field:#7676801f; --ui-subtle:#7676801f;
+  --ui-hover:#e5e5ea; --ui-divider:#c6c6c8; --ui-text:#000; --ui-secondary:#8a8a8e; --ui-accent-tint:#007aff1f;
+  --ui-danger:#ff3b30; --ui-warn:#c93400; --ui-warn-bg:#ff95001f; --ui-heading:#000;
+  --sep:#3c3c434a; --fill:#78788033; --green:#34c759; --orange:#ff9500; --red:#ff3b30; --indigo:#5856d6; --pink:#ff2d55; --gray:#8e8e93;
+  --bar:rgba(249,249,249,.8);
+}
+
+/* ---------- Base ---------- */
+html.apple body,html.apple #app{background:var(--bg1);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+html.apple .teras-icon,html.apple .i{stroke-width:1.75}
+html.apple :is(button,a,input,select,textarea):focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 45%,transparent);outline-offset:1px}
+
+/* ---------- Header: large title ---------- */
+html.apple .teras-dashboard{font-family:var(--font-display)}
+html.apple .teras-wordmark{font:800 30px/1 var(--font-display);letter-spacing:-.03em;font-style:normal}
+html.apple .teras-wordmark em{font-style:normal;color:var(--blue)}
+html.apple .teras-date{font:600 15px/1 var(--font-ui);color:var(--mut);letter-spacing:0}
+
+/* Week toolbar: segmented-style controls */
+html.apple .teras-week-tools{grid-template-columns:36px minmax(84px,150px) 36px 1fr;gap:6px;margin:14px 0 14px}
+html.apple .teras-square{border:0;border-radius:50%;width:36px;min-height:36px;background:var(--fill);color:var(--blue)}
+html.apple .teras-square .teras-icon{width:18px;height:18px;stroke-width:2.4}
+html.apple .teras-week-picker{border:0;border-radius:10px;min-height:36px;background:var(--fill);color:var(--ink);font:600 16px/1 var(--font-ui)}
+html.apple .teras-week-tools time{color:var(--ink);font:700 34px/1 var(--font-num);letter-spacing:-.02em}
+
+/* ---------- Week: inset grouped list ---------- */
+html.apple .teras-week{background:var(--card);border-radius:12px;overflow:hidden}
+html.apple .teras-day{position:relative;min-height:48px;border:0;border-radius:0;background:transparent;padding:6px 12px 6px 16px;font:400 17px/1.2 var(--font-ui)}
+html.apple .teras-day+.teras-day::before{content:"";position:absolute;top:0;left:16px;right:0;height:1px;transform:scaleY(.5);transform-origin:top;background:var(--sep)}
+html.apple .teras-day:hover{background:var(--ui-hover)}
+html.apple .teras-day:active{background:var(--fill)}
+html.apple .teras-day-date{gap:8px}
+html.apple .teras-day-date b{font-weight:600;width:1.7em}
+html.apple .teras-day-date span{color:var(--mut)}
+html.apple .teras-day[aria-current=date] .teras-day-date b{color:var(--blue)}
+html.apple .teras-day[aria-current=date] .teras-day-date span{color:var(--blue)}
+html.apple .teras-hours{background:transparent;color:var(--mut);font:500 16px/1 var(--font-num);padding:4px 6px;min-width:64px}
+html.apple .teras-hours svg{width:16px;height:16px;opacity:.8}
+html.apple .recorded .teras-hours{background:var(--ui-accent-tint);color:var(--blue);font-weight:600;border-radius:8px}
+html.apple .teras-day-project{border-left:0;padding-left:6px;font:400 15px/1.25 var(--font-ui);color:var(--mut)}
+html.apple .recorded .teras-day-project{color:var(--ink)}
+/* plus.circle.fill */
+html.apple .teras-day-add{width:28px;height:28px;border:0;background:var(--blue);color:#fff}
+html.apple .teras-day-add svg{width:18px;height:18px;stroke-width:2.6}
+html.apple .teras-day:hover .teras-day-add{background:var(--blue);filter:brightness(1.1)}
+
+/* ---------- Month calendar ---------- */
+html.apple .teras-month{margin:20px 0 0;padding:14px 10px 12px;border-radius:12px;background:var(--card)}
+html.apple .teras-month-tools h2{font:700 20px/1.1 var(--font-display);letter-spacing:-.02em}
+html.apple .teras-month-tools .teras-square{width:32px;min-height:32px;background:transparent}
+html.apple .teras-weekday{color:var(--mut);font:600 12px/1 var(--font-ui);text-transform:uppercase;padding:6px 0 8px}
+html.apple .teras-grid{gap:4px 2px}
+html.apple .teras-grid button,html.apple .teras-blank{border:0;background:transparent;min-height:44px;border-radius:50%}
+html.apple .teras-blank{visibility:hidden}
+html.apple .teras-grid button{width:44px;max-width:100%;justify-self:center;aspect-ratio:1}
+html.apple .teras-grid button b{font:400 19px/1 var(--font-ui)}
+html.apple .teras-grid button:hover{background:var(--fill)}
+html.apple .teras-grid small{font:600 10px/1 var(--font-num);color:var(--blue)}
+html.apple .teras-grid button[aria-current=date]{background:var(--blue);color:#fff}
+html.apple .teras-grid button[aria-current=date] b{font-weight:600}
+html.apple .teras-grid button[aria-current=date] small{background:transparent;color:#fff}
+
+/* ---------- Tab bar ---------- */
+html.apple.teras #nav{background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:0;box-shadow:0 -.5px 0 var(--sep);padding:6px 2px calc(4px + env(safe-area-inset-bottom,0px))}
+html.apple.teras #nav a{min-height:49px;gap:3px;color:var(--gray);font:500 10px/1.1 var(--font-ui);letter-spacing:.01em}
+html.apple.teras #nav a .teras-icon,html.apple.teras #nav a .i{width:26px;height:26px;stroke-width:1.7}
+html.apple.teras #nav a.on{color:var(--blue)}
+/* "filled" SF Symbol feel for the selected tab */
+html.apple.teras #nav a.on :is(.teras-icon,.i){fill:currentColor;fill-opacity:.22;stroke-width:2}
+
+/* ---------- Cards, sheets, controls on other pages ---------- */
+html.apple.teras #v[data-surface] .card,html.apple.teras .sheet,html.apple.teras .tes-dialog,html.apple.teras .project-picker,html.apple.teras .teras-dialog,html.apple .card{border:0;border-radius:12px;background:var(--card);box-shadow:none}
+html.apple.teras .sheet,html.apple.teras .tes-dialog,html.apple.teras .teras-dialog{border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+html.apple.teras :is(.teras-page-toolbar,.teras-dialog-toolbar,#tes-editor .tes-editor-head) h2{font:700 32px/1.1 var(--font-display);letter-spacing:-.025em}
+html.apple.teras .teras-dialog-toolbar h2{font-size:17px;font-weight:600;letter-spacing:-.01em;text-align:center}
+html.apple.teras .teras-dialog-toolbar{border-bottom:0;box-shadow:0 .5px 0 var(--sep)}
+html.apple.teras :is(#v[data-surface],.sheet,.tes-dialog,.teras-dialog) h3{font:600 13px/1.2 var(--font-ui);text-transform:uppercase;letter-spacing:.02em;color:var(--mut)}
+html.apple.teras :is(#v[data-surface],.sheet,.tes-dialog,.teras-dialog) label{color:var(--mut);font-size:15px}
+html.apple.teras :is(#v[data-surface],.sheet,.tes-dialog,.teras-dialog) :is(input,select,textarea):not([data-measurement-overlay]):not([type="checkbox"]):not([type="radio"]){border:0;border-radius:10px;background:var(--ui-field);font:400 17px/1.25 var(--font-ui);min-height:44px}
+html.apple :is(input[type="checkbox"],input[type="radio"]){accent-color:var(--green)}
+
+/* Buttons: tinted by default, filled when primary */
+html.apple.teras :is(.teras-icon-button,.sheet-control,.teras-action,#v[data-surface] .btn,.sheet .btn,.tes-dialog .btn,.teras-dialog .btn),html.apple .btn{border:0;border-radius:12px;min-height:44px;background:var(--ui-accent-tint);color:var(--blue);font:600 16px/1.2 var(--font-ui);box-shadow:none}
+html.apple.teras :is(#v[data-surface] .btn.pri,.sheet .btn.pri,.tes-dialog .btn.pri,.teras-dialog .btn.pri,.sheet-done),html.apple .btn.pri{background:var(--blue);color:#fff}
+html.apple .btn:active,html.apple .teras-action:active{opacity:.7}
+
+/* Toolbar icon buttons: round, gray fill */
+html.apple.teras #app .teras-icon-button,html.apple.teras .teras-dialog .teras-icon-button{width:32px;height:32px;min-height:32px;padding:0;border:0;border-radius:50%;background:var(--fill);color:var(--blue)}
+html.apple.teras .teras-icon-button svg{width:17px;height:17px;stroke-width:2.2}
+html.apple.teras .teras-dialog .teras-icon-button.teras-done{background:var(--blue);color:#fff}
+html.apple.teras #app .teras-icon-button.teras-done{background:var(--blue);color:#fff}
+
+/* ---------- iOS Settings-style rows with colored icon tiles ---------- */
+html.apple.teras #v[data-surface] .card:has(> .calculator-link){padding:0 0 0 16px;overflow:hidden}
+html.apple.teras #v[data-surface] .btn.calculator-link{grid-template-columns:26px minmax(0,1fr) 14px;min-height:44px;gap:12px;padding:7px 14px 7px 0;border-radius:0;background:transparent;color:var(--ink);font:400 17px/1.2 var(--font-ui);border-bottom:0;position:relative}
+html.apple.teras #v[data-surface] .calculator-link+.calculator-link::before{content:"";position:absolute;top:0;left:38px;right:0;height:1px;transform:scaleY(.5);transform-origin:top;background:var(--sep)}
+html.apple.teras #v[data-surface] .calculator-link:active{background:var(--fill)}
+html.apple.teras #v[data-surface] .calculator-link>:last-child{color:var(--gray);opacity:.6}
+html.apple.teras #v[data-surface] .calculator-icon{width:26px;height:26px;border-radius:6px;background:var(--orange);color:#fff;display:grid;place-items:center}
+html.apple.teras #v[data-surface] .calculator-icon svg{width:16px;height:16px;stroke-width:2}
+html.apple.teras #v[data-surface] .calculator-link:nth-child(2) .calculator-icon{background:var(--green)}
+html.apple.teras #v[data-surface] .calculator-link:nth-child(3) .calculator-icon{background:var(--indigo)}
+html.apple.teras #v[data-surface] .calculator-link:nth-child(4) .calculator-icon{background:var(--pink)}
+html.apple.teras #v[data-surface] .calculator-link:nth-child(5) .calculator-icon{background:var(--blue)}
+
+html.apple.teras .teras-project-row{border:0;border-radius:12px;padding:14px 16px}
+html.apple.teras .teras-project-row h3{font:600 17px/1.25 var(--font-ui);text-transform:none;letter-spacing:-.01em;color:var(--ink)}
+html.apple.teras .teras-project-list,html.apple.teras .teras-type-list{gap:10px}
+
+/* ---------- Action buttons: tone text colors per theme (rules live in apple-design.js) ---------- */
+html.apple{--tint-amt:24%;--t-orange:#ffb340;--t-red:#ff6961;--t-blue:#7cc0ff;--t-green:#6fe08c;--t-teal:#7ad9ea;--t-indigo:#b0afff;--t-purple:#dfa0ff;--t-gray:#d1d1d6}
+html.apple[data-theme="light"]{--tint-amt:15%;--t-orange:#c45f00;--t-red:#d70015;--t-blue:#0058bf;--t-green:#1f7a35;--t-teal:#0b6f81;--t-indigo:#3634a3;--t-purple:#8236a8;--t-gray:#55555a}
+html.apple .teras-actions{display:flex;flex-wrap:wrap;gap:0}
+
+/* ---------- Design switcher (local experiment) ---------- */
+.apple-switch{position:fixed;z-index:9999;right:10px;bottom:calc(var(--nav-height,72px) + 10px);display:flex;padding:2px;border-radius:9px;background:var(--fill,#7676803d);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);font:600 12px/1 -apple-system,"Segoe UI",system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+html:has(.apple-switch).teras #v{padding-bottom:calc(var(--nav-height,72px) + 60px)}
+.apple-switch button{border:0;background:transparent;color:var(--ink,#000);padding:7px 10px;border-radius:7px;font:inherit;cursor:pointer}
+.apple-switch button[aria-pressed="true"]{background:var(--card,#fff);box-shadow:0 1px 4px rgba(0,0,0,.18)}
