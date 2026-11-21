@@ -1,0 +1,8 @@
+{
+  "appId": "fi.letterpilot.app",
+  "appName": "LetterPilot",
+  "webDir": "www",
+  "server": { "androidScheme": "https", "cleartext": false },
+  "ios": { "contentInset": "never" },
+  "android": { "allowMixedContent": false }
+}

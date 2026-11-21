@@ -1,0 +1,53 @@
+name: Build LetterPilot Android
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['letterpilot/index.html', 'letterpilot-app/**', '.github/workflows/letterpilot-android.yml']
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: letterpilot-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: letterpilot-app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - run: npm ci
+      - run: node build.mjs
+      - run: npx cap add android
+      - run: node android-prepare.mjs
+        env:
+          LP_BUILD_NUMBER: ${{ github.run_number }}
+      - name: Build installable test APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+      - name: Collect APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk LetterPilot.apk
+          sha256sum LetterPilot.apk > SHA256SUMS-Android.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LetterPilot-Android-APK
+          path: |
+            letterpilot-app/LetterPilot.apk
+            letterpilot-app/SHA256SUMS-Android.txt
+          if-no-files-found: error
+          retention-days: 90
