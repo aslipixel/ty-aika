@@ -427,8 +427,8 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
     <div class="section-h" data-i18n="uiLang">Interface language</div>
     <div class="seg" id="uiSeg"><button data-v="en">English</button><button data-v="ru">Русский</button></div>
     <div id="keySection" hidden>
-      <div class="section-h" data-i18n="apiKey">Anthropic API key</div>
-      <div class="group glass"><div class="list"><div class="row"><input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off" style="text-align:left;color:var(--text)"></div></div></div>
+      <div class="section-h" data-i18n="apiKey">LetterPilot access code</div>
+      <div class="group glass"><div class="list"><div class="row"><input type="password" id="apiKey" placeholder="••••••" autocomplete="off" style="text-align:left;color:var(--text)"></div></div></div>
       <p class="note" data-i18n="apiKeyNote"></p>
     </div>
     <div class="section-h" data-i18n="theme">Theme</div>
@@ -468,7 +468,7 @@ const icon = (name, cls = "i") => `<svg class="${cls}"><use href="#i-${name}"/><
 const I18N = {
   en: {
     camDenied: "No camera access. Take a photo instead.", camAutoOn: "Auto", camAutoOff: "Manual", camPoint: "Point the camera at a document", camFound: "Document found", camHold: "Hold still…", camSaved: "Page saved. Next page?", camNext: "Turn the page or tap Done",
-    apiKey: "Anthropic API key", apiKeyNote: "Needed only on this website. Stored in this browser only and sent straight to Anthropic. Get one at console.anthropic.com.", needKey: "Add your Anthropic API key in Settings to analyze documents.", badKey: "The API key was rejected. Check it in Settings.",
+    apiKey: "LetterPilot access code", apiKeyNote: "Needed only on this website. Enter your test access code (not a Gemini key). It is kept until you close the tab; documents are sent through the LetterPilot server to Gemini.", needKey: "Enter your access code in Settings to analyze documents.", badKey: "The access code was rejected. Check it in Settings.",
     home: "Home", settings: "Settings", newShort: "New", newDoc: "New document", heroTitle: "Understand any letter.",
     heroSub: "Translation, a plain-language explanation, deadlines, advice and a ready reply.",
     pastePh: "Paste the text of a letter, notice, invoice or contract in any language",
@@ -512,7 +512,7 @@ const I18N = {
   },
   ru: {
     camDenied: "Нет доступа к камере. Сделайте фото.", camAutoOn: "Авто", camAutoOff: "Вручную", camPoint: "Наведите камеру на документ", camFound: "Документ найден", camHold: "Не двигайте…", camSaved: "Страница сохранена. Следующая?", camNext: "Переверните страницу или нажмите «Готово»",
-    apiKey: "Ключ Anthropic API", apiKeyNote: "Нужен только на этом сайте. Хранится в этом браузере и отправляется напрямую в Anthropic. Получить: console.anthropic.com.", needKey: "Добавьте ключ Anthropic API в настройках, чтобы разбирать документы.", badKey: "Ключ API не принят. Проверьте его в настройках.",
+    apiKey: "Код доступа LetterPilot", apiKeyNote: "Нужен только на этом сайте. Введите тестовый код доступа (не ключ Gemini). Хранится до закрытия вкладки; документы идут через сервер LetterPilot в Gemini.", needKey: "Введите код доступа в настройках, чтобы разбирать документы.", badKey: "Код доступа не принят. Проверьте его в настройках.",
     home: "Домой", settings: "Настройки", newShort: "Новый", newDoc: "Новый документ", heroTitle: "Поймите любое письмо.",
     heroSub: "Перевод, объяснение простыми словами, сроки, советы и готовый ответ.",
     pastePh: "Вставьте текст письма, уведомления, счёта или договора на любом языке",
@@ -613,7 +613,11 @@ $("lang").onchange = () => store.set("lang", $("lang").value);
 /* ================= Claude (viewer's account) ================= */
 let sample = null, maxImages = 0;
 const inClaude = !!window.claude?.use;
-const SDK_URL = "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.5.0/+esm";
+// On the website, requests go through the LetterPilot Cloudflare Worker (Gemini); no AI key is ever in the browser.
+const WORKER_URL = "https://letterpilot-ai.asl-icopal.workers.dev";
+const WORKER_MODEL = "gemini-2.5-flash"; // the Worker picks the real model
+const tokenGet = () => { try { return sessionStorage.getItem("lp_test_token") || ""; } catch { return ""; } };
+const tokenSet = v => { try { sessionStorage.setItem("lp_test_token", v); } catch {} };
 function parseJsonLoose(s) {
   try { return JSON.parse(s); } catch {}
   const f = s.match(/```(?:json)?\s*([\s\S]*?)```/); if (f) { try { return JSON.parse(f[1]); } catch {} }
@@ -621,12 +625,9 @@ function parseJsonLoose(s) {
   throw { code: "invalid_json", text: s };
 }
 function makeApiSample() {
-  let mod = null;
   const toB64 = b => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(b); });
   async function run(input, o = {}) {
-    const key = store.get("apiKey", ""); if (!key) throw { code: "no_key" };
-    try { mod ||= await import(SDK_URL); } catch { throw { code: "upstream_error" }; }
-    const client = new mod.default({ apiKey: key, dangerouslyAllowBrowser: true });
+    const token = tokenGet(); if (!token) throw { code: "no_key" };
     const msgs = [];
     for (const m of (typeof input === "string" ? [{ role: "user", content: input }] : input)) {
       const last = msgs[msgs.length - 1];
@@ -637,38 +638,39 @@ function makeApiSample() {
       const imgs = await Promise.all([...o.images].map(async b => ({ type: "image", source: { type: "base64", media_type: b.type || "image/jpeg", data: await toB64(b) } })));
       last.content = [...imgs, { type: "text", text: last.content }];
     }
-    let text = "";
+    let res, data;
     try {
-      const stream = client.beta.messages.stream({
-        model: "claude-opus-5-5", max_tokens: 32000, betas: ["server-side-fallback-2026-07-01"], fallbacks: "default",
-        output_config: { effort: o.modelTier === "quick" ? "low" : "medium" }, messages: msgs
-      }, o.signal ? { signal: o.signal } : undefined);
-      stream.on("text", dl => { text += dl; o.onText && o.onText({ text, delta: dl }); });
-      const msg = await stream.finalMessage();
-      if (msg.stop_reason === "refusal") throw { code: "refused" };
-      const full = msg.content.filter(b => b.type === "text").map(b => b.text).join("");
-      return { text: full, truncated: msg.stop_reason === "max_tokens" };
+      res = await fetch(WORKER_URL + "/api", {
+        method: "POST", signal: o.signal,
+        headers: { "Content-Type": "application/json", "X-LetterPilot-Token": token },
+        body: JSON.stringify({ model: WORKER_MODEL, max_tokens: o.modelTier === "quick" ? 8000 : 16000, messages: msgs })
+      });
+      data = await res.json().catch(() => ({}));
     } catch (e) {
-      if (e && e.code && !e.status) throw e;
-      if (o.signal?.aborted) throw { code: "cancelled", text };
-      const s = e?.status;
-      throw { code: s === 401 || s === 403 ? "auth" : s === 429 ? "rate_limited" : s === 413 ? "prompt_too_large" : "upstream_error", text: text || undefined };
+      if (o.signal?.aborted) throw { code: "cancelled" };
+      throw { code: "upstream_error" };
     }
+    if (!res.ok) throw { code: res.status === 401 || res.status === 403 ? "auth" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : "upstream_error" };
+    if (data.stop_reason === "refusal") throw { code: "refused" };
+    const text = (data.content || []).filter(p => p.type === "text").map(p => p.text).join("");
+    if (!text.trim()) throw { code: "empty_completion" };
+    o.onText && o.onText({ text, delta: text });
+    return { text, truncated: data.stop_reason === "max_tokens" };
   }
   const s = (i, o) => run(i, o);
   s.json = async (i, o) => parseJsonLoose((await run(i, o)).text);
-  s.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 20 } });
+  s.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 10 } });
   return s;
 }
 const ready = (inClaude ? window.claude.use("sample") : Promise.resolve(makeApiSample())).then(async s => {
   sample = s;
-  if (!inClaude) { $("keySection").hidden = false; $("noClaude").hidden = !!store.get("apiKey", ""); $("noClaude").textContent = t("needKey"); }
+  if (!inClaude) { $("keySection").hidden = false; $("noClaude").hidden = !!tokenGet(); $("noClaude").textContent = t("needKey"); }
   if (!s) { $("noClaude").hidden = false; return null; }
   try { const lim = await s.limits(); maxImages = lim?.images?.maxCount || 0; } catch { maxImages = 0; }
   return s;
 });
-$("apiKey").value = store.get("apiKey", "");
-$("apiKey").addEventListener("change", () => { store.set("apiKey", $("apiKey").value.trim()); $("noClaude").hidden = !!$("apiKey").value.trim(); });
+$("apiKey").value = inClaude ? "" : tokenGet();
+$("apiKey").addEventListener("input", () => { tokenSet($("apiKey").value.trim()); $("noClaude").hidden = !!$("apiKey").value.trim(); });
 function errText(e) {
   switch (e?.code) {
     case "not_granted": return t("eNotGranted");
