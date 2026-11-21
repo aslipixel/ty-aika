@@ -1,7 +1,6 @@
-// LetterPilot Cloudflare Worker: forwards page requests to Google Gemini (and APInex as a backup).
+// LetterPilot Cloudflare Worker: forwards page requests to Google Gemini only.
 // Secrets (Cloudflare → Worker → Settings → Variables and Secrets):
-//   GEMINI_API_KEY          key from aistudio.google.com (used first)
-//   APINEX_API_KEY          optional backup, key from apinex.bond
+//   GEMINI_API_KEY          key from aistudio.google.com
 //   LETTERPILOT_TEST_TOKEN  access code given to testers (24+ characters)
 const ORIGIN = "https://aslipixel.github.io";
 // Tried in order; the next one is used when a model is refused (missing, payment, rate limit, overloaded).
@@ -10,8 +9,6 @@ const GEMINI_MODELS = [
   { model: "gemini-flash-lite-latest" },
   { model: "gemini-flash-latest", thinking: { thinkingLevel: "low" } }
 ];
-// The APInex free/ models unlock after a one-time $5 top-up there.
-const APINEX_MODELS = ["free/gpt-6-luna", "free/gemini-4-hydrogen", "free/gemini-3.8-flash"];
 const MAX_BODY = 7 * 1024 * 1024;
 
 function headers(origin) {
@@ -58,19 +55,6 @@ function convertPart(part) {
   throw new Error("Unsupported message part");
 }
 
-async function callApinex(key, model, base) {
-  const res = await fetch("https://api.apinex.bond/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ ...base, model })
-  });
-  if (!res.ok) return { ok: false, status: res.status, text: (await res.text().catch(() => "")).slice(0, 600) };
-  const data = await res.json().catch(() => null);
-  const content = Array.isArray(data?.content) ? data.content.filter(p => p?.type === "text" && typeof p.text === "string") : [];
-  if (data?.stop_reason !== "refusal" && !content.some(p => p.text.trim())) return { ok: false, status: 502, text: "empty answer" };
-  return { ok: true, content, stop_reason: data.stop_reason || "end_turn" };
-}
-
 // Converts the page's message format to Gemini's generateContent format and back.
 async function callGemini(key, model, base, thinking) {
   const contents = base.messages.map(m => ({
@@ -100,17 +84,9 @@ async function callGemini(key, model, base, thinking) {
   return { ok: true, content: [{ type: "text", text }], stop_reason: fr === "MAX_TOKENS" ? "max_tokens" : "end_turn" };
 }
 
-// A Google key (starts with "AIza") is used for Gemini even if it was saved under APINEX_API_KEY.
-function keys(env) {
-  const isGoogle = k => typeof k === "string" && k.startsWith("AIza");
-  const gemini = env.GEMINI_API_KEY || (isGoogle(env.APINEX_API_KEY) ? env.APINEX_API_KEY : "");
-  const apinex = env.APINEX_API_KEY && !isGoogle(env.APINEX_API_KEY) ? env.APINEX_API_KEY : "";
-  return { gemini, apinex };
-}
-
 export default {
   async fetch(request, env) {
-    const K = keys(env);
+    const geminiKey = env.GEMINI_API_KEY || "";
     const origin = request.headers.get("Origin") || "";
     const url = new URL(request.url);
 
@@ -124,9 +100,7 @@ export default {
         ok: true,
         service: "letterpilot",
         geminiModels: GEMINI_MODELS.map(m => m.model),
-        apinexModels: APINEX_MODELS,
-        geminiKeySet: !!K.gemini,
-        apinexKeySet: !!K.apinex,
+        geminiKeySet: !!geminiKey,
         testTokenSet: !!env.LETTERPILOT_TEST_TOKEN
       }, 200, origin);
     }
@@ -136,8 +110,8 @@ export default {
     }
     if (origin !== ORIGIN) return respond({ error: "Origin not allowed" }, 403, origin);
 
-    if ((!K.gemini && !K.apinex) || !env.LETTERPILOT_TEST_TOKEN) {
-      const missing = [!K.gemini && !K.apinex && "GEMINI_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
+    if (!geminiKey || !env.LETTERPILOT_TEST_TOKEN) {
+      const missing = [!geminiKey && "GEMINI_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
       console.log("Missing secrets:", missing);
       return respond({ error: "Server secrets not configured: " + missing }, 503, origin);
     }
@@ -186,14 +160,11 @@ export default {
       };
 
       let last = null;
-      const attempts = [
-        ...(K.gemini ? GEMINI_MODELS.map(m => ({ provider: "gemini", model: m.model, thinking: m.thinking })) : []),
-        ...(K.apinex ? APINEX_MODELS.map(model => ({ provider: "apinex", model })) : [])
-      ];
+      const attempts = GEMINI_MODELS.map(m => ({ provider: "gemini", model: m.model, thinking: m.thinking }));
       for (const { provider, model, thinking } of attempts) {
         let r;
         try {
-          r = provider === "gemini" ? await callGemini(K.gemini, model, base, thinking) : await callApinex(K.apinex, model, base);
+          r = await callGemini(geminiKey, model, base, thinking);
         } catch (e) {
           console.log("Could not reach", provider, String(e?.message || e));
           last = { provider, model, status: 502, text: "network error" };
@@ -202,13 +173,12 @@ export default {
         if (r.ok) return respond({ content: r.content, stop_reason: r.stop_reason }, 200, origin);
         console.log("Model error", provider, model, r.status, r.text);
         last = { provider, model, status: r.status, text: r.text };
-        if (![402, 403, 404, 429, 500, 503].includes(r.status)) break; // e.g. 400: the request itself is wrong
+        if (![404, 429, 500, 503].includes(r.status)) break; // e.g. 400: the request itself is wrong
       }
 
       const { provider, model, status, text } = last || { provider: "-", model: "-", status: 502, text: "" };
       const reason =
         status === 401 || status === 403 ? provider + " rejected the API key" :
-        status === 402 ? "APInex: payment required" :
         status === 404 ? provider + ": model not found (" + model + ")" :
         status === 429 ? provider + ": rate limit reached, try again in a minute" :
         provider + " request failed";
