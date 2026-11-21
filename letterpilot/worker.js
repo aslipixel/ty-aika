@@ -3,7 +3,9 @@
 //   APINEX_API_KEY          key from apinex.bond
 //   LETTERPILOT_TEST_TOKEN  access code given to testers (24+ characters)
 const ORIGIN = "https://aslipixel.github.io";
-const MODEL = "free/gemini-3.8-flash";
+// Tried in order; the next one is used when APInex refuses a model (payment, missing, rate limit).
+// The free/ models below unlock after a one-time $5 top-up at APInex (25M free tokens a day).
+const MODELS = ["free/gpt-6-luna", "free/gemini-4-hydrogen", "free/gemini-3.8-flash"];
 const MAX_BODY = 7 * 1024 * 1024;
 
 function headers(origin) {
@@ -64,7 +66,7 @@ export default {
       return respond({
         ok: true,
         service: "letterpilot-apinex",
-        model: MODEL,
+        models: MODELS,
         apinexKeySet: !!env.APINEX_API_KEY,
         testTokenSet: !!env.LETTERPILOT_TEST_TOKEN
       }, 200, origin);
@@ -117,43 +119,44 @@ export default {
       }
 
       const requestedTokens = body.max_tokens;
-      const params = {
-        model: MODEL,
+      const base = {
         messages,
         max_tokens: Number.isInteger(requestedTokens) && requestedTokens > 0 ? Math.min(requestedTokens, 12000) : 12000,
         temperature: 0.15,
         ...(system ? { system } : {})
       };
 
-      let response;
-      try {
-        response = await fetch("https://api.apinex.bond/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": env.APINEX_API_KEY,
-            "anthropic-version": "2023-06-01"
-          },
-          body: JSON.stringify(params)
-        });
-      } catch (e) {
-        console.log("Could not reach APInex:", String(e?.message || e));
-        return respond({ error: "Could not reach APInex" }, 502, origin);
-      }
-
-      if (!response.ok) {
+      let response = null, last = null;
+      for (const model of MODELS) {
+        try {
+          response = await fetch("https://api.apinex.bond/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": env.APINEX_API_KEY, "anthropic-version": "2023-06-01" },
+            body: JSON.stringify({ ...base, model })
+          });
+        } catch (e) {
+          console.log("Could not reach APInex:", String(e?.message || e));
+          return respond({ error: "Could not reach APInex" }, 502, origin);
+        }
+        if (response.ok) break;
         const status = response.status;
         const text = (await response.text().catch(() => "")).slice(0, 600);
-        console.log("APInex error", status, text);
+        console.log("APInex error", model, status, text);
+        last = { status, text, model };
+        response = null;
+        if (![402, 403, 404, 429].includes(status)) break; // other errors: don't hammer the next model
+      }
+
+      if (!response) {
+        const { status, text, model } = last;
         const reason =
           status === 401 || status === 403 ? "APInex rejected the API key" :
-          status === 402 ? "APInex: no credit / payment required" :
-          status === 404 ? "APInex: model or endpoint not found (" + MODEL + ")" :
+          status === 402 ? "APInex: payment required (a one-time $5 top-up unlocks the free models)" :
+          status === 404 ? "APInex: model or endpoint not found (" + model + ")" :
           status === 429 ? "APInex: rate limit reached" :
           "APInex request failed";
         const clientStatus = [400, 413, 429].includes(status) ? status : 502;
-        // detail carries APInex's own message (no secrets) so the page can show the real cause
-        return respond({ error: reason, status, detail: text.slice(0, 300) }, clientStatus, origin);
+        return respond({ error: reason, status, model, detail: text.slice(0, 300) }, clientStatus, origin);
       }
 
       const data = await response.json().catch(() => null);
