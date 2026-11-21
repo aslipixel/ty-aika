@@ -96,8 +96,17 @@ async function callGemini(key, model, base) {
   return { ok: true, content: [{ type: "text", text }], stop_reason: fr === "MAX_TOKENS" ? "max_tokens" : "end_turn" };
 }
 
+// A Google key (starts with "AIza") is used for Gemini even if it was saved under APINEX_API_KEY.
+function keys(env) {
+  const isGoogle = k => typeof k === "string" && k.startsWith("AIza");
+  const gemini = env.GEMINI_API_KEY || (isGoogle(env.APINEX_API_KEY) ? env.APINEX_API_KEY : "");
+  const apinex = env.APINEX_API_KEY && !isGoogle(env.APINEX_API_KEY) ? env.APINEX_API_KEY : "";
+  return { gemini, apinex };
+}
+
 export default {
   async fetch(request, env) {
+    const K = keys(env);
     const origin = request.headers.get("Origin") || "";
     const url = new URL(request.url);
 
@@ -112,8 +121,8 @@ export default {
         service: "letterpilot-apinex",
         geminiModels: GEMINI_MODELS,
         apinexModels: APINEX_MODELS,
-        geminiKeySet: !!env.GEMINI_API_KEY,
-        apinexKeySet: !!env.APINEX_API_KEY,
+        geminiKeySet: !!K.gemini,
+        apinexKeySet: !!K.apinex,
         testTokenSet: !!env.LETTERPILOT_TEST_TOKEN
       }, 200, origin);
     }
@@ -123,8 +132,8 @@ export default {
     }
     if (origin !== ORIGIN) return respond({ error: "Origin not allowed" }, 403, origin);
 
-    if ((!env.GEMINI_API_KEY && !env.APINEX_API_KEY) || !env.LETTERPILOT_TEST_TOKEN) {
-      const missing = [!env.GEMINI_API_KEY && !env.APINEX_API_KEY && "GEMINI_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
+    if ((!K.gemini && !K.apinex) || !env.LETTERPILOT_TEST_TOKEN) {
+      const missing = [!K.gemini && !K.apinex && "GEMINI_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
       console.log("Missing secrets:", missing);
       return respond({ error: "Server secrets not configured: " + missing }, 503, origin);
     }
@@ -174,13 +183,13 @@ export default {
 
       let last = null;
       const attempts = [
-        ...(env.GEMINI_API_KEY ? GEMINI_MODELS.map(model => ({ provider: "gemini", model })) : []),
-        ...(env.APINEX_API_KEY ? APINEX_MODELS.map(model => ({ provider: "apinex", model })) : [])
+        ...(K.gemini ? GEMINI_MODELS.map(model => ({ provider: "gemini", model })) : []),
+        ...(K.apinex ? APINEX_MODELS.map(model => ({ provider: "apinex", model })) : [])
       ];
       for (const { provider, model } of attempts) {
         let r;
         try {
-          r = provider === "gemini" ? await callGemini(env.GEMINI_API_KEY, model, base) : await callApinex(env.APINEX_API_KEY, model, base);
+          r = provider === "gemini" ? await callGemini(K.gemini, model, base) : await callApinex(K.apinex, model, base);
         } catch (e) {
           console.log("Could not reach", provider, String(e?.message || e));
           last = { provider, model, status: 502, text: "network error" };
