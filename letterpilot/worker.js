@@ -5,7 +5,11 @@
 //   LETTERPILOT_TEST_TOKEN  access code given to testers (24+ characters)
 const ORIGIN = "https://aslipixel.github.io";
 // Tried in order; the next one is used when a model is refused (missing, payment, rate limit, overloaded).
-const GEMINI_MODELS = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"];
+// Measured: flash-lite answers a full analysis in ~5 s; flash with low thinking ~40 s (backup).
+const GEMINI_MODELS = [
+  { model: "gemini-flash-lite-latest" },
+  { model: "gemini-flash-latest", thinking: { thinkingLevel: "low" } }
+];
 // The APInex free/ models unlock after a one-time $5 top-up there.
 const APINEX_MODELS = ["free/gpt-6-luna", "free/gemini-4-hydrogen", "free/gemini-3.8-flash"];
 const MAX_BODY = 7 * 1024 * 1024;
@@ -68,7 +72,7 @@ async function callApinex(key, model, base) {
 }
 
 // Converts the page's message format to Gemini's generateContent format and back.
-async function callGemini(key, model, base) {
+async function callGemini(key, model, base, thinking) {
   const contents = base.messages.map(m => ({
     role: m.role === "assistant" ? "model" : "user",
     parts: m.content.map(p => p.type === "text"
@@ -77,7 +81,7 @@ async function callGemini(key, model, base) {
   }));
   const body = {
     contents,
-    generationConfig: { temperature: base.temperature, maxOutputTokens: Math.max(base.max_tokens, 8192) },
+    generationConfig: { temperature: base.temperature, maxOutputTokens: Math.max(base.max_tokens, 8192), ...(thinking ? { thinkingConfig: thinking } : {}) },
     ...(base.system ? { systemInstruction: { parts: [{ text: base.system }] } } : {})
   };
   const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
@@ -118,8 +122,8 @@ export default {
       // Says whether the secrets exist, never their values.
       return respond({
         ok: true,
-        service: "letterpilot-apinex",
-        geminiModels: GEMINI_MODELS,
+        service: "letterpilot",
+        geminiModels: GEMINI_MODELS.map(m => m.model),
         apinexModels: APINEX_MODELS,
         geminiKeySet: !!K.gemini,
         apinexKeySet: !!K.apinex,
@@ -183,13 +187,13 @@ export default {
 
       let last = null;
       const attempts = [
-        ...(K.gemini ? GEMINI_MODELS.map(model => ({ provider: "gemini", model })) : []),
+        ...(K.gemini ? GEMINI_MODELS.map(m => ({ provider: "gemini", model: m.model, thinking: m.thinking })) : []),
         ...(K.apinex ? APINEX_MODELS.map(model => ({ provider: "apinex", model })) : [])
       ];
-      for (const { provider, model } of attempts) {
+      for (const { provider, model, thinking } of attempts) {
         let r;
         try {
-          r = provider === "gemini" ? await callGemini(K.gemini, model, base) : await callApinex(K.apinex, model, base);
+          r = provider === "gemini" ? await callGemini(K.gemini, model, base, thinking) : await callApinex(K.apinex, model, base);
         } catch (e) {
           console.log("Could not reach", provider, String(e?.message || e));
           last = { provider, model, status: 502, text: "network error" };
