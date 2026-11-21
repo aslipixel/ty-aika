@@ -308,10 +308,6 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
       </div>
     </div>
 
-    <div class="actions">
-      <button class="btn sec sm" id="demoBtn" data-i18n="sample">Try an example</button>
-      <button class="btn sec sm" id="clearBtn" data-i18n="clear">Clear</button>
-    </div>
     <div class="err" id="err" hidden></div>
     <p class="note" id="noClaude" hidden data-i18n="noClaude">Open this page in Claude to analyze documents.</p>
 
@@ -1350,24 +1346,11 @@ window.addEventListener("scroll", () => {
   lastY = y;
 }, { passive: true });
 function clearInput() { $("docText").value = ""; while (pages.length) removePage(0); hideErr(); syncClear(); }
-$("clearBtn").onclick = () => { $("ctx").value = ""; clearInput(); };
 $("clearTop").onclick = () => { clearInput(); $("docText").focus({ preventScroll: true }); };
 $("docText").addEventListener("input", syncClear);
-const DEMO = `Hyvä vuokralainen,
-
-Ilmoitamme, että taloyhtiön putkiremontti alkaa asunnossanne 3.2.2027. Remontin aikana asunnossa ei voi asua, ja sen arvioitu kesto on kuusi (6) viikkoa.
-
-Vuokranantaja maksaa vuokranalennuksena 50 % kuukausivuokrasta remontin ajalta. Mikäli tarvitsette väliaikaista asuntoa, pyydämme ilmoittamaan siitä viimeistään 15.12.2026 sähköpostitse osoitteeseen asuminen@esimerkki.fi. Ilmoitukseen tulee liittää vuokrasopimuksen numero (VS-48213).
-
-Huomioittehan, että asunto on tyhjennettävä irtaimistosta kylpyhuoneen ja keittiön osalta ennen remontin alkua.
-
-Ystävällisin terveisin
-Esimerkki Asunnot Oy
-Asiakaspalvelu, puh. 09 123 4567`;
-$("demoBtn").onclick = () => { $("docText").value = DEMO; syncClear(); };
 
 applyI18n();
-$("docText").value = DEMO; syncClear();
+syncClear();
 })();
 </script>
 
