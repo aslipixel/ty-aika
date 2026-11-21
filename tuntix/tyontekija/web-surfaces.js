@@ -139,7 +139,7 @@
     import: 'upload', resetcatalog: 'undo-2', saveitem: 'check', closeeditor: 'check'
   };
   const settingsActions = {
-    aboutapp: 'info', saveoffice: 'check', backup: 'download', import: 'upload', csv: 'download',
+    aboutapp: 'info', saveoffice: 'check', backup: 'download', import: 'upload', csv: 'table-2',
     dismisssheet: 'check', retryroute: 'refresh-cw'
   };
 

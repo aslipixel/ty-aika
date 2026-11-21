@@ -48,6 +48,9 @@ button[data-tone]::before,button[data-tone]::after{width:15px!important;height:1
 button[data-tone][data-solid],button[data-tone][aria-pressed="true"]{background:var(--c)!important;color:#fff!important}
 :is(.actions,footer,.teras-actions,.measurement-signature-actions):has(> button[data-tone]){display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:6px!important}
 :is(.actions,footer,.teras-actions,.measurement-signature-actions) > button[data-tone]{margin:0!important}
+button[data-tone][data-icon-only]{min-width:44px!important;min-height:40px!important;padding:0 10px!important;gap:0!important;border-radius:12px!important;font-size:0!important;line-height:0!important}
+button[data-tone][data-icon-only] > span{display:none!important}
+button[data-tone][data-icon-only] svg{width:20px!important;height:20px!important;flex:0 0 20px!important}
 button[data-tone]:active{opacity:.65}
 button[data-tone]:disabled{opacity:.45}`;
 
@@ -71,6 +74,12 @@ button[data-tone]:disabled{opacity:.45}`;
     const short = SHORT[full] || SHORT_RE.find(([re]) => re.test(full))?.[1] || (tone && first !== full ? first : null);
     if (short && node) { b.dataset.fullLabel = full; if (node.textContent !== short) node.textContent = short; b.title = full; b.setAttribute('aria-label', full); }
     if (tone) { if (b.dataset.tone !== tone) b.dataset.tone = tone; if (SOLID.has(full.split(/\s+/)[0].toLowerCase())) b.dataset.solid = ''; }
+    // Action buttons with an icon show only the icon; the full label stays for screen readers and hover.
+    if (tone && b.querySelector('svg')) {
+      if (!('iconOnly' in b.dataset)) b.dataset.iconOnly = '';
+      if (b.getAttribute('aria-label') !== full) b.setAttribute('aria-label', full);
+      if (b.title !== full) b.title = full;
+    }
   };
   const scan = () => {
     document.querySelectorAll('*').forEach(el => {
