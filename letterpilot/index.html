@@ -9,19 +9,13 @@
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <style>
 /* Layout: one centered column (max 680px), sticky glass top bar, floating glass tab bar at the bottom of results. */
-/* Skins: AUTO (Aqua light / Graphite dark), AQUA, GRAPHITE, TITANIUM, MIDNIGHT. */
+/* One deliberate light look: Aqua (frosted glass, Apple blue). */
 :root{
   --bg:#eef1f6;--bg-sheet:#f2f2f7;--blob1:rgba(120,170,255,.38);--blob2:rgba(200,170,255,.32);--blob3:rgba(120,220,200,.28);--card:rgba(255,255,255,.72);--card-solid:#ffffff;--bar:rgba(246,247,250,.78);--text:#1d1d1f;--muted:#6e6e73;--sep:rgba(60,60,67,.18);--sep2:rgba(60,60,67,.3);--edge:rgba(255,255,255,.7);--fill:rgba(118,118,128,.12);--fill2:rgba(118,118,128,.2);--tint:rgba(0,113,227,.1);--accent:#0071e3;--accent-text:#ffffff;--shadow:0 1px 2px rgba(0,0,0,.04),0 8px 28px rgba(30,60,120,.08);color-scheme:light;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --r-lg:22px;--r-md:14px;--r-sm:10px;
   --ok:#248a3d;--warn:#b25000;--bad:#d70015;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]):not([data-skin]){--bg:#000000;--bg-sheet:#1c1c1e;--blob1:rgba(40,40,46,.9);--blob2:rgba(30,30,36,.8);--blob3:rgba(24,24,28,.8);--card:rgba(28,28,30,.82);--card-solid:#1c1c1e;--bar:rgba(18,18,20,.8);--text:#f5f5f7;--muted:#98989d;--sep:rgba(84,84,88,.6);--sep2:rgba(120,120,128,.6);--edge:rgba(255,255,255,.07);--fill:rgba(118,118,128,.24);--fill2:rgba(118,118,128,.34);--tint:rgba(10,132,255,.18);--accent:#0a84ff;--accent-text:#ffffff;--shadow:0 8px 28px rgba(0,0,0,.4);color-scheme:dark;}}
-:root[data-theme="dark"]:not([data-skin]){--bg:#000000;--bg-sheet:#1c1c1e;--blob1:rgba(40,40,46,.9);--blob2:rgba(30,30,36,.8);--blob3:rgba(24,24,28,.8);--card:rgba(28,28,30,.82);--card-solid:#1c1c1e;--bar:rgba(18,18,20,.8);--text:#f5f5f7;--muted:#98989d;--sep:rgba(84,84,88,.6);--sep2:rgba(120,120,128,.6);--edge:rgba(255,255,255,.07);--fill:rgba(118,118,128,.24);--fill2:rgba(118,118,128,.34);--tint:rgba(10,132,255,.18);--accent:#0a84ff;--accent-text:#ffffff;--shadow:0 8px 28px rgba(0,0,0,.4);color-scheme:dark;}
-[data-skin="aqua"]{--bg:#eef1f6;--bg-sheet:#f2f2f7;--blob1:rgba(120,170,255,.38);--blob2:rgba(200,170,255,.32);--blob3:rgba(120,220,200,.28);--card:rgba(255,255,255,.72);--card-solid:#ffffff;--bar:rgba(246,247,250,.78);--text:#1d1d1f;--muted:#6e6e73;--sep:rgba(60,60,67,.18);--sep2:rgba(60,60,67,.3);--edge:rgba(255,255,255,.7);--fill:rgba(118,118,128,.12);--fill2:rgba(118,118,128,.2);--tint:rgba(0,113,227,.1);--accent:#0071e3;--accent-text:#ffffff;--shadow:0 1px 2px rgba(0,0,0,.04),0 8px 28px rgba(30,60,120,.08);color-scheme:light;}
-[data-skin="graphite"]{--bg:#000000;--bg-sheet:#1c1c1e;--blob1:rgba(40,40,46,.9);--blob2:rgba(30,30,36,.8);--blob3:rgba(24,24,28,.8);--card:rgba(28,28,30,.82);--card-solid:#1c1c1e;--bar:rgba(18,18,20,.8);--text:#f5f5f7;--muted:#98989d;--sep:rgba(84,84,88,.6);--sep2:rgba(120,120,128,.6);--edge:rgba(255,255,255,.07);--fill:rgba(118,118,128,.24);--fill2:rgba(118,118,128,.34);--tint:rgba(10,132,255,.18);--accent:#0a84ff;--accent-text:#ffffff;--shadow:0 8px 28px rgba(0,0,0,.4);color-scheme:dark;}
-[data-skin="titanium"]{--bg:#e6e6ea;--bg-sheet:#f0f0f3;--blob1:rgba(255,255,255,.75);--blob2:rgba(180,184,196,.45);--blob3:rgba(210,206,198,.5);--card:rgba(250,250,252,.8);--card-solid:#fafafc;--bar:rgba(236,236,240,.82);--text:#1d1d1f;--muted:#6b6b70;--sep:rgba(60,60,67,.18);--sep2:rgba(60,60,67,.32);--edge:rgba(255,255,255,.85);--fill:rgba(60,60,67,.08);--fill2:rgba(60,60,67,.14);--tint:rgba(29,29,31,.07);--accent:#1d1d1f;--accent-text:#ffffff;--shadow:0 1px 1px rgba(0,0,0,.05),0 10px 30px rgba(40,40,50,.1);color-scheme:light;}
-[data-skin="midnight"]{--bg:#0a0f1e;--bg-sheet:#121a2e;--blob1:rgba(40,80,200,.35);--blob2:rgba(20,140,150,.25);--blob3:rgba(90,60,200,.25);--card:rgba(26,34,58,.66);--card-solid:#1a2238;--bar:rgba(12,18,34,.75);--text:#eef2ff;--muted:#9aa4c7;--sep:rgba(140,160,220,.2);--sep2:rgba(140,160,220,.38);--edge:rgba(255,255,255,.08);--fill:rgba(140,160,220,.14);--fill2:rgba(140,160,220,.22);--tint:rgba(100,210,255,.14);--accent:#64d2ff;--accent-text:#04121f;--shadow:0 10px 30px rgba(0,0,0,.45);color-scheme:dark;}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
@@ -234,19 +228,6 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
 .grabber{width:36px;height:5px;border-radius:3px;background:var(--sep2);margin:0 auto 6px}
 .sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 8px}
 .sheet-h h3{margin:0;font-size:20px;letter-spacing:-.02em}
-.skins{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
-.skin{border:2px solid transparent;border-radius:16px;padding:0;background:none;text-align:left;overflow:hidden;display:flex;flex-direction:column}
-.skin.on{border-color:var(--accent)}
-.skin .pv{height:92px;padding:10px;position:relative;background:var(--bg);background-image:radial-gradient(80px 60px at 10% 0%,var(--blob1),transparent),radial-gradient(90px 70px at 100% 100%,var(--blob2),transparent)}
-.skin .pv i{display:block;border-radius:8px;background:var(--card-solid);height:44px;padding:7px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.skin .pv i::before{content:"";display:block;height:6px;width:60%;border-radius:3px;background:var(--text);opacity:.8}
-.skin .pv i::after{content:"";display:block;height:5px;width:85%;border-radius:3px;background:var(--muted);opacity:.6;margin-top:6px}
-.skin .pv u{position:absolute;right:10px;bottom:10px;width:34px;height:14px;border-radius:7px;background:var(--accent)}
-.skin .pv.split{background:linear-gradient(135deg,#eef1f6 50%,#000 50%)}
-.skin .pv.split i{background:linear-gradient(135deg,#fff 50%,#1c1c1e 50%)}
-.skin .lbl{flex:1;padding:8px 10px;background:var(--card-solid);color:var(--text)}
-.skin .lbl b{display:block;font-size:14px}
-.skin .lbl span{font-size:12px;color:var(--muted)}
 .stage{position:relative;background:#111;border-radius:14px;overflow:hidden;touch-action:none;user-select:none}
 .stage img{display:block;width:100%;max-height:56vh;object-fit:contain}
 .stage svg{position:absolute;inset:0;width:100%;height:100%}
@@ -431,8 +412,6 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
       <div class="group glass"><div class="list"><div class="row"><input type="password" id="apiKey" placeholder="••••••" autocomplete="off" style="text-align:left;color:var(--text)"></div></div></div>
       <p class="note" data-i18n="apiKeyNote"></p>
     </div>
-    <div class="section-h" data-i18n="theme">Theme</div>
-    <div class="skins" id="skins"></div>
   </div>
 </div>
 
@@ -564,25 +543,14 @@ function applyI18n() {
   document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); el.setAttribute("aria-label", t(el.dataset.i18nTitle)); });
   if (!inClaude) $("noClaude").textContent = t("needKey");
   $("draft").dataset.ph = t("letterPh"); $("draftTr").dataset.ph = t("letterTrPh");
-  renderFeatures(); renderSkins(); renderStyleSeg(); renderFilterSeg(); renderPages(); renderHistory();
+  renderFeatures(); renderStyleSeg(); renderFilterSeg(); renderPages(); renderHistory();
   document.querySelectorAll("#uiSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === ui));
   if (current) render(false);
 }
 
-/* ================= skins ================= */
-const SKINS = [["auto", "skAuto"], ["aqua", "skAqua"], ["graphite", "skGraphite"], ["titanium", "skTitanium"], ["midnight", "skMidnight"]];
-let skin = store.get("skin", "auto");
-function applySkin() {
-  if (skin === "auto") delete document.documentElement.dataset.skin; else document.documentElement.dataset.skin = skin;
-}
-function renderSkins() {
-  $("skins").innerHTML = SKINS.map(([id, k]) => `<button class="skin ${id === skin ? "on" : ""}" data-v="${id}">
-    <div class="pv ${id === "auto" ? "split" : ""}" ${id === "auto" ? "" : `data-skin="${id}"`}><i></i><u ${id === "auto" ? 'style="background:#0071e3"' : ""}></u></div>
-    <div class="lbl"><b>${esc(t(k))}</b><span>${esc(t(k + "D"))}</span></div></button>`).join("");
-}
-$("skins").onclick = e => { const b = e.target.closest(".skin"); if (!b) return; skin = b.dataset.v; store.set("skin", skin); applySkin(); renderSkins(); };
+/* ================= look: Aqua only ================= */
+delete document.documentElement.dataset.skin;
 $("uiSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return; ui = b.dataset.v; store.set("ui", ui); applyI18n(); };
-applySkin();
 
 /* ================= sheets, toast ================= */
 function openSheet(id) { $(id).hidden = false; }
