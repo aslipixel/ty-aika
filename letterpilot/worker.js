@@ -3,6 +3,8 @@
 //   GEMINI_API_KEY          key from aistudio.google.com
 //   LETTERPILOT_TEST_TOKEN  access code given to testers (24+ characters)
 const ORIGIN = "https://aslipixel.github.io";
+// The website plus the iPhone (capacitor://localhost) and Android (https://localhost) apps.
+const ALLOWED = [ORIGIN, "capacitor://localhost", "https://localhost"];
 // Tried in order; the next one is used when a model is refused (missing, payment, rate limit, overloaded).
 // Measured: flash-lite answers a full analysis in ~5 s; flash with low thinking ~40 s (backup).
 const GEMINI_MODELS = [
@@ -15,8 +17,8 @@ function headers(origin) {
   return {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
-    ...(origin === ORIGIN ? {
-      "Access-Control-Allow-Origin": ORIGIN,
+    ...(ALLOWED.includes(origin) ? {
+      "Access-Control-Allow-Origin": origin,
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, X-LetterPilot-Token",
       "Vary": "Origin"
@@ -91,7 +93,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: origin === ORIGIN ? 204 : 403, headers: headers(origin) });
+      return new Response(null, { status: ALLOWED.includes(origin) ? 204 : 403, headers: headers(origin) });
     }
 
     if (url.pathname === "/health" && request.method === "GET") {
@@ -108,7 +110,7 @@ export default {
     if (url.pathname !== "/api" || request.method !== "POST") {
       return respond({ error: "Not found" }, 404, origin);
     }
-    if (origin !== ORIGIN) return respond({ error: "Origin not allowed" }, 403, origin);
+    if (!ALLOWED.includes(origin)) return respond({ error: "Origin not allowed" }, 403, origin);
 
     if (!geminiKey || !env.LETTERPILOT_TEST_TOKEN) {
       const missing = [!geminiKey && "GEMINI_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
