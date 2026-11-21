@@ -1,49 +1,19 @@
-name: Publish app downloads
-# Copies the newest successful app builds into the "apps" release, so each file
-# has a permanent direct link: https://github.com/<owner>/<repo>/releases/download/apps/<file>
+name: Remove app downloads release
+# One-time cleanup: deletes the public "apps" release and its tag. This file is removed right after.
 on:
-  workflow_dispatch:
-  workflow_run:
-    workflows: ["Build TuntiX IPA", "Build LetterPilot IPA", "Build LetterPilot Android"]
-    types: [completed]
+  push:
     branches: [main]
+    paths: ['.github/workflows/publish-apps.yml']
+  workflow_dispatch:
 permissions:
   contents: write
-  actions: read
-concurrency:
-  group: publish-apps
-  cancel-in-progress: false
 jobs:
-  publish:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+  remove:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - name: Download the newest successful builds
-        run: |
-          set -e
-          mkdir -p out
-          get() { # workflow file, artifact name
-            id=$(gh run list -w "$1" -b main -s success -L 1 --json databaseId -q '.[0].databaseId')
-            if [ -z "$id" ]; then echo "No successful run for $1"; return 0; fi
-            gh run download "$id" -n "$2" -D "dl/$2"
-          }
-          get native-ios.yml TuntiX-iPhone-IPA
-          get letterpilot-ios.yml LetterPilot-iPhone-IPA
-          get letterpilot-android.yml LetterPilot-Android-APK
-          [ -f dl/TuntiX-iPhone-IPA/tuntiX.ipa ] && cp dl/TuntiX-iPhone-IPA/tuntiX.ipa out/TuntiX.ipa
-          [ -f dl/LetterPilot-iPhone-IPA/LetterPilot.ipa ] && cp dl/LetterPilot-iPhone-IPA/LetterPilot.ipa out/LetterPilot.ipa
-          [ -f dl/LetterPilot-Android-APK/LetterPilot.apk ] && cp dl/LetterPilot-Android-APK/LetterPilot.apk out/LetterPilot.apk
-          (cd out && sha256sum * > SHA256SUMS.txt)
-          ls -la out
-      - name: Upload to the "apps" release
-        run: |
-          set -e
-          notes="Direct downloads of the newest app builds (updated automatically).
-          - LetterPilot.apk — Android, installs directly (test build)
-          - LetterPilot.ipa — iPhone, unsigned: sign before installing
-          - TuntiX.ipa — iPhone, unsigned: sign before installing"
-          gh release view apps >/dev/null 2>&1 || gh release create apps --title "App downloads" --notes "$notes" --latest=false
-          gh release upload apps out/* --clobber
+      - run: |
+          if gh release view apps >/dev/null 2>&1; then gh release delete apps --cleanup-tag --yes; echo "Release apps deleted"; else echo "No apps release"; fi
+          gh api "repos/$GH_REPO/git/refs/tags/apps" >/dev/null 2>&1 && gh api -X DELETE "repos/$GH_REPO/git/refs/tags/apps" && echo "Tag apps deleted" || echo "No apps tag"
