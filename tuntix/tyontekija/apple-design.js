@@ -1,10 +1,9 @@
-// Apple-style design experiment: toggles class "apple" on <html> (remembered per browser).
-// In Apple mode every text button gets one compact standard and a color by its action (data-tone).
+// Apple-style design: class "apple" on <html>; every text button gets one compact standard
+// and a color by its action (data-tone).
 (() => {
-  const KEY = 'tuntix.design';
   const root = document.documentElement;
-  let mode = 'apple';
-  try { mode = localStorage.getItem(KEY) || 'apple'; } catch {}
+  // Clears the old Apple/Vanha switch choice; the Apple design is the only design now.
+  try { localStorage.removeItem('tuntix.design'); } catch {}
 
   // Shorter labels; the full text stays in title/aria-label.
   const SHORT = {
@@ -64,57 +63,32 @@ button[data-tone]:disabled{opacity:.45}`;
     return last;
   };
   const decorate = b => {
-    if (b.closest('.apple-switch')) return;
     const node = labelNode(b);
     if (!node && !b.dataset.fullLabel) return;
     const full = b.dataset.fullLabel || node.textContent.trim();
     const first = full.split(/\s+/)[0].replace(/[·,:;]+$/, '');
     const tone = TONE[first.toLowerCase()];
     const short = SHORT[full] || SHORT_RE.find(([re]) => re.test(full))?.[1] || (tone && first !== full ? first : null);
-    if (mode === 'apple') {
-      if (short && node) { b.dataset.fullLabel = full; if (node.textContent !== short) node.textContent = short; b.title = full; b.setAttribute('aria-label', full); }
-      if (tone) { if (b.dataset.tone !== tone) b.dataset.tone = tone; if (SOLID.has(full.split(/\s+/)[0].toLowerCase())) b.dataset.solid = ''; }
-    } else {
-      if (b.dataset.fullLabel && node) { node.textContent = b.dataset.fullLabel; b.removeAttribute('title'); b.removeAttribute('aria-label'); delete b.dataset.fullLabel; }
-      delete b.dataset.tone; delete b.dataset.solid;
-    }
+    if (short && node) { b.dataset.fullLabel = full; if (node.textContent !== short) node.textContent = short; b.title = full; b.setAttribute('aria-label', full); }
+    if (tone) { if (b.dataset.tone !== tone) b.dataset.tone = tone; if (SOLID.has(full.split(/\s+/)[0].toLowerCase())) b.dataset.solid = ''; }
   };
   const scan = () => {
     document.querySelectorAll('*').forEach(el => {
       const sr = el.shadowRoot;
       if (sr && !roots.has(sr)) { roots.add(sr); observer.observe(sr, { childList: true, subtree: true }); }
     });
-    for (const sr of roots) {
-      const s = sr.querySelector('style[data-apple-tone]');
-      if (mode === 'apple' && !s) sr.append(styleFor());
-      if (mode !== 'apple' && s) s.remove();
-    }
-    if (mode === 'apple' && !docStyle.isConnected) document.head.append(docStyle);
-    if (mode !== 'apple') docStyle.remove();
+    for (const sr of roots) if (!sr.querySelector('style[data-apple-tone]')) sr.append(styleFor());
+    if (!docStyle.isConnected) document.head.append(docStyle);
     [document, ...roots].forEach(r => r.querySelectorAll('button').forEach(decorate));
   };
   let queued = false;
   const schedule = () => { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; scan(); }); };
 
-  const apply = m => {
-    mode = m;
-    root.classList.toggle('apple', m === 'apple');
-    try { localStorage.setItem(KEY, m); } catch {}
-    document.querySelectorAll('.apple-switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.design === m)));
-    if (document.body) scan();
-  };
-  apply(mode);
+  root.classList.add('apple');
 
   const mount = () => {
-    const bar = document.createElement('div');
-    bar.className = 'apple-switch';
-    bar.setAttribute('role', 'group');
-    bar.setAttribute('aria-label', 'Ulkoasu');
-    bar.innerHTML = '<button type="button" data-design="apple">Apple</button><button type="button" data-design="classic">Vanha</button>';
-    bar.addEventListener('click', e => { const b = e.target.closest('button'); if (b) apply(b.dataset.design); });
-    document.body.append(bar);
     observer.observe(document.body, { childList: true, subtree: true });
-    apply(mode);
+    scan();
   };
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', mount) : mount();
 })();
