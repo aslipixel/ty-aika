@@ -108,7 +108,7 @@ textarea.doc::placeholder,input::placeholder,textarea::placeholder{color:var(--m
 .linkbtn{border:0;background:none;color:var(--accent);font-weight:500;padding:6px 4px}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .actions .btn.wide{flex:1 1 100%}
-.err{background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad);border-radius:var(--r-md);padding:10px 14px;margin-top:12px;font-size:15px}
+.err{white-space:pre-line;overflow-wrap:anywhere;background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad);border-radius:var(--r-md);padding:10px 14px;margin-top:12px;font-size:15px}
 .note{font-size:13px;color:var(--muted);margin:12px 4px}
 .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--sep)}
 .feat>div{background:var(--card-solid);padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
@@ -444,6 +444,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const icon = (name, cls = "i") => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
 
 /* ================= i18n ================= */
+const inClaudeText = (claudeMsg, webMsg) => (window.claude?.use ? claudeMsg : webMsg);
 const I18N = {
   en: {
     camDenied: "No camera access. Take a photo instead.", camAutoOn: "Auto", camAutoOff: "Manual", camPoint: "Point the camera at a document", camFound: "Document found", camHold: "Hold still…", camSaved: "Page saved. Next page?", camNext: "Turn the page or tap Done",
@@ -485,7 +486,7 @@ const I18N = {
     eRate: "Too many requests or your usage limit is reached. Try again a bit later.", eSession: "Please sign in to Claude again.",
     eImage: "This image could not be read. Try another photo (JPEG or PNG).", eImagesOff: "Images can't be sent from this window. Paste the text instead.",
     eTooLarge: "The document is too large. Split it into parts.", eRefused: "Claude declined to process this document.", eJson: "The answer came back in the wrong format. Try again.",
-    eGeneric: "Couldn't reach Claude. Try again.", eTooMany: "Too many pages for one request (max {n}). Remove some pages.",
+    eGeneric: inClaudeText("Couldn't reach Claude. Try again.", "The AI service didn't answer. Try again."), reason: "Reason", eTooMany: "Too many pages for one request (max {n}). Remove some pages.",
     ePdf: "This PDF couldn't be opened.", eFormat: "This file type isn't supported.", eChoose: "Choose a position or write what you want to say.",
     eCopy: "Couldn't copy. Select the text and copy it manually.", truncated: "The answer was cut short. Try a shorter document."
   },
@@ -529,7 +530,7 @@ const I18N = {
     eRate: "Слишком много запросов или достигнут лимит. Попробуйте чуть позже.", eSession: "Войдите в Claude заново.",
     eImage: "Не получилось прочитать картинку. Попробуйте другое фото (JPEG или PNG).", eImagesOff: "Из этого окна нельзя отправлять картинки. Вставьте текст.",
     eTooLarge: "Документ слишком большой. Разделите его на части.", eRefused: "Claude отказался обрабатывать этот документ.", eJson: "Ответ пришёл в неверном формате. Попробуйте ещё раз.",
-    eGeneric: "Не удалось связаться с Claude. Попробуйте ещё раз.", eTooMany: "Слишком много страниц для одного запроса (максимум {n}). Уберите лишние.",
+    eGeneric: inClaudeText("Не удалось связаться с Claude. Попробуйте ещё раз.", "Сервис ИИ не ответил. Попробуйте ещё раз."), reason: "Причина", eTooMany: "Слишком много страниц для одного запроса (максимум {n}). Уберите лишние.",
     ePdf: "Не получилось открыть этот PDF.", eFormat: "Этот тип файла не поддерживается.", eChoose: "Выберите позицию или напишите, что хотите сказать.",
     eCopy: "Не получилось скопировать. Выделите текст и скопируйте вручную.", truncated: "Ответ обрезан. Попробуйте документ покороче."
   }
@@ -618,7 +619,10 @@ function makeApiSample() {
       if (o.signal?.aborted) throw { code: "cancelled" };
       throw { code: "upstream_error" };
     }
-    if (!res.ok) throw { code: res.status === 401 || res.status === 403 ? "auth" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : "upstream_error" };
+    if (!res.ok) {
+      const detail = [data.error, data.status ? "APInex " + data.status : "", data.detail].filter(Boolean).join(" · ").slice(0, 300);
+      throw { code: res.status === 401 ? "auth" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : "upstream_error", detail };
+    }
     if (data.stop_reason === "refusal") throw { code: "refused" };
     const text = (data.content || []).filter(p => p.type === "text").map(p => p.text).join("");
     if (!text.trim()) throw { code: "empty_completion" };
@@ -643,7 +647,7 @@ function errText(e) {
   switch (e?.code) {
     case "not_granted": return t("eNotGranted");
     case "sampling_disabled": case "capability_disabled": case "not_declared": case "capability_removed": return t("eDisabled");
-    case "rate_limited": return t("eRate");
+    case "rate_limited": return t("eRate") + (e?.detail ? "\n" + e.detail : "");
     case "session_expired": return t("eSession");
     case "image_rejected": return t("eImage");
     case "images_unavailable": return t("eImagesOff");
@@ -653,7 +657,7 @@ function errText(e) {
     case "cancelled": return "";
     case "no_key": openSheet("setSheet"); return t("needKey");
     case "auth": return t("badKey");
-    default: return t("eGeneric");
+    default: return t("eGeneric") + (e?.detail ? "\n" + t("reason") + ": " + e.detail : "");
   }
 }
 
