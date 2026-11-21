@@ -2,7 +2,7 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-xEsdYyp6+uLhan/wobYNyYlFtnVqpH+0BnCtNXB5LcQ=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-2aM4TClZDMN/qAEcR70GNh0rA+whx/tHCEGV0tYN7Cs=' 'sha256-XBqzvh3TlV07Wi/A/sr4w/SRoBj7Ooxrwb9jTeQTN00='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://photon.komoot.io https://router.project-osrm.org; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>TuntiX – Työajan seuranta</title>
@@ -1739,13 +1739,41 @@ stopAddressSearch();const box=input.parentElement.querySelector('.address-sugges
 const query=input.value.trim();if(query.length<3){input.parentElement.querySelector('.address-hint').textContent='Kirjoita vähintään 3 merkkiä.';return}
 const generation=addressGeneration;addressTimer=setTimeout(()=>findAddressSuggestions(input,query,generation),450);
 });
+function chooseAddress(option){
+  const field=option.closest('.address-field'),input=field.querySelector('[data-address-suggest]');
+  input.value=option.dataset.addressValue;
+  hideAddressSuggestions();
+  field.querySelector('.address-hint').textContent=option.dataset.addressNumber==='yes'?'Osoite valittu.':'Lisää vielä talonumero kadun nimen jälkeen.';
+  input.focus({preventScroll:true});
+  input.setSelectionRange(input.value.length,input.value.length);
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+}
+// Commit a tap before the software keyboard can resize the dialog and retarget the click.
+let addressTap=null;
+document.addEventListener('touchstart',ev=>{
+  const option=ev.target.closest('[data-address-value]'),touch=ev.touches[0];
+  addressTap=option&&ev.touches.length===1?{option,x:touch.clientX,y:touch.clientY}:null;
+},{passive:true});
+document.addEventListener('touchmove',ev=>{
+  if(!addressTap)return;
+  const touch=ev.touches[0];
+  if(ev.touches.length!==1||Math.hypot(touch.clientX-addressTap.x,touch.clientY-addressTap.y)>10)addressTap=null;
+},{passive:true});
+document.addEventListener('touchcancel',()=>{addressTap=null},{passive:true});
+document.addEventListener('touchend',ev=>{
+  const tap=addressTap;
+  addressTap=null;
+  if(!tap||!ev.cancelable||!tap.option.isConnected||ev.touches.length)return;
+  const touch=ev.changedTouches[0];
+  if(Math.hypot(touch.clientX-tap.x,touch.clientY-tap.y)>10||
+     !tap.option.contains(document.elementFromPoint(touch.clientX,touch.clientY)))return;
+  ev.preventDefault();
+  chooseAddress(tap.option);
+},{passive:false});
 document.addEventListener('click',ev=>{
-const option=ev.target.closest('[data-address-value]');if(option){
-const field=option.closest('.address-field'),input=field.querySelector('[data-address-suggest]');
-input.value=option.dataset.addressValue;hideAddressSuggestions();input.dispatchEvent(new Event('change',{bubbles:true}));
-field.querySelector('.address-hint').textContent=option.dataset.addressNumber==='yes'?'Osoite valittu.':'Lisää vielä talonumero kadun nimen jälkeen.';
-input.focus({preventScroll:true});input.setSelectionRange(input.value.length,input.value.length);
-}else if(!ev.target.closest('.address-field'))hideAddressSuggestions();
+  const option=ev.target.closest('[data-address-value]');
+  if(option)chooseAddress(option);
+  else if(!ev.target.closest('.address-field'))hideAddressSuggestions();
 });
 document.addEventListener('focusin',ev=>{if(!ev.target.closest('.address-field'))hideAddressSuggestions()});
 document.addEventListener('keydown',ev=>{
