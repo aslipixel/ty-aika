@@ -20,17 +20,17 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.47;letter-spacing:-.011em;-webkit-font-smoothing:antialiased;min-height:100vh}
-body{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
-body.has-tabs{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
-.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:25;width:min(560px,calc(100% - 24px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));border-radius:30px;box-shadow:0 8px 30px rgba(0,0,0,.18);border:.5px solid var(--edge);display:flex;align-items:center;gap:4px;padding:6px}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+body.has-tabs{padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:25;border-radius:0;border:0;border-top:.5px solid var(--sep);box-shadow:0 -4px 20px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;gap:4px;padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));background:var(--bar);transition:transform .28s ease}
 .dock[hidden]{display:none}
 .dk{flex:none;width:62px;border:0;background:transparent;border-radius:22px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 5px;color:var(--accent);font-size:10.5px;font-weight:600}
 .dk:hover{background:var(--tint)}
 .dk svg{width:24px;height:24px}
 .dk span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dock .go{flex:1;min-width:0;padding:13px 14px}
+.dock .go{flex:1;min-width:0;max-width:360px;padding:13px 14px}
 .dock .go span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.quick{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:24;width:min(560px,calc(100% - 24px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));display:flex;gap:8px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:2px}
+.quick{position:fixed;left:0;right:0;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:24;display:flex;gap:8px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:2px max(12px,env(safe-area-inset-right,0px)) 6px max(12px,env(safe-area-inset-left,0px));transition:transform .28s ease,opacity .2s}
 .quick[hidden]{display:none}
 .quick::-webkit-scrollbar{display:none}
 .chip{flex:none;border:.5px solid var(--edge);background:var(--card);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 4px 16px rgba(0,0,0,.14);color:var(--accent);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
@@ -181,9 +181,9 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
 .ok{color:var(--ok)}
 
 /* bottom tab bar */
-.tabbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:25;width:min(560px,calc(100% - 24px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));border-radius:30px;box-shadow:0 8px 30px rgba(0,0,0,.18);border:.5px solid var(--edge);display:flex;padding:6px}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:25;border-radius:0;border:0;border-top:.5px solid var(--sep);box-shadow:0 -4px 20px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;gap:0;padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));background:var(--bar);transition:transform .28s ease}
 .tabbar[hidden]{display:none}
-.tab{flex:1;min-width:0;border:0;background:transparent;border-radius:22px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 5px;color:var(--muted);font-size:10.5px;font-weight:600}
+.tab{flex:1;min-width:0;max-width:110px;border:0;background:transparent;border-radius:22px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 5px;color:var(--muted);font-size:10.5px;font-weight:600}
 .tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .tab svg{width:24px;height:24px}
 .tab.on{color:var(--accent);background:var(--tint)}
@@ -234,6 +234,17 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
 .stage polygon{fill:rgba(10,132,255,.18);stroke:#0a84ff;stroke-width:2;vector-effect:non-scaling-stroke}
 .stage circle{fill:#fff;stroke:#0a84ff;stroke-width:3;vector-effect:non-scaling-stroke;cursor:grab}
 .result-pv{display:block;max-width:100%;max-height:40vh;margin:0 auto;border-radius:10px;box-shadow:var(--shadow)}
+/* bottom bars slide away while scrolling down */
+.dock.away,.tabbar.away{transform:translateY(calc(100% + 2px))}
+.quick.away{transform:translateY(calc(66px + env(safe-area-inset-bottom,0px)));opacity:0;pointer-events:none}
+.quick.low{bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+@media (prefers-reduced-motion:reduce){.dock,.tabbar,.quick{transition:none}}
+.clear-x{position:absolute;top:10px;right:10px;z-index:2;border:0;border-radius:999px;background:var(--fill);color:var(--text);display:inline-flex;align-items:center;gap:4px;padding:5px 10px 5px 7px;font-size:13px;font-weight:600}
+.clear-x svg{width:15px;height:15px;stroke-width:2.2}
+.clear-x[hidden]{display:none}
+#inputGroup:has(.clear-x:not([hidden])) textarea.doc{padding-top:44px}
+.dock,.tabbar{background:color-mix(in srgb,var(--card-solid) 93%,transparent)}
+.quick{justify-content:safe center}
 </style>
 
 </head>
@@ -280,7 +291,8 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
     <h1 class="large" data-i18n="heroTitle">Understand any letter.</h1>
     <p class="lead" data-i18n="heroSub">Translation, a plain-language explanation, deadlines, advice and a ready reply.</p>
 
-    <div class="group glass" id="inputGroup">
+    <div class="group glass" id="inputGroup" style="position:relative">
+      <button class="clear-x" id="clearTop" hidden><svg class="i"><use href="#i-x"/></svg><span data-i18n="clear">Clear</span></button>
       <textarea class="doc" id="docText" data-i18n-ph="pastePh" placeholder="Paste the text of a letter, notice, invoice or contract in any language"></textarea>
       <input type="file" id="scanIn" accept="image/*" capture="environment" hidden>
       <input type="file" id="photoIn" accept="image/png,image/jpeg,image/webp,image/gif,image/heic" multiple hidden>
@@ -376,7 +388,7 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
 </main>
 
 <div class="dock glass" id="dock">
-  <button class="dk" id="scanBtn"><svg class="i"><use href="#i-scan"/></svg><span data-i18n="scan">Scan</span></button>
+  <button class="dk" id="scanBtn"><svg class="i"><use href="#i-scan"/></svg><span data-i18n="dkScan">Scan</span></button>
   <button class="dk" id="photoBtn"><svg class="i"><use href="#i-photo"/></svg><span data-i18n="photos">Photos</span></button>
   <button class="dk" id="pdfBtn"><svg class="i"><use href="#i-pdf"/></svg><span data-i18n="pdf">PDF</span></button>
   <button class="btn go" id="goBtn"><svg class="i"><use href="#i-sparkle"/></svg><span data-i18n="analyze">Analyze</span></button>
@@ -384,7 +396,7 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
 <div class="quick" id="quick" hidden></div>
 <nav class="tabbar glass" id="tabbar" hidden>
   <button class="tab on" data-tab="translation"><svg class="i"><use href="#i-translate"/></svg><span data-i18n="tabTr">Translation</span></button>
-  <button class="tab" data-tab="todo"><svg class="i"><use href="#i-checklist"/></svg><span data-i18n="tTodo">To do</span></button>
+  <button class="tab" data-tab="todo"><svg class="i"><use href="#i-checklist"/></svg><span data-i18n="tabTodo">To do</span></button>
   <button class="tab" data-tab="terms"><svg class="i"><use href="#i-book"/></svg><span data-i18n="tTerms">Terms</span></button>
   <button class="tab" data-tab="tips"><svg class="i"><use href="#i-bulb"/></svg><span data-i18n="tTips">Tips</span></button>
   <button class="tab" data-tab="reply"><svg class="i"><use href="#i-reply"/></svg><span data-i18n="tReply">Reply</span></button>
@@ -448,7 +460,7 @@ const inClaudeText = (claudeMsg, webMsg) => (window.claude?.use ? claudeMsg : we
 const I18N = {
   en: {
     camDenied: "No camera access. Take a photo instead.", camAutoOn: "Auto", camAutoOff: "Manual", camPoint: "Point the camera at a document", camFound: "Document found", camHold: "Hold still…", camSaved: "Page saved. Next page?", camNext: "Turn the page or tap Done",
-    apiKey: "LetterPilot access code", apiKeyNote: "Needed only on this website. Enter your test access code (not a Gemini key). It is kept until you close the tab; documents are sent through the LetterPilot server to Gemini.", needKey: "Enter your access code in Settings to analyze documents.", badKey: "The access code was rejected. Check it in Settings.",
+    apiKey: "LetterPilot access code", apiKeyNote: "Needed only on this website. Enter your test access code (not a Gemini key). It stays saved in this browser until you clear the site data; documents are sent through the LetterPilot server to Gemini.", needKey: "Enter your access code in Settings to analyze documents.", badKey: "The access code was rejected. Check it in Settings.",
     home: "Home", settings: "Settings", newShort: "New", newDoc: "New document", heroTitle: "Understand any letter.",
     heroSub: "Translation, a plain-language explanation, deadlines, advice and a ready reply.",
     pastePh: "Paste the text of a letter, notice, invoice or contract in any language",
@@ -465,8 +477,8 @@ const I18N = {
     f5: "Advice", f5d: "How to answer and what to watch out for.",
     f6: "Ready reply", f6d: "A letter in the sender's language, plus a translation for you.",
     want: "What they want", from: "From", urgent: "Urgent", hasDeadlines: "Has deadlines", notUrgent: "Not urgent", replyNeeded: "Reply needed",
-    tabTr: "Translate", tTranslation: "Translation", tTodo: "To do", tTerms: "Terms", tTips: "Tips", tReply: "Reply", tAsk: "Ask",
-    copy: "Copy", copied: "Copied", qCopyTr: "Copy translation", qReply: "Reply", qAsk: "Ask", qCopyPlan: "Copy plan", qCopyLetter: "Copy letter", original: "Original", translation: "Translation",
+    tabTr: "Translate", tabTodo: "Plan", dkScan: "Scan", tTranslation: "Translation", tTodo: "To do", tTerms: "Terms", tTips: "Tips", tReply: "Reply", tAsk: "Ask",
+    copy: "Copy", copied: "Copied", qCopyTr: "Copy", qReply: "Reply", qAsk: "Ask", qCopyPlan: "Copy plan", qCopyLetter: "Copy letter", original: "Original", translation: "Translation",
     deadlines: "Deadlines", steps: "What to do", amounts: "Amounts & references", ignored: "If you do nothing",
     noTerms: "No difficult terms found.", tipsTitle: "How to reply", tone: "Tone of the letter",
     position: "Your position", notes: "What do you want to say?", notesPh: "In your own words, any language. E.g. I agree, but please move the date to the end of the month.",
@@ -492,7 +504,7 @@ const I18N = {
   },
   ru: {
     camDenied: "Нет доступа к камере. Сделайте фото.", camAutoOn: "Авто", camAutoOff: "Вручную", camPoint: "Наведите камеру на документ", camFound: "Документ найден", camHold: "Не двигайте…", camSaved: "Страница сохранена. Следующая?", camNext: "Переверните страницу или нажмите «Готово»",
-    apiKey: "Код доступа LetterPilot", apiKeyNote: "Нужен только на этом сайте. Введите тестовый код доступа (не ключ Gemini). Хранится до закрытия вкладки; документы идут через сервер LetterPilot в Gemini.", needKey: "Введите код доступа в настройках, чтобы разбирать документы.", badKey: "Код доступа не принят. Проверьте его в настройках.",
+    apiKey: "Код доступа LetterPilot", apiKeyNote: "Нужен только на этом сайте. Введите тестовый код доступа (не ключ Gemini). Сохраняется в этом браузере, пока вы не очистите данные сайта; документы идут через сервер LetterPilot в Gemini.", needKey: "Введите код доступа в настройках, чтобы разбирать документы.", badKey: "Код доступа не принят. Проверьте его в настройках.",
     home: "Домой", settings: "Настройки", newShort: "Новый", newDoc: "Новый документ", heroTitle: "Поймите любое письмо.",
     heroSub: "Перевод, объяснение простыми словами, сроки, советы и готовый ответ.",
     pastePh: "Вставьте текст письма, уведомления, счёта или договора на любом языке",
@@ -509,8 +521,8 @@ const I18N = {
     f5: "Советы", f5d: "Как ответить и на что обратить внимание.",
     f6: "Готовый ответ", f6d: "Письмо на языке отправителя и перевод для вас.",
     want: "Что от вас хотят", from: "От", urgent: "Срочно", hasDeadlines: "Есть сроки", notUrgent: "Не срочно", replyNeeded: "Нужен ответ",
-    tabTr: "Перевод", tTranslation: "Перевод", tTodo: "Что делать", tTerms: "Термины", tTips: "Советы", tReply: "Ответить", tAsk: "Спросить",
-    copy: "Копировать", copied: "Скопировано", qCopyTr: "Копировать перевод", qReply: "Ответить", qAsk: "Спросить", qCopyPlan: "Копировать план", qCopyLetter: "Копировать письмо", original: "Оригинал", translation: "Перевод",
+    tabTr: "Перевод", tabTodo: "План", dkScan: "Сканер", tTranslation: "Перевод", tTodo: "Что делать", tTerms: "Термины", tTips: "Советы", tReply: "Ответить", tAsk: "Спросить",
+    copy: "Копировать", copied: "Скопировано", qCopyTr: "Копировать", qReply: "Ответить", qAsk: "Спросить", qCopyPlan: "Копировать план", qCopyLetter: "Копировать письмо", original: "Оригинал", translation: "Перевод",
     deadlines: "Сроки", steps: "Что сделать", amounts: "Суммы и реквизиты", ignored: "Если ничего не делать",
     noTerms: "Сложных терминов не найдено.", tipsTitle: "Как ответить", tone: "Тон письма",
     position: "Ваша позиция", notes: "Что вы хотите сказать?", notesPh: "Своими словами, на любом языке. Напр.: согласен, но прошу перенести срок на конец месяца.",
@@ -585,8 +597,9 @@ const inClaude = !!window.claude?.use;
 // On the website, requests go through the LetterPilot Cloudflare Worker (Gemini); no AI key is ever in the browser.
 const WORKER_URL = "https://letterpilot-ai.asl-icopal.workers.dev";
 const WORKER_MODEL = "gemini-2.5-flash"; // the Worker picks the real model
-const tokenGet = () => { try { return sessionStorage.getItem("lp_test_token") || ""; } catch { return ""; } };
-const tokenSet = v => { try { sessionStorage.setItem("lp_test_token", v); } catch {} };
+// The access code stays in this browser until the site data is cleared (moved over from the older per-tab storage).
+const tokenGet = () => { try { let v = localStorage.getItem("lp_test_token") || ""; if (!v) { v = sessionStorage.getItem("lp_test_token") || ""; if (v) localStorage.setItem("lp_test_token", v); } return v; } catch { return ""; } };
+const tokenSet = v => { try { if (v) localStorage.setItem("lp_test_token", v); else localStorage.removeItem("lp_test_token"); } catch {} };
 function parseJsonLoose(s) {
   try { return JSON.parse(s); } catch {}
   const f = s.match(/```(?:json)?\s*([\s\S]*?)```/); if (f) { try { return JSON.parse(f[1]); } catch {} }
@@ -663,7 +676,9 @@ function errText(e) {
 
 /* ================= pages: scanned images + PDF text ================= */
 let pages = []; // {kind:"img", src:Image, srcUrl, quad|null, filter, blob, url, auto} | {kind:"text", name, text, count}
+function syncClear() { $("clearTop").hidden = !($("docText").value.trim() || pages.length); }
 function renderPages() {
+  setTimeout(syncClear);
   $("pages").innerHTML = pages.map((p, i) => p.kind === "text"
     ? `<div class="pg txt"><button class="th" data-i="${i}" disabled>${icon("pdf")}<span>${esc(p.name)}</span>${esc(t("pdfText"))} · ${p.count} ${esc(t("pages"))}</button><button class="x" data-del="${i}" aria-label="Remove">×</button></div>`
     : `<div class="pg"><button class="th" data-i="${i}" aria-label="${esc(t("page"))} ${i + 1}"><img src="${p.url}" alt=""></button>${p.auto ? `<span class="tag">${esc(t("autoCropped"))}</span>` : ""}<button class="x" data-del="${i}" aria-label="Remove">×</button></div>`).join("");
@@ -1150,6 +1165,8 @@ function normalize(r) {
 }
 
 /* ================= results ================= */
+let quietScrollUntil = 0;
+const pageScroll = (top, smooth) => { quietScrollUntil = Date.now() + 900; ["tabbar", "dock", "quick", "topbar"].forEach(id => $(id).classList.remove("away", "low", "hide")); window.scrollTo({ top, behavior: smooth && !matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "auto" }); };
 let tab = "translation", selectedOpt = null, styleIdx = 0;
 const STYLES = [["sFormal", "formal and polite"], ["sNeutral", "polite and neutral"], ["sFriendly", "friendly and simple"], ["sFirm", "firm but polite, standing one's ground"]];
 function renderStyleSeg() { $("styleSeg").innerHTML = STYLES.map(([k], i) => `<button data-i="${i}" class="${i === styleIdx ? "on" : ""}">${esc(t(k))}</button>`).join(""); }
@@ -1183,10 +1200,10 @@ function render(fresh) {
   $("draft").textContent = current.draft || ""; $("draftTr").textContent = current.draftTr || "";
   $("draftTrWrap").hidden = !current.draftTr && !!current.draft;
   renderChat();
-  if (fresh) { setTab("translation"); window.scrollTo({ top: 0 }); }
+  if (fresh) { setTab("translation"); pageScroll(0); }
 }
 function setTab(name) {
-  tab = name; renderQuick();
+  tab = name; renderQuick(); ["tabbar", "dock", "quick"].forEach(id => $(id).classList.remove("away", "low"));
   document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
   document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === "p-" + name));
 }
@@ -1194,7 +1211,7 @@ $("tabbar").onclick = e => {
   const b = e.target.closest(".tab"); if (!b) return;
   setTab(b.dataset.tab);
   const top = $("p-" + b.dataset.tab).getBoundingClientRect().top + window.scrollY - 70;
-  window.scrollTo({ top: Math.max(0, top), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  pageScroll(Math.max(0, top), true);
 };
 $("opts").onclick = e => { const b = e.target.closest(".opt"); if (!b) return; selectedOpt = selectedOpt === +b.dataset.i ? null : +b.dataset.i; document.querySelectorAll(".opt").forEach(o => o.classList.toggle("on", +o.dataset.i === selectedOpt)); };
 
@@ -1282,9 +1299,10 @@ function renderQuick() {
 }
 $("quick").addEventListener("click", e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
-  const go = name => { setTab(name); window.scrollTo({ top: $("p-" + name).getBoundingClientRect().top + window.scrollY - 70 }); };
+  const go = name => { setTab(name); pageScroll($("p-" + name).getBoundingClientRect().top + window.scrollY - 70); };
   switch (b.dataset.act) {
     case "copyTr": $("copyTr").click(); break;
+    case "new": newDoc(); break;
     case "copyPlan": copy(current.result.action_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"), "err"); break;
     case "copyLetter": $("copyDraft").click(); break;
     case "reply": go("reply"); break;
@@ -1311,7 +1329,7 @@ $("wipeBtn").onclick = () => { store.del("history"); renderHistory(); };
 /* ================= navigation ================= */
 function goHome() {
   $("results").hidden = true; $("tabbar").hidden = true; $("dock").hidden = false; $("newBtn").hidden = true; $("topbar").classList.remove("hide"); $("home").hidden = false; document.body.classList.remove("has-tabs");
-  current = null; renderQuick(); hideErr(); window.scrollTo({ top: 0 });
+  current = null; renderQuick(); hideErr(); pageScroll(0);
 }
 $("homeBtn").onclick = goHome;
 function newDoc() { $("docText").value = ""; $("ctx").value = ""; while (pages.length) removePage(0); goHome(); $("docText").focus({ preventScroll: true }); }
@@ -1320,11 +1338,21 @@ $("newBtn").onclick = newDoc; $("newBtn2").onclick = newDoc;
 let lastY = window.scrollY;
 window.addEventListener("scroll", () => {
   const y = window.scrollY, dy = y - lastY;
+  if (Date.now() < quietScrollUntil) { lastY = y; return; } // scrolling started by the page itself
   if (Math.abs(dy) < 6) return;
-  $("topbar").classList.toggle("hide", dy > 0 && y > 80);
+  const away = dy > 0 && y > 80;
+  $("topbar").classList.toggle("hide", away);
+  const typing = document.activeElement === $("chatIn");
+  ["tabbar", "dock"].forEach(id => $(id).classList.toggle("away", away && !typing));
+  // the question box stays reachable on the Ask tab: it drops to the bottom edge instead of hiding
+  $("quick").classList.toggle("away", away && !typing && tab !== "ask");
+  $("quick").classList.toggle("low", away && tab === "ask");
   lastY = y;
 }, { passive: true });
-$("clearBtn").onclick = () => { $("docText").value = ""; $("ctx").value = ""; while (pages.length) removePage(0); hideErr(); };
+function clearInput() { $("docText").value = ""; while (pages.length) removePage(0); hideErr(); syncClear(); }
+$("clearBtn").onclick = () => { $("ctx").value = ""; clearInput(); };
+$("clearTop").onclick = () => { clearInput(); $("docText").focus({ preventScroll: true }); };
+$("docText").addEventListener("input", syncClear);
 const DEMO = `Hyvä vuokralainen,
 
 Ilmoitamme, että taloyhtiön putkiremontti alkaa asunnossanne 3.2.2027. Remontin aikana asunnossa ei voi asua, ja sen arvioitu kesto on kuusi (6) viikkoa.
@@ -1336,10 +1364,10 @@ Huomioittehan, että asunto on tyhjennettävä irtaimistosta kylpyhuoneen ja kei
 Ystävällisin terveisin
 Esimerkki Asunnot Oy
 Asiakaspalvelu, puh. 09 123 4567`;
-$("demoBtn").onclick = () => { $("docText").value = DEMO; };
+$("demoBtn").onclick = () => { $("docText").value = DEMO; syncClear(); };
 
 applyI18n();
-$("docText").value = DEMO;
+$("docText").value = DEMO; syncClear();
 })();
 </script>
 
