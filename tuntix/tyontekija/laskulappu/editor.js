@@ -134,7 +134,7 @@
   const button = (action, glyph, label, title = label) =>
     `<button type="button" data-action="${action}" title="${escape(title)}" aria-label="${escape(title)}">${icon(glyph)}${label ? '<span>' + escape(label) + '</span>' : ''}</button>`;
   const actions = {
-    sign: ['pen-line', 'Allekirjoita'],
+    sign: ['signature', 'Allekirjoita'],
     removeSig: ['trash-2', 'Poista', 'Poista allekirjoitus'],
     preview: ['eye', 'Katso', 'Esikatsele lomaketta'],
     open: ['folder-open', 'Avaa'],
