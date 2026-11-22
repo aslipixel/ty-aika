@@ -1,9 +1,6 @@
 name: Build LetterPilot Android
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['letterpilot/index.html', 'letterpilot-app/**', '.github/workflows/letterpilot-android.yml']
 permissions:
   contents: read
 jobs:
