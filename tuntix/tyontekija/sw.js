@@ -1,5 +1,5 @@
 /* Cache only the TuntiX app shell. No addresses, requests or external APIs. */
-const CACHE='tuntix-shell-orange-graphite-99';
+const CACHE='tuntix-shell-week-reminder-100';
 const INDEX=new URL('./index.html',self.registration.scope).href;
 const ASSETS=[INDEX,...['laskulappu/paper.js','laskulappu/editor.js','laskulappu/editor.css','laskulappu/blank.jpg','teras/dashboard.css', 'teras/icons.js', 'teras/calendar.js', 'web-entry.js', 'web-projects.js', 'web-surfaces.js', 'web-surfaces.css', 'apple-design.css', 'apple-design.js', 'teras/barlow-semi-condensed-latin-500-normal.woff2', 'teras/barlow-semi-condensed-latin-600-normal.woff2', 'teras/barlow-semi-condensed-latin-700-normal.woff2','measurement.js?v=19','form-upload.js?v=2','office-document.js?v=2','vendor/formats/zip.mjs','vendor/formats/tiff.mjs','vendor/formats/heic.mjs','pdfjs/pdf.min.mjs','pdfjs/pdf.worker.min.mjs','Mittaustodistus_92986_editable.pdf','Mittaustodistus_92986.jpg','vendor/pdf-lib.min.js','vendor/fontkit.umd.min.js','fonts/Caveat-Medium.ttf','fonts/OpenSans-Regular.ttf','fonts/inter-latin.woff2','fonts/inter-cyrillic.woff2']
   .map(path=>new URL(path,self.registration.scope).href)];

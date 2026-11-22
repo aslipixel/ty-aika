@@ -10,28 +10,29 @@
     const selected = route === 'asiakirjat' ? 'lomakkeet' : route;
     return tabs.map(([id,glyph,label]) => `<a href="#${id}"${selected === id ? ' class="on" aria-current="page"' : ''}>${icon(glyph)}<span>${label}</span></a>`).join('');
   }
-  function clock(now) { return pad(now.getHours())+'.'+pad(now.getMinutes()); }
   function updateClock() {
     const el = document.getElementById('teras-time');
     if (!el) return;
-    const now = new Date();
-    if (el.dataset.day !== dk(now)) {
-      if (!document.querySelector('dialog[open], #m .ov')) render(1);
-    } else if (el.textContent !== clock(now)) {
-      el.textContent = clock(now);
-      el.dateTime = pad(now.getHours())+':'+pad(now.getMinutes());
-    }
+    if (el.dataset.day !== dk(new Date()) && !document.querySelector('dialog[open], #m .ov')) render(1);
+  }
+  function num(h) { return (Math.round(h*10)/10).toString().replace('.',','); }
+  function weekTotal(total,today) {
+    const goal = (Number(S.set.goal) || 8) * 5, left = goal - total;
+    const note = left > 0.05 ? `jäljellä ${num(left)} h` : left < -0.05 ? `+${num(-left)} h yli` : 'tavoite täynnä';
+    return `<div class="teras-week-total" id="teras-time" data-day="${dk(today)}" role="status" aria-label="Viikko yhteensä ${num(total)} h, tavoite ${num(goal)} h, ${note}">
+      <small>${note}</small><span><b>${num(total)}</b> / ${num(goal)} h</span>
+    </div>`;
   }
   function iconButton(key,glyph,label) {
     return `<button type="button" class="teras-square" data-a="${key}" title="${label}" aria-label="${label}">${icon(glyph)}</button>`;
   }
-  function weekControls(start,today) {
+  function weekControls(start,today,total) {
     const date = dk(wo === 0 ? today : start);
     return `<div class="teras-week-tools">
       ${iconButton('pw','chevron-left','Edellinen viikko')}
       <label class="teras-week-picker"><span>Viikko ${wk(start)}</span><input id="weekdate" type="date" aria-label="Valitse viikko" value="${date}"></label>
       ${iconButton('nw','chevron-right','Seuraava viikko')}
-      <time id="teras-time" data-day="${dk(today)}" datetime="${pad(today.getHours())}:${pad(today.getMinutes())}">${clock(today)}</time>
+      ${weekTotal(total,today)}
     </div>`;
   }
   function weekRow(date, entries, total, today) {
@@ -73,7 +74,8 @@
       <header class="teras-bar"><div class="teras-wordmark">Tunti<em>X</em></div>
         <b class="teras-date">${DN[wd(now)]} ${fd(now)}${now.getFullYear()}</b>
       </header>
-      ${weekControls(start,now)}
+      ${weekControls(start,now,days.reduce((sum,d)=>sum+(totals[dk(d)]||0),0))}
+      ${wo===0&&window.reminderBanner?reminderBanner():''}
       <section class="teras-week" aria-label="Viikon kirjaukset">${days.map(d=>weekRow(d,byDate.get(dk(d)),totals[dk(d)]||0,now)).join('')}</section>
       ${month(now,totals)}
     </section>`;
