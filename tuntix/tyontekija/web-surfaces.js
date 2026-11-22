@@ -76,7 +76,7 @@
   function applyTheme() {
     const theme = S.set.theme === 'light' ? 'light' : 'dark';
     document.documentElement.dataset.theme = theme;
-    document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#eff4f9' : '#10191f';
+    document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f2f2f5' : '#3a3d42';
   }
 
   function themeSettings() {
