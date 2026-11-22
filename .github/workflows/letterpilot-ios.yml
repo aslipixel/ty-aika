@@ -1,9 +1,6 @@
 name: Build LetterPilot IPA
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['letterpilot/index.html', 'letterpilot-app/**', '.github/workflows/letterpilot-ios.yml']
 permissions:
   contents: read
 jobs:

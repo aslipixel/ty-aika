@@ -33,7 +33,10 @@ html.teras[data-theme="light"] {
 .teras-wordmark em{color:var(--blue)}
 .teras-date{margin-left:auto;font-size:clamp(19px,4.8vw,24px)}
 .teras-week-tools{display:grid;align-items:center;grid-template-columns:36px minmax(72px,145px) 36px 1fr;gap:7px;margin:8px 0 12px}
-.teras-week-tools time{justify-self:end;color:var(--blue);font:700 clamp(31px,8vw,40px)/1 var(--font-display);font-variant-numeric:tabular-nums}
+.teras-week-total{justify-self:end;display:grid;justify-items:end;gap:2px;min-width:0;line-height:1}
+.teras-week-total small{color:var(--mut);font:600 12px/1.1 var(--font-ui);white-space:nowrap}
+.teras-week-total span{color:var(--mut);font:700 17px/1 var(--font-display);white-space:nowrap;font-variant-numeric:tabular-nums}
+.teras-week-total b{color:var(--blue);font:800 clamp(28px,7.5vw,34px)/1 var(--font-display)}
 .teras-square,.teras-week-picker{display:inline-flex;align-items:center;justify-content:center;min-height:37px;border:1px solid var(--ui-control-edge, #8e9ca7);border-radius:11px;background:transparent}
 .teras-square{width:36px}
 .teras-square .teras-icon{width:17px;height:17px;stroke-width:2.8}

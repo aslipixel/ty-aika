@@ -39,40 +39,63 @@
     return false;
   }
 
-  function actions(id) {
-    return `<div class="teras-actions">${[
-      ['open', 'folder-open', 'Avaa'], ['edit', 'pencil', 'Muokkaa'], ['delete', 'trash-2', 'Poista']
-    ].map(([action, glyph, name]) => `<button type="button" class="teras-action" data-project-record="${action}" data-entry-id="${esc(id)}">${icon(glyph)}${name}</button>`).join('')}</div>`;
+  // Projektit: one compact row per day and project ("Ma 16.11. · E1204401 · 5 h Sovittu, 3 h Lasku").
+  // The small button opens the details: each entry with its hours, work type and comment.
+  const groupNames = {':absence':'Poissaolo', ':deleted':'Poistettu projekti', ':none':'Ei projektia'};
+  const hoursText = h => formatHours.format(h) + ' h';
+  function groupKey(entry) {
+    if (entry.p && S.pr.some(p => p.id === entry.p)) return entry.p;
+    return isAbsence(entry.t) ? ':absence' : entry.p ? ':deleted' : ':none';
+  }
+  function byType(entries) {
+    const sums = new Map();
+    for (const e of entries) sums.set(e.t, (sums.get(e.t) || 0) + e.h);
+    return [...sums].map(([t, h]) => ({t, h}));
   }
 
-  function projectRow(entry, project) {
-    const date = pd(entry.d);
-    const name = project?.n || (entry.p ? 'Poistettu projekti' : isAbsence(entry.t) ? 'Poissaolo' : 'Ei projektia');
-    return `<article class="card teras-project-row" data-entry-id="${esc(entry.id)}">
-      <h3 class="teras-project-heading">${esc(name)}</h3>
-      <p class="teras-project-meta"><time datetime="${esc(entry.d)}">${DN[wd(date)]} ${date.toLocaleDateString('fi-FI')}</time>
-      · <b>${formatHours.format(entry.h)} h</b> · ${esc(label(entry.t))}</p>
-      ${project?.a ? `<p class="teras-project-address">${icon('map-pin')}${esc(project.a)} ${distanceBadge(project.id, !isAbsence(entry.t))}</p>` : ''}
-      ${entry.c ? `<p class="teras-project-comment">${esc(entry.c)}</p>` : ''}${actions(entry.id)}</article>`;
+  function entryLine(entry) {
+    return `<button type="button" class="pj-entry" data-project-record="open" data-entry-id="${esc(entry.id)}" aria-label="${esc(hoursText(entry.h)+' '+label(entry.t)+(entry.c?', '+entry.c:''))}. Avaa kirjaus.">
+      <b>${hoursText(entry.h)}</b><span>${esc(label(entry.t))}</span>${entry.c ? `<small>${esc(entry.c)}</small>` : ''}</button>`;
+  }
+
+  function dayRow(day, key, entries) {
+    const date = pd(day), project = S.pr.find(p => p.id === key);
+    const name = project?.n || groupNames[key] || 'Ei projektia';
+    const types = byType(entries), total = entries.reduce((sum, e) => sum + e.h, 0);
+    const lines = entries.map(entryLine).join('');
+    return `<details class="pj-row">
+      <summary aria-label="${esc(DL[wd(date)]+' '+fd(date)+' '+name+' '+hoursText(total))}. Näytä tiedot.">
+        <span class="pj-date"><b>${DN[wd(date)]}</b><span>${fd(date)}</span></span>
+        <span class="pj-main"><b class="pj-name">${esc(name)}</b><span class="pj-types">${types.map(x => `${hoursText(x.h)} ${esc(label(x.t))}`).join(' · ')}</span></span>
+        <span class="pj-more" aria-hidden="true">${icon('chevron-down')}</span>
+      </summary>
+      <div class="pj-details">${lines}</div>
+    </details>`;
   }
 
   function view() {
-    const projects = new Map(S.pr.map(p => [p.id, p]));
-    const entries = [...S.en].sort((a, b) => b.d.localeCompare(a.d));
-    const rows = entries.map(entry => projectRow(entry, projects.get(entry.p)));
-    return `<h2>Projektit</h2><div class="teras-project-list">${rows.join('') || '<p class="card">Ei tuntikirjauksia.</p>'}</div>`;
+    const days = new Map();
+    for (const entry of S.en) {
+      if (!days.has(entry.d)) days.set(entry.d, new Map());
+      const groups = days.get(entry.d), key = groupKey(entry);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(entry);
+    }
+    let month = '', html = '';
+    for (const day of [...days.keys()].sort((a, b) => b.localeCompare(a))) {
+      const date = pd(day), title = MO[date.getMonth()] + ' ' + date.getFullYear();
+      if (title !== month) { html += `${month ? '</div>' : ''}<h3 class="pj-month">${title}</h3><div class="card pj-list">`; month = title; }
+      for (const [key, entries] of days.get(day)) html += dayRow(day, key, entries);
+    }
+    if (month) html += '</div>';
+    return `<h2>Projektit</h2>${html || '<p class="card">Ei tuntikirjauksia.</p>'}`;
   }
 
   document.addEventListener('click', event => {
-    const button = event.target.closest('[data-project-record]');
-    if (!button) return;
-    const entry = S.en.find(e => e.id === button.dataset.entryId);
-    if (!entry) { render(1); return; }
-    switch (button.dataset.projectRecord) {
-      case 'open': WebEntries.view(entry.id); break;
-      case 'edit': WebEntries.open(entry.d, entry.id); break;
-      case 'delete': WebEntries.remove(entry.id); break;
-    }
+    const record = event.target.closest('[data-project-record]');
+    if (!record) return;
+    const entry = S.en.find(e => e.id === record.dataset.entryId);
+    if (entry) WebEntries.view(entry.id); else render(1);
   });
 
   function toolbar(title) {

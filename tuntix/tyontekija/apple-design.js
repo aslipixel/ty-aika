@@ -36,7 +36,7 @@
   const TONE_CSS = `
 [data-tone=orange]{--c:#ff9500;--t:var(--t-orange,#c45f00)}
 [data-tone=red]{--c:#ff3b30;--t:var(--t-red,#d70015)}
-[data-tone=blue]{--c:#007aff;--t:var(--t-blue,#0058bf)}
+[data-tone=blue]{--c:var(--blue,#f07215);--t:var(--t-blue,#b4520a)}
 [data-tone=green]{--c:#34c759;--t:var(--t-green,#1f7a35)}
 [data-tone=teal]{--c:#30b0c7;--t:var(--t-teal,#0b6f81)}
 [data-tone=indigo]{--c:#5e5ce6;--t:var(--t-indigo,#3634a3)}
