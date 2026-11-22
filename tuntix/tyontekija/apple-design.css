@@ -7,23 +7,23 @@ html.teras.apple:root{
   --font-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
   --font-ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
   --font-num:ui-rounded,"SF Pro Rounded",-apple-system,"Segoe UI",system-ui,sans-serif;
-  --ink:#ffffff; --mut:#98989f; --line:#38383a;
-  --blue:#0a84ff; --teal:#0a84ff; --vio:#0a84ff; --lil:#0a84ff26;
-  --card:#1c1c1e; --bg1:#000000; --bg2:#000000; --sh:none; --nav-base:#1c1c1ecc;
-  --ui-page:#000; --ui-outer:#000; --ui-panel:#1c1c1e; --ui-field:#2c2c2e; --ui-subtle:#2c2c2e;
-  --ui-hover:#2c2c2e; --ui-hover-edge:transparent; --ui-edge:transparent; --ui-control-edge:transparent;
-  --ui-divider:#38383a; --ui-text:#fff; --ui-secondary:#98989f; --ui-accent-tint:#0a84ff26;
-  --ui-on-accent:#fff; --ui-danger:#ff453a; --ui-warn:#ff9f0a; --ui-warn-bg:#ff9f0a26; --ui-heading:#fff;
-  --sep:#54545899; --fill:#7676803d; --green:#30d158; --orange:#ff9f0a; --red:#ff453a; --indigo:#5e5ce6; --pink:#ff375f; --gray:#8e8e93;
-  --bar:rgba(22,22,24,.78);
+  --ink:#f4f4f5; --mut:#aeb2b9; --line:#5a5e64;
+  --blue:#ff8a3d; --teal:#ff8a3d; --vio:#ff8a3d; --lil:#ff8a3d2e;
+  --card:#4a4e54; --bg1:#3a3d42; --bg2:#3a3d42; --sh:none; --nav-base:#4a4e54e6;
+  --ui-page:#3a3d42; --ui-outer:#3a3d42; --ui-panel:#4a4e54; --ui-field:#575b62; --ui-subtle:#575b62;
+  --ui-hover:#575b62; --ui-hover-edge:transparent; --ui-edge:transparent; --ui-control-edge:transparent;
+  --ui-divider:#5a5e64; --ui-text:#fff; --ui-secondary:#aeb2b9; --ui-accent-tint:#ff8a3d2e;
+  --ui-on-accent:#fff; --ui-danger:#ff5a4f; --ui-warn:#ffb340; --ui-warn-bg:#ffb34026; --ui-heading:#fff;
+  --sep:#6b707899; --fill:#8a8e9640; --green:#30d158; --orange:#ffb340; --red:#ff5a4f; --indigo:#7d7bf0; --pink:#ff375f; --gray:#9a9ea5;
+  --bar:rgba(58,61,66,.86);
 }
 html.teras.apple[data-theme="light"]{
   color-scheme:light;
   --ink:#000000; --mut:#8a8a8e; --line:#c6c6c8;
-  --blue:#007aff; --teal:#007aff; --vio:#007aff; --lil:#007aff1f;
-  --card:#ffffff; --bg1:#f2f2f7; --bg2:#f2f2f7; --nav-base:#f9f9f9cc;
-  --ui-page:#f2f2f7; --ui-outer:#f2f2f7; --ui-panel:#fff; --ui-field:#7676801f; --ui-subtle:#7676801f;
-  --ui-hover:#e5e5ea; --ui-divider:#c6c6c8; --ui-text:#000; --ui-secondary:#8a8a8e; --ui-accent-tint:#007aff1f;
+  --blue:#f07215; --teal:#f07215; --vio:#f07215; --lil:#f072151f;
+  --card:#ffffff; --bg1:#f2f2f5; --bg2:#f2f2f5; --nav-base:#f9f9f9cc;
+  --ui-page:#f2f2f5; --ui-outer:#f2f2f5; --ui-panel:#fff; --ui-field:#7676801f; --ui-subtle:#7676801f;
+  --ui-hover:#e5e5ea; --ui-divider:#c6c6c8; --ui-text:#000; --ui-secondary:#8a8a8e; --ui-accent-tint:#f072151f;
   --ui-danger:#ff3b30; --ui-warn:#c93400; --ui-warn-bg:#ff95001f; --ui-heading:#000;
   --sep:#3c3c434a; --fill:#78788033; --green:#34c759; --orange:#ff9500; --red:#ff3b30; --indigo:#5856d6; --pink:#ff2d55; --gray:#8e8e93;
   --bar:rgba(249,249,249,.8);
