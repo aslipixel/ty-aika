@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>LetterPilot · Коды доступа</title>
+<style>
+:root{--bg:#eef1f6;--card:#fff;--ink:#1d1d1f;--muted:#6e6e73;--line:rgba(60,60,67,.16);--fill:rgba(118,118,128,.12);--accent:#0071e3;--ok:#248a3d;--bad:#d70015;
+--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+h1{font-size:30px;letter-spacing:-.02em;margin:8px 0 4px}
+.lead{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border-radius:18px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 24px rgba(0,0,0,.05);margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--muted);font-weight:600;margin:0 0 6px}
+input{width:100%;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+input:focus{outline:3px solid rgba(0,113,227,.25);border-color:var(--accent)}
+.row{display:flex;gap:8px;align-items:center}
+.row>input{flex:1;min-width:0}
+button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:10px 16px;background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap}
+button.sec{background:var(--fill);color:var(--accent)}
+button.danger{background:rgba(215,0,21,.1);color:var(--bad)}
+button.sm{padding:6px 12px;font-size:14px}
+button:disabled{opacity:.5}
+.msg{margin-top:10px;font-size:14px}
+.msg.err{color:var(--bad)}.msg.ok{color:var(--ok)}
+.code{border-top:1px solid var(--line);padding:12px 0;display:grid;gap:6px}
+.code:first-child{border-top:0}
+.code .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.code b{font-size:17px}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+.pill.on{background:rgba(36,138,61,.12);color:var(--ok)}.pill.off{background:rgba(215,0,21,.1);color:var(--bad)}
+.val{font-family:var(--mono);font-size:13px;background:var(--fill);border-radius:8px;padding:6px 9px;overflow-wrap:anywhere}
+.meta{font-size:13px;color:var(--muted)}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.confirm{font-size:14px;color:var(--bad);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.new{background:rgba(36,138,61,.08);border-radius:12px;padding:12px;margin-top:12px}
+.new .val{background:#fff}
+.note{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Коды доступа</h1>
+  <p class="lead">Управление личными кодами LetterPilot. У каждого человека свой код, любой можно отключить или удалить. На каждый код действует лимит: 10 запросов в минуту и 200 в день.</p>
+
+  <div class="card">
+    <label for="adm">Пароль администратора</label>
+    <div class="row"><input type="password" id="adm" autocomplete="off" placeholder="LPA-…"><button id="loginBtn">Войти</button></div>
+    <p class="note" style="margin:8px 0 0">Пароль запоминается в этом браузере. Никому его не давайте: с ним можно создавать и удалять коды.</p>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div id="panel" hidden>
+    <div class="card">
+      <label for="newName">Новый код для…</label>
+      <div class="row"><input type="text" id="newName" placeholder="Например: Друг Миша" maxlength="60"><button id="createBtn">Создать</button></div>
+      <div id="created"></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Все коды</b><button class="sec sm" id="refreshBtn">Обновить</button></div>
+      <div id="list" style="margin-top:6px"></div>
+      <div class="msg" id="listMsg"></div>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const API = "https://letterpilot-ai.asl-icopal.workers.dev";
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const get = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+  const set = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch {} };
+  let pending = null; // code waiting for delete confirmation
+
+  async function call(path, body) {
+    const r = await fetch(API + path, { method: body ? "POST" : "GET", headers: { "X-Admin-Token": $("adm").value.trim(), ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(r.status === 401 ? "Неверный пароль администратора." : data.error || ("Ошибка " + r.status));
+    return data;
+  }
+  function msg(id, text, kind) { const el = $(id); el.textContent = text || ""; el.className = "msg " + (kind || ""); }
+  const fmt = d => d ? new Date(d + "T12:00:00").toLocaleDateString("ru-RU") : "ещё не пользовались";
+
+  async function load() {
+    msg("listMsg", "");
+    try {
+      const { codes } = await call("/admin/codes");
+      $("panel").hidden = false; msg("loginMsg", "Вход выполнен.", "ok"); set("lp_admin", $("adm").value.trim());
+      codes.sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+      $("list").innerHTML = codes.length ? codes.map(c => `<div class="code">
+        <div class="top"><b>${esc(c.name)}</b><span class="pill ${c.disabled ? "off" : "on"}">${c.disabled ? "Отключён" : "Работает"}</span></div>
+        <div class="val">${esc(c.code)}</div>
+        <div class="meta">Создан: ${fmt(c.created)} · Последний раз: ${fmt(c.lastUsed)}</div>
+        ${pending === c.code
+          ? `<div class="confirm">Удалить код «${esc(c.name)}» навсегда? <button class="danger sm" data-act="del" data-code="${esc(c.code)}">Да, удалить</button><button class="sec sm" data-act="cancel">Отмена</button></div>`
+          : `<div class="acts"><button class="sec sm" data-act="copy" data-code="${esc(c.code)}">Копировать</button><button class="sec sm" data-act="toggle" data-code="${esc(c.code)}" data-off="${c.disabled ? 1 : 0}">${c.disabled ? "Включить" : "Отключить"}</button><button class="danger sm" data-act="ask" data-code="${esc(c.code)}">Удалить</button></div>`}
+      </div>`).join("") : `<p class="note">Кодов пока нет. Создайте первый выше.</p>`;
+    } catch (e) { $("panel").hidden = true; msg("loginMsg", e.message, "err"); }
+  }
+
+  $("loginBtn").onclick = load;
+  $("adm").addEventListener("keydown", e => { if (e.key === "Enter") load(); });
+  $("refreshBtn").onclick = load;
+  $("createBtn").onclick = async () => {
+    const name = $("newName").value.trim();
+    $("createBtn").disabled = true;
+    try {
+      const c = await call("/admin/codes", { name });
+      $("newName").value = "";
+      $("created").innerHTML = `<div class="new"><b>Код для «${esc(c.name)}» создан.</b><p class="note" style="margin:4px 0 8px">Отправьте его этому человеку: он вводит код в LetterPilot → ⚙️ Настройки.</p><div class="row"><div class="val" style="flex:1">${esc(c.code)}</div><button class="sm" data-act="copy" data-code="${esc(c.code)}">Копировать</button></div></div>`;
+      load();
+    } catch (e) { $("created").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+    finally { $("createBtn").disabled = false; }
+  };
+  document.addEventListener("click", async e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const code = b.dataset.code;
+    try {
+      if (b.dataset.act === "copy") { try { await navigator.clipboard.writeText(code); b.textContent = "Скопировано"; } catch { b.textContent = "Выделите и скопируйте"; } setTimeout(() => { b.textContent = "Копировать"; }, 1500); return; }
+      if (b.dataset.act === "ask") { pending = code; return load(); }
+      if (b.dataset.act === "cancel") { pending = null; return load(); }
+      if (b.dataset.act === "del") { pending = null; await call("/admin/codes/update", { code, delete: true }); return load(); }
+      if (b.dataset.act === "toggle") { await call("/admin/codes/update", { code, disabled: b.dataset.off !== "1" }); return load(); }
+    } catch (err) { msg("listMsg", err.message, "err"); }
+  });
+  const saved = get("lp_admin"); if (saved) { $("adm").value = saved; load(); }
+})();
+</script>
+</body>
+</html>
