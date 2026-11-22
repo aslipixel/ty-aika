@@ -30,6 +30,8 @@ html.teras.apple[data-theme="light"]{
 }
 
 /* ---------- Base ---------- */
+/* body already reserves the top safe area; padding on html too doubled the empty space above the header. */
+html.teras.apple:root{padding-top:0}
 html.apple body,html.apple #app{background:var(--bg1);font-family:var(--font-ui);-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
 html.apple .teras-icon,html.apple .i{stroke-width:1.75}
 html.apple :is(button,a,input,select,textarea):focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 45%,transparent);outline-offset:1px}
@@ -45,7 +47,8 @@ html.apple .teras-week-tools{grid-template-columns:36px minmax(84px,150px) 36px 
 html.apple .teras-square{border:0;border-radius:50%;width:36px;min-height:36px;background:var(--fill);color:var(--blue)}
 html.apple .teras-square .teras-icon{width:18px;height:18px;stroke-width:2.4}
 html.apple .teras-week-picker{border:0;border-radius:10px;min-height:36px;background:var(--fill);color:var(--ink);font:600 16px/1 var(--font-ui)}
-html.apple .teras-week-tools time{color:var(--ink);font:700 34px/1 var(--font-num);letter-spacing:-.02em}
+html.apple .teras-week-total b{color:var(--blue);font:700 32px/1 var(--font-num);letter-spacing:-.02em}
+html.apple .teras-week-total span{font-family:var(--font-num)}
 
 /* ---------- Week: inset grouped list ---------- */
 html.apple .teras-week{background:var(--card);border-radius:12px;overflow:hidden}
