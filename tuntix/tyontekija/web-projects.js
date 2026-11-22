@@ -39,83 +39,66 @@
     return false;
   }
 
-  // One card per project. The day-by-day list of entries opens inside the card;
-  // number, address and travel allowance are shown once, not under every entry.
+  // Projektit: one compact row per day and project ("Ma 16.11. · E1204401 · 5 h Sovittu, 3 h Lasku").
+  // The small button opens the details: each entry with its comment, then the address and travel once.
+  const groupNames = {':absence':'Poissaolo', ':deleted':'Poistettu projekti', ':none':'Ei projektia'};
+  const hoursText = h => formatHours.format(h) + ' h';
   function groupKey(entry) {
     if (entry.p && S.pr.some(p => p.id === entry.p)) return entry.p;
     return isAbsence(entry.t) ? ':absence' : entry.p ? ':deleted' : ':none';
   }
-  const groupNames = {':absence':'Poissaolot', ':deleted':'Poistettu projekti', ':none':'Ei projektia'};
-  const hoursText = h => formatHours.format(h) + ' h';
-  const dayText = d => { const date = pd(d); return `${DN[wd(date)]} ${date.toLocaleDateString('fi-FI')}`; };
-
-  function entryLine(entry) {
-    return `<button type="button" class="teras-project-entry" data-project-record="open" data-entry-id="${esc(entry.id)}" aria-label="${esc(dayText(entry.d)+' '+hoursText(entry.h)+' '+label(entry.t)+(entry.c?' '+entry.c:''))}. Avaa kirjaus.">
-      <b>${hoursText(entry.h)}</b><span>${esc(label(entry.t))}</span><small>${esc(entry.c || '')}</small></button>`;
+  function byType(entries) {
+    const sums = new Map();
+    for (const e of entries) sums.set(e.t, (sums.get(e.t) || 0) + e.h);
+    return [...sums].map(([t, h]) => ({t, h}));
   }
 
-  function projectCard(key, entries) {
-    const project = S.pr.find(p => p.id === key);
+  function entryLine(entry) {
+    return `<button type="button" class="pj-entry" data-project-record="open" data-entry-id="${esc(entry.id)}" aria-label="${esc(hoursText(entry.h)+' '+label(entry.t)+(entry.c?', '+entry.c:''))}. Avaa kirjaus.">
+      <b>${hoursText(entry.h)}</b><span>${esc(label(entry.t))}</span>${entry.c ? `<small>${esc(entry.c)}</small>` : ''}</button>`;
+  }
+
+  function dayRow(day, key, entries) {
+    const date = pd(day), project = S.pr.find(p => p.id === key);
     const name = project?.n || groupNames[key] || 'Ei projektia';
-    const total = entries.reduce((sum, e) => sum + e.h, 0);
-    const days = [...new Set(entries.map(e => e.d))];
+    const types = byType(entries), total = entries.reduce((sum, e) => sum + e.h, 0);
     const work = entries.some(e => !isAbsence(e.t));
-    const list = days.map(d => {
-      const rows = entries.filter(e => e.d === d);
-      return `<section class="teras-project-day"><h4><time datetime="${esc(d)}">${dayText(d)}</time><span>${hoursText(rows.reduce((sum, e) => sum + e.h, 0))}</span></h4>${rows.map(entryLine).join('')}</section>`;
-    }).join('');
-    const summary = entries.length
-      ? `${days.length === 1 ? '1 päivä' : days.length + ' päivää'} · viimeksi ${dayText(days[0])}`
-      : 'Ei kirjauksia';
-    const buttons = project ? `<div class="teras-actions">
-      <button type="button" class="teras-action" data-project-card="edit" data-project-id="${esc(project.id)}">${icon('pencil')}Muokkaa</button>
-      <button type="button" class="teras-action" data-project-card="delete" data-project-id="${esc(project.id)}">${icon('trash-2')}Poista</button></div>` : '';
-    return `<article class="card teras-project-row" data-project-key="${esc(key)}">
-      <details${entries.length ? '' : ' class="empty"'}>
-        <summary>
-          <span class="teras-project-title"><h3 class="teras-project-heading">${esc(name)}</h3><b class="teras-project-total">${hoursText(total)}</b>${entries.length ? `<span class="teras-project-chevron" aria-hidden="true">${icon('chevron-down')}</span>` : ''}</span>
-          ${project?.a ? `<span class="teras-project-address">${icon('map-pin')}${esc(project.a)}</span><span class="teras-project-travel">${distanceBadge(project.id, work)}</span>` : ''}
-          <span class="teras-project-meta">${summary}</span>
-        </summary>
-        <div class="teras-project-days">${list}</div>
-      </details>${buttons}</article>`;
+    // With one entry per type the lines show the comments; otherwise the type totals come first.
+    const lines = entries.map(entryLine).join('');
+    const place = project?.a ? `<div class="pj-place">${icon('map-pin')}<span>${esc(project.a)}</span></div><div class="pj-travel">${distanceBadge(project.id, work)}</div>` : '';
+    return `<details class="pj-row">
+      <summary aria-label="${esc(DL[wd(date)]+' '+fd(date)+' '+name+' '+hoursText(total))}. Näytä tiedot.">
+        <span class="pj-date"><b>${DN[wd(date)]}</b><span>${fd(date)}</span></span>
+        <span class="pj-main"><b class="pj-name">${esc(name)}</b><span class="pj-types">${types.map(x => `${hoursText(x.h)} ${esc(label(x.t))}`).join(' · ')}</span></span>
+        <span class="pj-more" aria-hidden="true">${icon('chevron-down')}</span>
+      </summary>
+      <div class="pj-details">${lines}${place}</div>
+    </details>`;
   }
 
   function view() {
-    const groups = new Map();
-    for (const entry of [...S.en].sort((a, b) => b.d.localeCompare(a.d))) {
-      const key = groupKey(entry);
+    const days = new Map();
+    for (const entry of S.en) {
+      if (!days.has(entry.d)) days.set(entry.d, new Map());
+      const groups = days.get(entry.d), key = groupKey(entry);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(entry);
     }
-    for (const project of S.pr) if (!groups.has(project.id)) groups.set(project.id, []);
-    const cards = [...groups].map(([key, entries]) => projectCard(key, entries));
-    return `<h2>Projektit</h2><div class="teras-project-list">${cards.join('') || '<p class="card">Ei tuntikirjauksia.</p>'}</div>`;
+    let month = '', html = '';
+    for (const day of [...days.keys()].sort((a, b) => b.localeCompare(a))) {
+      const date = pd(day), title = MO[date.getMonth()] + ' ' + date.getFullYear();
+      if (title !== month) { html += `${month ? '</div>' : ''}<h3 class="pj-month">${title}</h3><div class="card pj-list">`; month = title; }
+      for (const [key, entries] of days.get(day)) html += dayRow(day, key, entries);
+    }
+    if (month) html += '</div>';
+    return `<h2>Projektit</h2>${html || '<p class="card">Ei tuntikirjauksia.</p>'}`;
   }
 
-  document.addEventListener('click', async event => {
+  document.addEventListener('click', event => {
     const record = event.target.closest('[data-project-record]');
-    if (record) {
-      const entry = S.en.find(e => e.id === record.dataset.entryId);
-      if (entry) WebEntries.view(entry.id); else render(1);
-      return;
-    }
-    const button = event.target.closest('[data-project-card]');
-    if (!button) return;
-    const project = S.pr.find(p => p.id === button.dataset.projectId);
-    if (!project) { render(1); return; }
-    if (button.dataset.projectCard === 'edit') { pform(project.id); return; }
-    const entries = S.en.filter(e => e.p === project.id);
-    const question = entries.length
-      ? `Poistetaanko projekti ”${project.n}” ja sen ${entries.length} kirjausta (${hoursText(entries.reduce((sum, e) => sum + e.h, 0))})?`
-      : `Poistetaanko projekti ”${project.n}”?`;
-    if (!(await appConfirm(question, {yes:'Poista', glyph:'trash-2', danger:true}))) return;
-    const previous = {pr:S.pr, en:S.en};
-    S.pr = S.pr.filter(p => p.id !== project.id);
-    S.en = S.en.filter(e => e.p !== project.id);
-    if (!save()) { S.pr = previous.pr; S.en = previous.en; return; }
-    render(1);
-    toast('Projekti poistettu');
+    if (!record) return;
+    const entry = S.en.find(e => e.id === record.dataset.entryId);
+    if (entry) WebEntries.view(entry.id); else render(1);
   });
 
   function toolbar(title) {
