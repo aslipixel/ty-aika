@@ -245,6 +245,16 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
 #inputGroup:has(.clear-x:not([hidden])) textarea.doc{padding-top:44px}
 .dock,.tabbar{background:color-mix(in srgb,var(--card-solid) 93%,transparent)}
 .quick{justify-content:safe center}
+.acode{display:grid;gap:6px;padding:12px 16px;position:relative}
+.acode+.acode::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--sep)}
+.acode .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.acode .val{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;background:var(--fill);border-radius:8px;padding:6px 9px;overflow-wrap:anywhere}
+.acode .acts{display:flex;gap:6px;flex-wrap:wrap}
+.acode .meta{font-size:13px;color:var(--muted)}
+.pill.on{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.pill.off{background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad)}
+.btn.danger{background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad)}
+.acreated{margin-top:10px;border-radius:14px;padding:12px;background:color-mix(in srgb,var(--ok) 10%,transparent);display:grid;gap:8px}
 </style>
 
 </head>
@@ -419,6 +429,27 @@ textarea.field{width:100%;border:0;outline:none;background:transparent;resize:ve
       <div class="section-h" data-i18n="apiKey">LetterPilot access code</div>
       <div class="group glass"><div class="list"><div class="row"><input type="password" id="apiKey" placeholder="••••••" autocomplete="off" style="text-align:left;color:var(--text)"></div></div></div>
       <p class="note" data-i18n="apiKeyNote"></p>
+      <div class="section-h" data-i18n="adminH">Administrator</div>
+      <div class="group glass"><div class="list"><button class="row hrow" id="adminOpen"><span data-i18n="adminOpen">Manage access codes</span><svg class="i"><use href="#i-chev"/></svg></button></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-wrap" id="adminSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <div class="grabber"></div>
+    <div class="sheet-h"><h3 data-i18n="adminTitle">Access codes</h3><button class="btn sec sm" data-close data-i18n="done">Done</button></div>
+    <p class="muted small" style="margin:0 0 6px" data-i18n="adminLead">Each person gets their own code. Limit per code: 10 requests a minute, 200 a day.</p>
+    <div class="section-h" data-i18n="adminPw">Administrator password</div>
+    <div class="group glass"><div class="list"><div class="row"><input type="password" id="adminPw" autocomplete="off" placeholder="LPA-…" style="text-align:left;color:var(--text)"><button class="btn sm" id="adminLogin" data-i18n="adminLogin">Sign in</button></div></div></div>
+    <p class="note" data-i18n="adminPwNote">Saved on this device only. Never share it: it can create and delete codes.</p>
+    <div class="err" id="adminErr" hidden></div>
+    <div id="adminPanel" hidden>
+      <div class="section-h" data-i18n="adminNew">New code for…</div>
+      <div class="group glass"><div class="list"><div class="row"><input type="text" id="adminName" maxlength="60" data-i18n-ph="adminNamePh" placeholder="e.g. Friend Misha" style="text-align:left;color:var(--text)"><button class="btn sm" id="adminCreate" data-i18n="adminCreate">Create</button></div></div></div>
+      <div id="adminCreated"></div>
+      <div class="section-h" style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="adminAll">All codes</span><button class="linkbtn small" id="adminRefresh" data-i18n="adminRefresh">Refresh</button></div>
+      <div class="group glass"><div class="list" id="adminList"></div></div>
     </div>
   </div>
 </div>
@@ -455,6 +486,7 @@ const icon = (name, cls = "i") => `<svg class="${cls}"><use href="#i-${name}"/><
 const inClaudeText = (claudeMsg, webMsg) => (window.claude?.use ? claudeMsg : webMsg);
 const I18N = {
   en: {
+    adminH: "Administrator", adminOpen: "Manage access codes", adminTitle: "Access codes", adminLead: "Each person gets their own code. Limit per code: 10 requests a minute, 200 a day.", adminPw: "Administrator password", adminLogin: "Sign in", adminPwNote: "Saved on this device only. Never share it: it can create and delete codes.", adminNew: "New code for…", adminNamePh: "e.g. Friend Misha", adminCreate: "Create", adminAll: "All codes", adminRefresh: "Refresh", adminBadPw: "Wrong administrator password.", adminNone: "No codes yet. Create the first one above.", adminOn: "Active", adminOff: "Disabled", adminCreatedOn: "Created", adminLast: "Last used", adminNever: "not used yet", adminDisable: "Disable", adminEnable: "Enable", adminDelete: "Delete", adminDelQ: "Delete this code for good?", adminYes: "Yes, delete", adminCancel: "Cancel", adminShare: "Share", adminMade: "Code created. Send it to this person: they enter it in LetterPilot → ⚙️ Settings.", adminShareText: "Your LetterPilot access code (enter it in ⚙️ Settings):", adminNet: "The server didn't answer. Try again.",
     camDenied: "No camera access. Take a photo instead.", camAutoOn: "Auto", camAutoOff: "Manual", camPoint: "Point the camera at a document", camFound: "Document found", camHold: "Hold still…", camSaved: "Page saved. Next page?", camNext: "Turn the page or tap Done",
     apiKey: "LetterPilot access code", apiKeyNote: "Needed only on this website. Enter your test access code (not a Gemini key). It stays saved in this browser until you clear the site data; documents are sent through the LetterPilot server to Gemini.", needKey: "Enter your access code in Settings to analyze documents.", badKey: "The access code was rejected. Check it in Settings.",
     home: "Home", settings: "Settings", newShort: "New", newDoc: "New document", heroTitle: "Understand any letter.",
@@ -499,6 +531,7 @@ const I18N = {
     eCopy: "Couldn't copy. Select the text and copy it manually.", truncated: "The answer was cut short. Try a shorter document."
   },
   ru: {
+    adminH: "Администратор", adminOpen: "Управление кодами", adminTitle: "Коды доступа", adminLead: "У каждого человека свой код. Лимит на код: 10 запросов в минуту, 200 в день.", adminPw: "Пароль администратора", adminLogin: "Войти", adminPwNote: "Сохраняется только на этом устройстве. Никому не давайте: с ним можно создавать и удалять коды.", adminNew: "Новый код для…", adminNamePh: "Например: Друг Миша", adminCreate: "Создать", adminAll: "Все коды", adminRefresh: "Обновить", adminBadPw: "Неверный пароль администратора.", adminNone: "Кодов пока нет. Создайте первый выше.", adminOn: "Работает", adminOff: "Отключён", adminCreatedOn: "Создан", adminLast: "Последний раз", adminNever: "ещё не пользовались", adminDisable: "Отключить", adminEnable: "Включить", adminDelete: "Удалить", adminDelQ: "Удалить этот код навсегда?", adminYes: "Да, удалить", adminCancel: "Отмена", adminShare: "Поделиться", adminMade: "Код создан. Отправьте его этому человеку: он вводит его в LetterPilot → ⚙️ Настройки.", adminShareText: "Твой код доступа к LetterPilot (вводится в ⚙️ Настройках):", adminNet: "Сервер не ответил. Попробуйте ещё раз.",
     camDenied: "Нет доступа к камере. Сделайте фото.", camAutoOn: "Авто", camAutoOff: "Вручную", camPoint: "Наведите камеру на документ", camFound: "Документ найден", camHold: "Не двигайте…", camSaved: "Страница сохранена. Следующая?", camNext: "Переверните страницу или нажмите «Готово»",
     apiKey: "Код доступа LetterPilot", apiKeyNote: "Нужен только на этом сайте. Введите тестовый код доступа (не ключ Gemini). Сохраняется в этом браузере, пока вы не очистите данные сайта; документы идут через сервер LetterPilot в Gemini.", needKey: "Введите код доступа в настройках, чтобы разбирать документы.", badKey: "Код доступа не принят. Проверьте его в настройках.",
     home: "Домой", settings: "Настройки", newShort: "Новый", newDoc: "Новый документ", heroTitle: "Поймите любое письмо.",
@@ -1305,6 +1338,69 @@ $("quick").addEventListener("click", e => {
     case "ask": go("ask"); setTimeout(() => $("chatIn").focus(), 50); break;
     case "write": $("draftBtn").click(); break;
   }
+});
+
+
+/* ================= access code management (website only) ================= */
+let adminPending = null;
+const adminPwGet = () => { try { return localStorage.getItem("lp_admin") || ""; } catch { return ""; } };
+const adminPwSet = v => { try { v ? localStorage.setItem("lp_admin", v) : localStorage.removeItem("lp_admin"); } catch {} };
+async function adminCall(path, body) {
+  let r, data;
+  try {
+    r = await fetch(WORKER_URL + path, { method: body ? "POST" : "GET", headers: { "X-Admin-Token": $("adminPw").value.trim(), ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    data = await r.json().catch(() => ({}));
+  } catch { throw new Error(t("adminNet")); }
+  if (!r.ok) throw new Error(r.status === 401 ? t("adminBadPw") : data.error || ("HTTP " + r.status));
+  return data;
+}
+const adminDate = d => d ? new Date(d + "T12:00:00").toLocaleDateString(ui) : t("adminNever");
+async function adminLoad() {
+  hideErr("adminErr");
+  try {
+    const { codes } = await adminCall("/admin/codes");
+    adminPwSet($("adminPw").value.trim());
+    $("adminPanel").hidden = false;
+    codes.sort((a, b) => (b.created || "").localeCompare(a.created || ""));
+    $("adminList").innerHTML = codes.length ? codes.map(c => `<div class="acode">
+      <div class="top"><b>${esc(c.name)}</b><span class="pill ${c.disabled ? "off" : "on"}">${esc(t(c.disabled ? "adminOff" : "adminOn"))}</span></div>
+      <div class="val">${esc(c.code)}</div>
+      <div class="meta">${esc(t("adminCreatedOn"))}: ${esc(adminDate(c.created))} · ${esc(t("adminLast"))}: ${esc(adminDate(c.lastUsed))}</div>
+      ${adminPending === c.code
+        ? `<div class="acts"><span class="small" style="color:var(--bad);align-self:center">${esc(t("adminDelQ"))}</span><button class="btn danger sm" data-adm="del" data-code="${esc(c.code)}">${esc(t("adminYes"))}</button><button class="btn sec sm" data-adm="cancel">${esc(t("adminCancel"))}</button></div>`
+        : `<div class="acts"><button class="btn sec sm" data-adm="share" data-code="${esc(c.code)}">${esc(t("adminShare"))}</button><button class="btn sec sm" data-adm="toggle" data-code="${esc(c.code)}" data-off="${c.disabled ? 1 : 0}">${esc(t(c.disabled ? "adminEnable" : "adminDisable"))}</button><button class="btn danger sm" data-adm="ask" data-code="${esc(c.code)}">${esc(t("adminDelete"))}</button></div>`}
+    </div>`).join("") : `<div class="row muted">${esc(t("adminNone"))}</div>`;
+  } catch (e) { $("adminPanel").hidden = true; showErr(e.message, "adminErr"); }
+}
+async function shareCode(code, btn) {
+  const text = t("adminShareText") + "\n" + code;
+  if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+  try { await navigator.clipboard.writeText(code); toast(t("copied")); } catch { showErr(t("eCopy"), "adminErr"); }
+}
+$("adminOpen").onclick = () => { closeSheet("setSheet"); $("adminPw").value = adminPwGet(); openSheet("adminSheet"); if ($("adminPw").value) adminLoad(); };
+$("adminLogin").onclick = adminLoad;
+$("adminPw").addEventListener("keydown", e => { if (e.key === "Enter") adminLoad(); });
+$("adminRefresh").onclick = adminLoad;
+$("adminCreate").onclick = async () => {
+  const btn = $("adminCreate"); btn.disabled = true; hideErr("adminErr");
+  try {
+    const c = await adminCall("/admin/codes", { name: $("adminName").value.trim() });
+    $("adminName").value = "";
+    $("adminCreated").innerHTML = `<div class="acreated"><b>${esc(c.name)}</b><span class="small">${esc(t("adminMade"))}</span><div class="val" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;overflow-wrap:anywhere">${esc(c.code)}</div><div><button class="btn sm" data-adm="share" data-code="${esc(c.code)}">${esc(t("adminShare"))}</button></div></div>`;
+    adminLoad();
+  } catch (e) { showErr(e.message, "adminErr"); }
+  finally { btn.disabled = false; }
+};
+$("adminSheet").addEventListener("click", async e => {
+  const b = e.target.closest("[data-adm]"); if (!b) return;
+  const code = b.dataset.code;
+  try {
+    if (b.dataset.adm === "share") return shareCode(code, b);
+    if (b.dataset.adm === "ask") { adminPending = code; return adminLoad(); }
+    if (b.dataset.adm === "cancel") { adminPending = null; return adminLoad(); }
+    if (b.dataset.adm === "del") { adminPending = null; await adminCall("/admin/codes/update", { code, delete: true }); return adminLoad(); }
+    if (b.dataset.adm === "toggle") { await adminCall("/admin/codes/update", { code, disabled: b.dataset.off !== "1" }); return adminLoad(); }
+  } catch (err) { showErr(err.message, "adminErr"); }
 });
 
 /* ================= history (this browser only) ================= */
