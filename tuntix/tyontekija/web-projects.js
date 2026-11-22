@@ -39,40 +39,83 @@
     return false;
   }
 
-  function actions(id) {
-    return `<div class="teras-actions">${[
-      ['open', 'folder-open', 'Avaa'], ['edit', 'pencil', 'Muokkaa'], ['delete', 'trash-2', 'Poista']
-    ].map(([action, glyph, name]) => `<button type="button" class="teras-action" data-project-record="${action}" data-entry-id="${esc(id)}">${icon(glyph)}${name}</button>`).join('')}</div>`;
+  // One card per project. The day-by-day list of entries opens inside the card;
+  // number, address and travel allowance are shown once, not under every entry.
+  function groupKey(entry) {
+    if (entry.p && S.pr.some(p => p.id === entry.p)) return entry.p;
+    return isAbsence(entry.t) ? ':absence' : entry.p ? ':deleted' : ':none';
+  }
+  const groupNames = {':absence':'Poissaolot', ':deleted':'Poistettu projekti', ':none':'Ei projektia'};
+  const hoursText = h => formatHours.format(h) + ' h';
+  const dayText = d => { const date = pd(d); return `${DN[wd(date)]} ${date.toLocaleDateString('fi-FI')}`; };
+
+  function entryLine(entry) {
+    return `<button type="button" class="teras-project-entry" data-project-record="open" data-entry-id="${esc(entry.id)}" aria-label="${esc(dayText(entry.d)+' '+hoursText(entry.h)+' '+label(entry.t)+(entry.c?' '+entry.c:''))}. Avaa kirjaus.">
+      <b>${hoursText(entry.h)}</b><span>${esc(label(entry.t))}</span><small>${esc(entry.c || '')}</small></button>`;
   }
 
-  function projectRow(entry, project) {
-    const date = pd(entry.d);
-    const name = project?.n || (entry.p ? 'Poistettu projekti' : isAbsence(entry.t) ? 'Poissaolo' : 'Ei projektia');
-    return `<article class="card teras-project-row" data-entry-id="${esc(entry.id)}">
-      <h3 class="teras-project-heading">${esc(name)}</h3>
-      <p class="teras-project-meta"><time datetime="${esc(entry.d)}">${DN[wd(date)]} ${date.toLocaleDateString('fi-FI')}</time>
-      · <b>${formatHours.format(entry.h)} h</b> · ${esc(label(entry.t))}</p>
-      ${project?.a ? `<p class="teras-project-address">${icon('map-pin')}${esc(project.a)} ${distanceBadge(project.id, !isAbsence(entry.t))}</p>` : ''}
-      ${entry.c ? `<p class="teras-project-comment">${esc(entry.c)}</p>` : ''}${actions(entry.id)}</article>`;
+  function projectCard(key, entries) {
+    const project = S.pr.find(p => p.id === key);
+    const name = project?.n || groupNames[key] || 'Ei projektia';
+    const total = entries.reduce((sum, e) => sum + e.h, 0);
+    const days = [...new Set(entries.map(e => e.d))];
+    const work = entries.some(e => !isAbsence(e.t));
+    const list = days.map(d => {
+      const rows = entries.filter(e => e.d === d);
+      return `<section class="teras-project-day"><h4><time datetime="${esc(d)}">${dayText(d)}</time><span>${hoursText(rows.reduce((sum, e) => sum + e.h, 0))}</span></h4>${rows.map(entryLine).join('')}</section>`;
+    }).join('');
+    const summary = entries.length
+      ? `${days.length === 1 ? '1 päivä' : days.length + ' päivää'} · viimeksi ${dayText(days[0])}`
+      : 'Ei kirjauksia';
+    const buttons = project ? `<div class="teras-actions">
+      <button type="button" class="teras-action" data-project-card="edit" data-project-id="${esc(project.id)}">${icon('pencil')}Muokkaa</button>
+      <button type="button" class="teras-action" data-project-card="delete" data-project-id="${esc(project.id)}">${icon('trash-2')}Poista</button></div>` : '';
+    return `<article class="card teras-project-row" data-project-key="${esc(key)}">
+      <details${entries.length ? '' : ' class="empty"'}>
+        <summary>
+          <span class="teras-project-title"><h3 class="teras-project-heading">${esc(name)}</h3><b class="teras-project-total">${hoursText(total)}</b>${entries.length ? `<span class="teras-project-chevron" aria-hidden="true">${icon('chevron-down')}</span>` : ''}</span>
+          ${project?.a ? `<span class="teras-project-address">${icon('map-pin')}${esc(project.a)}</span><span class="teras-project-travel">${distanceBadge(project.id, work)}</span>` : ''}
+          <span class="teras-project-meta">${summary}</span>
+        </summary>
+        <div class="teras-project-days">${list}</div>
+      </details>${buttons}</article>`;
   }
 
   function view() {
-    const projects = new Map(S.pr.map(p => [p.id, p]));
-    const entries = [...S.en].sort((a, b) => b.d.localeCompare(a.d));
-    const rows = entries.map(entry => projectRow(entry, projects.get(entry.p)));
-    return `<h2>Projektit</h2><div class="teras-project-list">${rows.join('') || '<p class="card">Ei tuntikirjauksia.</p>'}</div>`;
+    const groups = new Map();
+    for (const entry of [...S.en].sort((a, b) => b.d.localeCompare(a.d))) {
+      const key = groupKey(entry);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(entry);
+    }
+    for (const project of S.pr) if (!groups.has(project.id)) groups.set(project.id, []);
+    const cards = [...groups].map(([key, entries]) => projectCard(key, entries));
+    return `<h2>Projektit</h2><div class="teras-project-list">${cards.join('') || '<p class="card">Ei tuntikirjauksia.</p>'}</div>`;
   }
 
-  document.addEventListener('click', event => {
-    const button = event.target.closest('[data-project-record]');
-    if (!button) return;
-    const entry = S.en.find(e => e.id === button.dataset.entryId);
-    if (!entry) { render(1); return; }
-    switch (button.dataset.projectRecord) {
-      case 'open': WebEntries.view(entry.id); break;
-      case 'edit': WebEntries.open(entry.d, entry.id); break;
-      case 'delete': WebEntries.remove(entry.id); break;
+  document.addEventListener('click', async event => {
+    const record = event.target.closest('[data-project-record]');
+    if (record) {
+      const entry = S.en.find(e => e.id === record.dataset.entryId);
+      if (entry) WebEntries.view(entry.id); else render(1);
+      return;
     }
+    const button = event.target.closest('[data-project-card]');
+    if (!button) return;
+    const project = S.pr.find(p => p.id === button.dataset.projectId);
+    if (!project) { render(1); return; }
+    if (button.dataset.projectCard === 'edit') { pform(project.id); return; }
+    const entries = S.en.filter(e => e.p === project.id);
+    const question = entries.length
+      ? `Poistetaanko projekti ”${project.n}” ja sen ${entries.length} kirjausta (${hoursText(entries.reduce((sum, e) => sum + e.h, 0))})?`
+      : `Poistetaanko projekti ”${project.n}”?`;
+    if (!(await appConfirm(question, {yes:'Poista', glyph:'trash-2', danger:true}))) return;
+    const previous = {pr:S.pr, en:S.en};
+    S.pr = S.pr.filter(p => p.id !== project.id);
+    S.en = S.en.filter(e => e.p !== project.id);
+    if (!save()) { S.pr = previous.pr; S.en = previous.en; return; }
+    render(1);
+    toast('Projekti poistettu');
   });
 
   function toolbar(title) {
