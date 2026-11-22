@@ -1,7 +1,11 @@
 // LetterPilot Cloudflare Worker: forwards page requests to Google Gemini only.
 // Secrets (Cloudflare → Worker → Settings → Variables and Secrets):
-//   GEMINI_API_KEY          key from aistudio.google.com
-//   LETTERPILOT_TEST_TOKEN  access code given to testers (24+ characters)
+//   GEMINI_API_KEY            key from aistudio.google.com
+//   LETTERPILOT_ADMIN_TOKEN   password for the code management page (letterpilot/admin.html)
+//   LETTERPILOT_TEST_TOKEN    optional old shared access code (still accepted while it exists)
+// Bindings:
+//   LP_KV     Workers KV namespace that stores personal access codes under the key "codes"
+//   LIMITS    Durable Object namespace (class Limiter): per-code request counters
 const ORIGIN = "https://aslipixel.github.io";
 // The website plus the iPhone (capacitor://localhost) and Android (https://localhost) apps.
 const ALLOWED = [ORIGIN, "capacitor://localhost", "https://localhost"];
@@ -12,6 +16,9 @@ const GEMINI_MODELS = [
   { model: "gemini-flash-latest", thinking: { thinkingLevel: "low" } }
 ];
 const MAX_BODY = 7 * 1024 * 1024;
+// Requests allowed for each access code.
+const PER_MINUTE = 10;
+const PER_DAY = 200;
 
 function headers(origin) {
   return {
@@ -19,8 +26,8 @@ function headers(origin) {
     "Cache-Control": "no-store",
     ...(ALLOWED.includes(origin) ? {
       "Access-Control-Allow-Origin": origin,
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, X-LetterPilot-Token",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-LetterPilot-Token, X-Admin-Token",
       "Vary": "Origin"
     } : {})
   };
@@ -86,8 +93,68 @@ async function callGemini(key, model, base, thinking) {
   return { ok: true, content: [{ type: "text", text }], stop_reason: fr === "MAX_TOKENS" ? "max_tokens" : "end_turn" };
 }
 
+// ---------- personal access codes (stored in KV as one JSON object: { code: {name, created, lastUsed, disabled} }) ----------
+let codesCache = null, codesAt = 0;
+async function loadCodes(env, fresh) {
+  if (!env.LP_KV) return {};
+  if (!fresh && codesCache && Date.now() - codesAt < 20000) return codesCache;
+  codesCache = (await env.LP_KV.get("codes", "json")) || {};
+  codesAt = Date.now();
+  return codesCache;
+}
+async function saveCodes(env, codes) {
+  await env.LP_KV.put("codes", JSON.stringify(codes));
+  codesCache = codes; codesAt = Date.now();
+}
+function newCode() {
+  const b = new Uint8Array(18); crypto.getRandomValues(b);
+  return "LP-" + btoa(String.fromCharCode(...b)).replace(/\+/g, "A").replace(/\//g, "B").replace(/=+$/, "");
+}
+const today = () => new Date().toISOString().slice(0, 10);
+async function checkCode(env, code, ctx) {
+  if (!code || code.length < 16) return null;
+  if (env.LETTERPILOT_TEST_TOKEN && code === env.LETTERPILOT_TEST_TOKEN) return { name: "legacy" };
+  const codes = await loadCodes(env);
+  const c = codes[code];
+  if (!c || c.disabled) return null;
+  if (c.lastUsed !== today()) { // remember the day of last use (at most one write per code per day)
+    const fresh = await loadCodes(env, true);
+    if (fresh[code]) { fresh[code].lastUsed = today(); ctx.waitUntil(saveCodes(env, fresh)); }
+  }
+  return c;
+}
+async function handleAdmin(request, env, url, origin) {
+  const adm = request.headers.get("X-Admin-Token") || "";
+  if (!env.LETTERPILOT_ADMIN_TOKEN || adm.length < 24 || adm !== env.LETTERPILOT_ADMIN_TOKEN) return respond({ error: "Invalid admin password" }, 401, origin);
+  if (!env.LP_KV) return respond({ error: "Code storage is not connected" }, 503, origin);
+  const codes = await loadCodes(env, true);
+  if (url.pathname === "/admin/codes" && request.method === "GET") {
+    return respond({ codes: Object.entries(codes).map(([code, c]) => ({ code, ...c })) }, 200, origin);
+  }
+  const body = await request.json().catch(() => ({}));
+  if (url.pathname === "/admin/codes" && request.method === "POST") {
+    const name = String(body.name || "").trim().slice(0, 60) || "Без имени";
+    const code = newCode();
+    codes[code] = { name, created: today(), lastUsed: "", disabled: false };
+    await saveCodes(env, codes);
+    return respond({ code, ...codes[code] }, 200, origin);
+  }
+  if (url.pathname === "/admin/codes/update" && request.method === "POST") {
+    const code = String(body.code || "");
+    if (!codes[code]) return respond({ error: "No such code" }, 404, origin);
+    if (body.delete) delete codes[code];
+    else {
+      if (typeof body.disabled === "boolean") codes[code].disabled = body.disabled;
+      if (typeof body.name === "string" && body.name.trim()) codes[code].name = body.name.trim().slice(0, 60);
+    }
+    await saveCodes(env, codes);
+    return respond({ ok: true }, 200, origin);
+  }
+  return respond({ error: "Not found" }, 404, origin);
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const geminiKey = env.GEMINI_API_KEY || "";
     const origin = request.headers.get("Origin") || "";
     const url = new URL(request.url);
@@ -103,8 +170,16 @@ export default {
         service: "letterpilot",
         geminiModels: GEMINI_MODELS.map(m => m.model),
         geminiKeySet: !!geminiKey,
+        codeStorage: !!env.LP_KV,
+        rateLimit: !!env.LIMITS,
+        adminSet: !!env.LETTERPILOT_ADMIN_TOKEN,
         testTokenSet: !!env.LETTERPILOT_TEST_TOKEN
       }, 200, origin);
+    }
+
+    if (url.pathname.startsWith("/admin/")) {
+      if (!ALLOWED.includes(origin)) return respond({ error: "Origin not allowed" }, 403, origin);
+      return handleAdmin(request, env, url, origin);
     }
 
     if (url.pathname !== "/api" || request.method !== "POST") {
@@ -112,15 +187,19 @@ export default {
     }
     if (!ALLOWED.includes(origin)) return respond({ error: "Origin not allowed" }, 403, origin);
 
-    if (!geminiKey || !env.LETTERPILOT_TEST_TOKEN) {
-      const missing = [!geminiKey && "GEMINI_API_KEY", !env.LETTERPILOT_TEST_TOKEN && "LETTERPILOT_TEST_TOKEN"].filter(Boolean).join(", ");
+    if (!geminiKey) {
+      const missing = "GEMINI_API_KEY";
       console.log("Missing secrets:", missing);
       return respond({ error: "Server secrets not configured: " + missing }, 503, origin);
     }
 
     const token = request.headers.get("X-LetterPilot-Token") || "";
-    if (token.length < 24 || token !== env.LETTERPILOT_TEST_TOKEN) {
-      return respond({ error: "Invalid test access code" }, 401, origin);
+    const who = await checkCode(env, token, ctx);
+    if (!who) return respond({ error: "Invalid or disabled access code" }, 401, origin);
+    if (env.LIMITS) {
+      const stub = env.LIMITS.get(env.LIMITS.idFromName(token));
+      const lim = await stub.fetch(`https://limiter/hit?min=${PER_MINUTE}&day=${PER_DAY}`).then(r => r.json()).catch(() => ({ ok: true }));
+      if (!lim.ok) return respond({ error: lim.why === "day" ? `Daily limit reached for this access code (${PER_DAY} requests): try again tomorrow` : `Too many requests for this access code (${PER_MINUTE} per minute): wait a minute`, status: 429 }, 429, origin);
     }
 
     if (!(request.headers.get("Content-Type") || "").startsWith("application/json")) {
@@ -192,3 +271,22 @@ export default {
     }
   }
 };
+
+// One instance per access code (idFromName(code)) keeps that code's counters.
+export class Limiter {
+  constructor(state) { this.state = state; }
+  async fetch(request) {
+    const u = new URL(request.url);
+    const perMin = Number(u.searchParams.get("min")) || 10, perDay = Number(u.searchParams.get("day")) || 200;
+    const now = Date.now(), day = new Date().toISOString().slice(0, 10);
+    const s = (await this.state.storage.get("s")) || { m: [], day, d: 0 };
+    if (s.day !== day) { s.day = day; s.d = 0; }
+    s.m = s.m.filter(t => now - t < 60000);
+    let res;
+    if (s.m.length >= perMin) res = { ok: false, why: "minute" };
+    else if (s.d >= perDay) res = { ok: false, why: "day" };
+    else { s.m.push(now); s.d++; res = { ok: true, today: s.d }; }
+    await this.state.storage.put("s", s);
+    return new Response(JSON.stringify(res), { headers: { "Content-Type": "application/json" } });
+  }
+}
