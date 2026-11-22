@@ -266,7 +266,13 @@
     const row = record(id);if (!row) return;
     draft=null;entryDay=row.d;
     const info=[['Päivä',dateLabel(row.d)],['Työlaji',typeInfo().label(row.t)],['Projektinumero',pn(row.p)],['Työmaan osoite',pa(row.p)],['Työaika',row.start&&row.end?row.start+'–'+row.end:''],['Tunnit',hoursLabel(row.h)],['Kommentti',row.c]];
-    layout('Kirjauksen tiedot',`<div class="teras-editor"><dl>${info.filter(([,v])=>v).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div class="teras-dialog-actions">${action('edit','Muokkaa','pencil',id)}${action('remove','Poista','trash-2',id)}</div></div>`);
+    const project=S.pr.find(p=>p.id===row.p);
+    // Travel for the day: one-way km and the daily allowance, shown under the site address.
+    const travel=project?.a&&!typeInfo().isAbsence(row.t)
+      ? `<dt>Matka</dt><dd>${validDistance(project)?esc(kilometres.format(project.route.km)+' km · Matkakorvaus '+dailyTravel(project.route.km)+' / päivä'):distanceBadge(project.id,true)}</dd>`:'';
+    const rows=info.filter(([,v])=>v).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`+(k==='Työmaan osoite'?travel:'')).join('');
+    layout('Kirjauksen tiedot',`<div class="teras-editor"><dl>${rows}</dl><div class="teras-dialog-actions">${action('edit','Muokkaa','pencil',id)}${action('remove','Poista','trash-2',id)}</div></div>`);
+    if (travel && !validDistance(project)) refreshDistances();
   }
   async function remove(id) {
     const row = record(id);
