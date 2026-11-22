@@ -113,6 +113,7 @@ function newCode() {
 const today = () => new Date().toISOString().slice(0, 10);
 async function checkCode(env, code, ctx) {
   if (!code || code.length < 16) return null;
+  if (env.LETTERPILOT_ADMIN_TOKEN && code.length >= 24 && code === env.LETTERPILOT_ADMIN_TOKEN) return { name: "Администратор", admin: true };
   if (env.LETTERPILOT_TEST_TOKEN && code === env.LETTERPILOT_TEST_TOKEN) return { name: "legacy" };
   const codes = await loadCodes(env);
   const c = codes[code];
@@ -175,6 +176,14 @@ export default {
         adminSet: !!env.LETTERPILOT_ADMIN_TOKEN,
         testTokenSet: !!env.LETTERPILOT_TEST_TOKEN
       }, 200, origin);
+    }
+
+    if (url.pathname === "/whoami" && request.method === "GET") {
+      // Tells the page whether the entered code works and whether it is the administrator's.
+      if (!ALLOWED.includes(origin)) return respond({ error: "Origin not allowed" }, 403, origin);
+      const who = await checkCode(env, request.headers.get("X-LetterPilot-Token") || "", ctx);
+      if (!who) return respond({ ok: false }, 401, origin);
+      return respond({ ok: true, admin: !!who.admin, name: who.name }, 200, origin);
     }
 
     if (url.pathname.startsWith("/admin/")) {
