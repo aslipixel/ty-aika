@@ -40,7 +40,7 @@
   }
 
   // Projektit: one compact row per day and project ("Ma 16.11. · E1204401 · 5 h Sovittu, 3 h Lasku").
-  // The small button opens the details: each entry with its comment, then the address and travel once.
+  // The small button opens the details: each entry with its hours, work type and comment.
   const groupNames = {':absence':'Poissaolo', ':deleted':'Poistettu projekti', ':none':'Ei projektia'};
   const hoursText = h => formatHours.format(h) + ' h';
   function groupKey(entry) {
@@ -62,17 +62,14 @@
     const date = pd(day), project = S.pr.find(p => p.id === key);
     const name = project?.n || groupNames[key] || 'Ei projektia';
     const types = byType(entries), total = entries.reduce((sum, e) => sum + e.h, 0);
-    const work = entries.some(e => !isAbsence(e.t));
-    // With one entry per type the lines show the comments; otherwise the type totals come first.
     const lines = entries.map(entryLine).join('');
-    const place = project?.a ? `<div class="pj-place">${icon('map-pin')}<span>${esc(project.a)}</span></div><div class="pj-travel">${distanceBadge(project.id, work)}</div>` : '';
     return `<details class="pj-row">
       <summary aria-label="${esc(DL[wd(date)]+' '+fd(date)+' '+name+' '+hoursText(total))}. Näytä tiedot.">
         <span class="pj-date"><b>${DN[wd(date)]}</b><span>${fd(date)}</span></span>
         <span class="pj-main"><b class="pj-name">${esc(name)}</b><span class="pj-types">${types.map(x => `${hoursText(x.h)} ${esc(label(x.t))}`).join(' · ')}</span></span>
         <span class="pj-more" aria-hidden="true">${icon('chevron-down')}</span>
       </summary>
-      <div class="pj-details">${lines}${place}</div>
+      <div class="pj-details">${lines}</div>
     </details>`;
   }
 

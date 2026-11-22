@@ -446,7 +446,3 @@ html.teras #v[data-surface] h3.pj-month { margin: 18px 4px 8px; }
 .teras .pj-entry { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 10px; background: var(--lil); color: var(--ink); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
 .teras .pj-entry b { min-width: 34px; font-variant-numeric: tabular-nums; }
 .teras .pj-entry small { flex-basis: 100%; padding-left: 44px; color: var(--mut); font-size: 13px; }
-.teras .pj-place { display: flex; align-items: flex-start; gap: 6px; margin-top: 4px; color: var(--ink); font-size: 14px; overflow-wrap: anywhere; }
-.teras .pj-place svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--mut); }
-.teras .pj-travel { color: var(--mut); font-size: 13px; padding-left: 22px; }
-.teras .pj-travel:empty { display: none; }
