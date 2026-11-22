@@ -371,12 +371,18 @@
 
 @media (max-width: 680px), (pointer: coarse) {
   .teras dialog.web-entry-dialog {
+    --entry-top-gap: max(8px, env(safe-area-inset-top, 0px));
+    --entry-bottom-gap: max(8px, env(safe-area-inset-bottom, 0px));
     position: fixed;
-    top: calc(var(--visible-top, 0px) + 8px);
+    top: calc(var(--visible-top, 0px) + var(--entry-top-gap));
     bottom: auto;
     margin: 0 auto;
-    max-height: calc(var(--visible-height, 100vh) - 16px);
+    max-height: calc(var(--visible-height, 100dvh) - var(--entry-top-gap) - var(--entry-bottom-gap));
     overflow: hidden;
+  }
+  .teras .web-entry-dialog > .teras-editor {
+    flex: 0 1 auto;
+    overflow-y: auto;
   }
   .teras .web-entry-dialog form.teras-editor {
     grid-auto-rows: max-content;
