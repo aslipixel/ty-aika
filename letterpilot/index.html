@@ -512,7 +512,7 @@ const I18N = {
   en: {
     roleOk: "✓ Code accepted", roleAdmin: "✓ Administrator: code management is available below", roleBad: "Code not found or disabled", adminH: "Administrator", adminOpen: "Manage access codes", adminTitle: "Access codes", adminLead: "Each person gets their own code. Limit per code: 10 requests a minute, 200 a day.", adminPw: "Administrator password", adminLogin: "Sign in", adminPwNote: "Saved on this device only. Never share it: it can create and delete codes.", adminNew: "New code for…", adminNamePh: "e.g. Friend Misha", adminCreate: "Create", adminAll: "All codes", adminRefresh: "Refresh", adminBadPw: "Wrong administrator password.", adminNone: "No codes yet. Create the first one above.", adminOn: "Active", adminOff: "Disabled", adminCreatedOn: "Created", adminLast: "Last used", adminNever: "not used yet", adminDisable: "Disable", adminEnable: "Enable", adminDelete: "Delete", adminDelQ: "Delete this code for good?", adminYes: "Yes, delete", adminCancel: "Cancel", adminShare: "Share", adminMade: "Code created. Send it to this person: they enter it in LetterPilot → ⚙️ Settings.", adminShareText: "Your LetterPilot access code (enter it in ⚙️ Settings):", adminNet: "The server didn't answer. Try again.",
     camDenied: "No camera access. Take a photo instead.", camAutoOn: "Auto", camAutoOff: "Manual", camPoint: "Point the camera at a document", camFound: "Document found", camHold: "Hold still…", camSaved: "Page saved. Next page?", camNext: "Turn the page or tap Done",
-    apiKey: "LetterPilot access code", apiKeyNote: "Needed only on this website. Enter your personal access code (not a Gemini key). It stays saved in this browser until you clear the site data; documents are sent through the LetterPilot server to Gemini.", needKey: "Enter your access code in Settings to analyze documents.", badKey: "The access code was rejected. Check it in Settings.",
+    apiKey: "LetterPilot access code", apiKeyNote: "Needed only on this website. Enter your personal access code (not an AI provider key). It stays saved in this browser until you clear the site data; documents are sent through the LetterPilot server to NVIDIA first when configured, and to Google Gemini if needed.", needKey: "Enter your access code in Settings to analyze documents.", badKey: "The access code was rejected. Check it in Settings.",
     home: "Home", settings: "Settings", newShort: "New", newDoc: "New document", heroTitle: "Understand any letter.",
     heroSub: "Translation, a plain-language explanation, deadlines, advice and a ready reply.",
     pastePh: "Paste the text of a letter, notice, invoice or contract in any language",
@@ -562,7 +562,7 @@ const I18N = {
   ru: {
     roleOk: "✓ Код принят", roleAdmin: "✓ Администратор: ниже доступно управление кодами", roleBad: "Код не найден или отключён", adminH: "Администратор", adminOpen: "Управление кодами", adminTitle: "Коды доступа", adminLead: "У каждого человека свой код. Лимит на код: 10 запросов в минуту, 200 в день.", adminPw: "Пароль администратора", adminLogin: "Войти", adminPwNote: "Сохраняется только на этом устройстве. Никому не давайте: с ним можно создавать и удалять коды.", adminNew: "Новый код для…", adminNamePh: "Например: Друг Миша", adminCreate: "Создать", adminAll: "Все коды", adminRefresh: "Обновить", adminBadPw: "Неверный пароль администратора.", adminNone: "Кодов пока нет. Создайте первый выше.", adminOn: "Работает", adminOff: "Отключён", adminCreatedOn: "Создан", adminLast: "Последний раз", adminNever: "ещё не пользовались", adminDisable: "Отключить", adminEnable: "Включить", adminDelete: "Удалить", adminDelQ: "Удалить этот код навсегда?", adminYes: "Да, удалить", adminCancel: "Отмена", adminShare: "Поделиться", adminMade: "Код создан. Отправьте его этому человеку: он вводит его в LetterPilot → ⚙️ Настройки.", adminShareText: "Твой код доступа к LetterPilot (вводится в ⚙️ Настройках):", adminNet: "Сервер не ответил. Попробуйте ещё раз.",
     camDenied: "Нет доступа к камере. Сделайте фото.", camAutoOn: "Авто", camAutoOff: "Вручную", camPoint: "Наведите камеру на документ", camFound: "Документ найден", camHold: "Не двигайте…", camSaved: "Страница сохранена. Следующая?", camNext: "Переверните страницу или нажмите «Готово»",
-    apiKey: "Код доступа LetterPilot", apiKeyNote: "Нужен только на этом сайте. Введите свой код доступа (не ключ Gemini). Сохраняется в этом браузере, пока вы не очистите данные сайта; документы идут через сервер LetterPilot в Gemini.", needKey: "Введите код доступа в настройках, чтобы разбирать документы.", badKey: "Код доступа не принят. Проверьте его в настройках.",
+    apiKey: "Код доступа LetterPilot", apiKeyNote: "Нужен только на этом сайте. Введите свой код доступа (не API-ключ). Сохраняется в этом браузере, пока вы не очистите данные сайта; документы идут через сервер LetterPilot сначала в NVIDIA, если сервис подключён, а при необходимости — в Google Gemini.", needKey: "Введите код доступа в настройках, чтобы разбирать документы.", badKey: "Код доступа не принят. Проверьте его в настройках.",
     home: "Домой", settings: "Настройки", newShort: "Новый", newDoc: "Новый документ", heroTitle: "Поймите любое письмо.",
     heroSub: "Перевод, объяснение простыми словами, сроки, советы и готовый ответ.",
     pastePh: "Вставьте текст письма, уведомления, счёта или договора на любом языке",
@@ -657,9 +657,8 @@ $("lang").onchange = () => store.set("lang", $("lang").value);
 /* ================= Claude (viewer's account) ================= */
 let sample = null, maxImages = 0;
 const inClaude = !!window.claude?.use;
-// On the website, requests go through the LetterPilot Cloudflare Worker (Gemini); no AI key is ever in the browser.
+// On the website, requests go through the LetterPilot Cloudflare Worker; no AI key is ever in the browser.
 const WORKER_URL = "https://letterpilot-ai.asl-icopal.workers.dev";
-const WORKER_MODEL = "gemini-2.5-flash"; // the Worker picks the real model
 // The access code stays in this browser until the site data is cleared (moved over from the older per-tab storage).
 const tokenGet = () => { try { let v = localStorage.getItem("lp_test_token") || ""; if (!v) { v = sessionStorage.getItem("lp_test_token") || ""; if (v) localStorage.setItem("lp_test_token", v); } return v; } catch { return ""; } };
 const tokenSet = v => { try { if (v) localStorage.setItem("lp_test_token", v); else localStorage.removeItem("lp_test_token"); } catch {} };
@@ -688,7 +687,7 @@ function makeApiSample() {
       res = await fetch(WORKER_URL + "/api", {
         method: "POST", signal: o.signal,
         headers: { "Content-Type": "application/json", "X-LetterPilot-Token": token },
-        body: JSON.stringify({ model: WORKER_MODEL, max_tokens: o.modelTier === "quick" ? 8000 : 16000, messages: msgs })
+        body: JSON.stringify({ analysis: o.analysis === true, max_tokens: o.modelTier === "quick" ? 8000 : 16000, messages: msgs })
       });
       data = await res.json().catch(() => ({}));
     } catch (e) {
@@ -696,7 +695,7 @@ function makeApiSample() {
       throw { code: "upstream_error" };
     }
     if (!res.ok) {
-      const detail = [data.error, data.status ? "APInex " + data.status : "", data.detail].filter(Boolean).join(" · ").slice(0, 300);
+      const detail = [data.error, data.status ? "API " + data.status : "", data.detail].filter(Boolean).join(" · ").slice(0, 300);
       throw { code: res.status === 401 ? "auth" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : "upstream_error", detail };
     }
     if (data.stop_reason === "refusal") throw { code: "refused" };
@@ -706,7 +705,7 @@ function makeApiSample() {
     return { text, truncated: data.stop_reason === "max_tokens" };
   }
   const s = (i, o) => run(i, o);
-  s.json = async (i, o) => parseJsonLoose((await run(i, o)).text);
+  s.json = async (i, o) => parseJsonLoose((await run(i, { ...o, analysis: true })).text);
   s.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 10 } });
   return s;
 }
