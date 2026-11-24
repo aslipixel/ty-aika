@@ -1,5 +1,6 @@
-// LetterPilot Cloudflare Worker: forwards page requests to Google Gemini only.
+// LetterPilot Cloudflare Worker: uses NVIDIA first, then Google Gemini on provider failure.
 // Secrets (Cloudflare → Worker → Settings → Variables and Secrets):
+//   NVIDIA_API_KEY            key for the NVIDIA hosted inference API
 //   GEMINI_API_KEY            key from aistudio.google.com
 //   LETTERPILOT_ADMIN_TOKEN   password for the code management page (letterpilot/admin.html)
 //   LETTERPILOT_TEST_TOKEN    optional old shared access code (still accepted while it exists)
@@ -11,6 +12,7 @@ const ORIGIN = "https://aslipixel.github.io";
 const ALLOWED = [ORIGIN, "capacitor://localhost", "https://localhost"];
 // Tried in order; the next one is used when a model is refused (missing, payment, rate limit, overloaded).
 // Measured: flash-lite answers a full analysis in ~5 s; flash with low thinking ~40 s (backup).
+const NVIDIA_MODEL = "nvidia/nemotron-nano-12b-v2-vl";
 const GEMINI_MODELS = [
   { model: "gemini-flash-lite-latest" },
   { model: "gemini-flash-latest", thinking: { thinkingLevel: "low" } }
@@ -62,6 +64,47 @@ function convertPart(part) {
   }
 
   throw new Error("Unsupported message part");
+}
+
+async function callNvidia(key, base, analysis) {
+  const messages = [];
+  if (base.system) messages.push({ role: "system", content: base.system });
+  for (const { role, content } of base.messages) {
+    if (content.every(p => p.type === "text")) {
+      messages.push({ role, content: content.map(p => p.text).join("\n") });
+      continue;
+    }
+    // Pass the full request to Gemini when NVIDIA cannot accept this attachment.
+    if (role !== "user" || content.some(p => p.type === "document")) {
+      return { ok: false, status: 415, text: "Unsupported NVIDIA attachment" };
+    }
+    messages.push({ role, content: content.map(p => p.type === "text" ? p : {
+      type: "image_url", image_url: { url: "data:" + p.source.media_type + ";base64," + p.source.data }
+    }) });
+  }
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    signal: AbortSignal.timeout(30000),
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+    body: JSON.stringify({ model: NVIDIA_MODEL, messages, temperature: base.temperature,
+      max_tokens: Math.min(base.max_tokens, 8192), stream: false })
+  });
+  if (!res.ok) return { ok: false, status: res.status, text: "NVIDIA request failed" };
+  const choice = (await res.json()).choices?.[0];
+  if (choice?.finish_reason === "content_filter" || choice?.message?.refusal) {
+    return { ok: true, content: [], stop_reason: "refusal" };
+  }
+  const text = choice?.message?.content;
+  if (typeof text !== "string" || !text.trim()) return { ok: false, status: 502, text: "Empty NVIDIA response" };
+  if (analysis) {
+    try {
+      const parsed = JSON.parse(text.trim().replace(/^```(?:json)?\s*|\s*```$/gi, ""));
+      if (!Array.isArray(parsed?.paragraphs) || choice.finish_reason === "length") throw new Error();
+    } catch {
+      return { ok: false, status: 502, text: "Incomplete NVIDIA document analysis" };
+    }
+  }
+  return { ok: true, content: [{ type: "text", text }], stop_reason: choice.finish_reason === "length" ? "max_tokens" : "end_turn" };
 }
 
 // Converts the page's message format to Gemini's generateContent format and back.
@@ -156,6 +199,7 @@ async function handleAdmin(request, env, url, origin) {
 
 export default {
   async fetch(request, env, ctx) {
+    const nvidiaKey = env.NVIDIA_API_KEY || "";
     const geminiKey = env.GEMINI_API_KEY || "";
     const origin = request.headers.get("Origin") || "";
     const url = new URL(request.url);
@@ -169,6 +213,8 @@ export default {
       return respond({
         ok: true,
         service: "letterpilot",
+        nvidiaKeySet: !!nvidiaKey,
+        nvidiaModel: NVIDIA_MODEL,
         geminiModels: GEMINI_MODELS.map(m => m.model),
         geminiKeySet: !!geminiKey,
         codeStorage: !!env.LP_KV,
@@ -196,11 +242,7 @@ export default {
     }
     if (!ALLOWED.includes(origin)) return respond({ error: "Origin not allowed" }, 403, origin);
 
-    if (!geminiKey) {
-      const missing = "GEMINI_API_KEY";
-      console.log("Missing secrets:", missing);
-      return respond({ error: "Server secrets not configured: " + missing }, 503, origin);
-    }
+    if (!nvidiaKey && !geminiKey) return respond({ error: "No AI provider configured" }, 503, origin);
 
     const token = request.headers.get("X-LetterPilot-Token") || "";
     const who = await checkCode(env, token, ctx);
@@ -250,20 +292,24 @@ export default {
       };
 
       let last = null;
-      const attempts = GEMINI_MODELS.map(m => ({ provider: "gemini", model: m.model, thinking: m.thinking }));
+      const attempts = [];
+      if (nvidiaKey) attempts.push({ provider: "nvidia", model: NVIDIA_MODEL });
+      if (geminiKey) attempts.push(...GEMINI_MODELS.map(m => ({ provider: "gemini", ...m })));
       for (const { provider, model, thinking } of attempts) {
         let r;
         try {
-          r = await callGemini(geminiKey, model, base, thinking);
+          r = provider === "nvidia"
+            ? await callNvidia(nvidiaKey, base, body.analysis === true)
+            : await callGemini(geminiKey, model, base, thinking);
         } catch (e) {
           console.log("Could not reach", provider, String(e?.message || e));
           last = { provider, model, status: 502, text: "network error" };
           continue;
         }
-        if (r.ok) return respond({ content: r.content, stop_reason: r.stop_reason }, 200, origin);
+        if (r.ok) return respond({ provider, content: r.content, stop_reason: r.stop_reason }, 200, origin);
         console.log("Model error", provider, model, r.status, r.text);
         last = { provider, model, status: r.status, text: r.text };
-        if (![404, 429, 500, 503].includes(r.status)) break; // e.g. 400: the request itself is wrong
+        if (provider === "gemini" && ![404, 429, 500, 503].includes(r.status)) break; // e.g. 400: the request itself is wrong
       }
 
       const { provider, model, status, text } = last || { provider: "-", model: "-", status: 502, text: "" };
