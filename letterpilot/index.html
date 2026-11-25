@@ -1,1663 +1,317 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="LetterPilot AI: scan or open a letter and get a translation, a plain-language explanation, deadlines, advice and a ready reply.">
-<meta name="theme-color" content="#0071e3">
-<title>LetterPilot AI</title>
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-<style>
-/* Layout: one centered column (max 680px), sticky glass top bar, floating glass tab bar at the bottom of results. */
-/* One deliberate light look: Aqua (frosted glass, Apple blue). */
-:root{
-  --bg:#eef1f6;--bg-sheet:#f2f2f7;--blob1:rgba(120,170,255,.38);--blob2:rgba(200,170,255,.32);--blob3:rgba(120,220,200,.28);--card:rgba(255,255,255,.72);--card-solid:#ffffff;--bar:rgba(246,247,250,.78);--text:#1d1d1f;--muted:#6e6e73;--sep:rgba(60,60,67,.18);--sep2:rgba(60,60,67,.3);--edge:rgba(255,255,255,.7);--fill:rgba(118,118,128,.12);--fill2:rgba(118,118,128,.2);--tint:rgba(0,113,227,.1);--accent:#0071e3;--accent-text:#ffffff;--shadow:0 1px 2px rgba(0,0,0,.04),0 8px 28px rgba(30,60,120,.08);color-scheme:light;
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  --r-lg:22px;--r-md:14px;--r-sm:10px;
-  --ok:#248a3d;--warn:#b25000;--bad:#d70015;
-}
-
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{-webkit-text-size-adjust:100%}
-body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;line-height:1.47;letter-spacing:-.011em;-webkit-font-smoothing:antialiased;min-height:100vh}
-body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
-body.has-tabs{padding-bottom:calc(132px + env(safe-area-inset-bottom,0px))}
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:25;border-radius:0;border:0;border-top:.5px solid var(--sep);box-shadow:0 -4px 20px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;gap:4px;padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));background:var(--bar);transition:transform .28s ease}
-.dock[hidden]{display:none}
-.dk{flex:none;width:62px;border:0;background:transparent;border-radius:22px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 5px;color:var(--accent);font-size:10.5px;font-weight:600}
-.dk:hover{background:var(--tint)}
-.dk svg{width:24px;height:24px}
-.dk span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dock .go{flex:1;min-width:0;max-width:360px;padding:13px 14px}
-.dock .go span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.quick{position:fixed;left:0;right:0;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:24;display:flex;gap:8px;justify-content:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:2px max(12px,env(safe-area-inset-right,0px)) 6px max(12px,env(safe-area-inset-left,0px));transition:transform .28s ease,opacity .2s}
-.quick[hidden]{display:none}
-.quick::-webkit-scrollbar{display:none}
-.chip{flex:none;border:.5px solid var(--edge);background:var(--card);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:0 4px 16px rgba(0,0,0,.14);color:var(--accent);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
-.chip svg{width:18px;height:18px}
-.chip.pri{background:var(--accent);color:var(--accent-text);border-color:transparent}
-.chip:disabled{opacity:.5}
-.quick .composer{flex:1;box-shadow:0 4px 16px rgba(0,0,0,.14)}
-button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
-button{cursor:pointer}
-:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px;border-radius:8px}
-svg.i{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.backdrop{position:fixed;inset:0;z-index:-1;pointer-events:none;background:
-  radial-gradient(60vmax 50vmax at 12% -8%,var(--blob1),transparent 60%),
-  radial-gradient(55vmax 45vmax at 105% 12%,var(--blob2),transparent 62%),
-  radial-gradient(60vmax 50vmax at 50% 115%,var(--blob3),transparent 60%),var(--bg)}
-.glass{background:var(--card);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px)}
-
-/* top bar */
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bar)}
-.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bar);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--sep)}
-.topbar .in{max-width:680px;margin:0 auto;height:52px;display:flex;align-items:center;gap:8px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
-.tb-title{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:17px;min-width:0}
-.appicon{width:28px;height:28px;border-radius:8px;background:linear-gradient(160deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));display:grid;place-items:center;color:var(--accent-text);box-shadow:0 1px 3px rgba(0,0,0,.18)}
-.appicon svg{width:18px;height:18px;stroke-width:1.9}
-.iconbtn{width:40px;height:40px;border-radius:50%;border:0;background:transparent;color:var(--accent);display:grid;place-items:center}
-.iconbtn:hover{background:var(--fill)}
-.iconbtn[hidden]{display:none}
-.topbar{transition:transform .25s ease}
-.topbar.hide{transform:translateY(calc(-100% - env(safe-area-inset-top,0px) - 2px))}
-@media (prefers-reduced-motion:reduce){.topbar{transition:none}}
-.newbtn{border:0;background:var(--tint);color:var(--accent);border-radius:999px;height:34px;padding:0 12px 0 8px;display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:15px}
-.newbtn svg{width:18px;height:18px;stroke-width:2.1}
-.newbtn[hidden]{display:none}
-
-main{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px 48px}
-.large{font-size:34px;line-height:1.12;font-weight:700;letter-spacing:-.025em;margin:18px 0 6px;text-wrap:balance}
-.lead{color:var(--muted);font-size:17px;margin:0 0 18px;max-width:34em}
-.section-h{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:500;margin:22px 4px 8px}
-.group{border-radius:var(--r-lg);box-shadow:var(--shadow);border:.5px solid var(--edge);overflow:hidden}
-.pad{padding:16px}
-.muted{color:var(--muted)}
-.small{font-size:13px}
-textarea.doc{width:100%;min-height:150px;border:0;outline:none;background:transparent;resize:vertical;padding:16px;line-height:1.5;display:block}
-textarea.doc::placeholder,input::placeholder,textarea::placeholder{color:var(--muted)}
-.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 12px 12px}
-.tile{border:0;background:var(--fill);border-radius:var(--r-md);padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text)}
-.tile:hover{background:var(--fill2)}
-.tile .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--accent);background:var(--tint)}
-.tile .ic svg{width:24px;height:24px}
-.pages{display:flex;gap:10px;overflow-x:auto;padding:0 12px 12px;scrollbar-width:none}
-.pages:empty{display:none}
-.pages::-webkit-scrollbar{display:none}
-.pg{position:relative;flex:none;width:76px}
-.pg button.th{border:0;padding:0;width:76px;height:100px;border-radius:10px;overflow:hidden;background:var(--fill);display:block;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-.pg img{width:100%;height:100%;object-fit:cover;display:block}
-.pg .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--text);color:var(--bg);display:grid;place-items:center;font-size:13px;line-height:1}
-.pg .tag{position:absolute;left:4px;bottom:4px;font-size:10px;font-weight:600;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:1px 5px}
-.pg.txt button.th{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--accent);font-size:11px;font-weight:600;padding:6px;text-align:center}
-.pg.txt span{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
-.hint{font-size:13px;color:var(--muted);padding:0 16px 12px}
-.list{display:flex;flex-direction:column}
-.row{display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:50px;position:relative}
-.row+.row::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--sep)}
-.row label{flex:none;font-weight:500}
-.row select,.row input{flex:1;min-width:0;border:0;background:transparent;outline:none;text-align:right;color:var(--muted)}
-.row select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:18px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 7px) 55%,calc(100% - 2px) 55%;background-size:5px 5px;background-repeat:no-repeat}
-.row option{color:#000}
-.btn{border:0;border-radius:999px;padding:14px 20px;font-weight:600;font-size:17px;background:var(--accent);color:var(--accent-text);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s,opacity .2s}
-.btn:active{transform:scale(.98)}
-.btn:disabled{opacity:.45;cursor:default}
-.btn svg{width:20px;height:20px}
-.btn.wide{width:100%}
-.btn.sec{background:var(--fill);color:var(--accent)}
-.btn.sm{padding:8px 14px;font-size:15px}
-.linkbtn{border:0;background:none;color:var(--accent);font-weight:500;padding:6px 4px}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.actions .btn.wide{flex:1 1 100%}
-.err{white-space:pre-line;overflow-wrap:anywhere;background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad);border-radius:var(--r-md);padding:10px 14px;margin-top:12px;font-size:15px}
-.note{font-size:13px;color:var(--muted);margin:12px 4px}
-.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--sep)}
-.feat>div{background:var(--card-solid);padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
-.feat .ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:#fff;flex:none}
-.feat .ic svg{width:19px;height:19px;stroke-width:1.9}
-.feat b{display:block;font-size:15px}
-.feat p{margin:0;font-size:13px;color:var(--muted)}
-.hrow{width:100%;border:0;background:transparent;text-align:left}
-.hrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hrow small{color:var(--muted)}
-.hrow svg{color:var(--muted);width:16px;height:16px}
-
-/* results */
-.sum{padding:18px}
-.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.pill{font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;background:var(--fill);color:var(--text)}
-.pill.high{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
-.pill.medium{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
-.pill.low{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
-.sum h2{font-size:24px;line-height:1.2;letter-spacing:-.02em;margin:0 0 4px;text-wrap:balance}
-.want{display:flex;gap:10px;background:var(--tint);border-radius:var(--r-md);padding:12px 14px;margin:14px 0 10px}
-.want svg{color:var(--accent);margin-top:1px}
-.want b{display:block;font-size:13px;color:var(--accent);font-weight:600}
-.sum p{margin:0}
-.pane{display:none;margin-top:14px}
-.pane.on{display:block;animation:fade .2s ease}
-@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.pane.on{animation:none}.sheet{transition:none!important}}
-.pane-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 4px 10px}
-.pane-h h3{margin:0;font-size:22px;letter-spacing:-.02em}
-.para{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;position:relative}
-.para+.para::before{content:"";position:absolute;top:0;left:16px;right:16px;border-top:.5px solid var(--sep)}
-.para>div{min-width:0;overflow-wrap:anywhere}
-.para .o{color:var(--muted);font-size:15px}
-.para .n{grid-column:1/-1;display:flex;gap:8px;font-size:14px;background:var(--fill);border-radius:var(--r-sm);padding:8px 10px}
-.para .n svg{width:18px;height:18px;color:var(--warn)}
-.colh{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px 16px 0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-@media (max-width:600px){.para{grid-template-columns:1fr;gap:6px}.colh{display:none}}
-.dl{display:flex;gap:8px 12px;align-items:center;flex-wrap:wrap}
-.dl .txt{flex:1 1 160px;min-width:0}
-.left{display:inline-block;margin-left:6px;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--fill);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
-.left.soon{background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad)}
-.left.past{text-decoration:line-through}
-.inv .left{margin:4px 0 0}
-.dl .btn,.inv .btn{flex:none}
-.inv{gap:12px}
-.inv .vb{flex:1 1 0;min-width:0}
-.inv .lb{display:block;font-size:13px;color:var(--muted)}
-.inv .lb i{font-style:normal;opacity:.8}
-.inv .v{display:block;font-weight:600;overflow-wrap:anywhere}
-.inv .v.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:500;letter-spacing:.01em}
-.inv .v.amt{font-size:24px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.inv .v.bc{font-size:13px}
-.inv .wn{display:flex;gap:6px;align-items:flex-start;margin-top:4px;font-size:13px;font-weight:500;color:var(--warn)}
-.inv .wn svg{width:16px;height:16px;flex:none;margin-top:1px}
-.inv .bts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-@media (max-width:520px){.inv .cp{padding:10px;border-radius:50%}.inv .cp .lbl{display:none}.dl .btn{flex:1 1 100%}}
-.dl .d{flex:none;min-width:64px;text-align:center;border-radius:10px;background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad);font-weight:700;font-size:14px;padding:6px 8px;font-variant-numeric:tabular-nums}
-.check{display:flex;gap:12px;align-items:flex-start}
-.check .num{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-text);font-size:13px;font-weight:700;display:grid;place-items:center;margin-top:1px}
-.term b{display:block}
-.term span{color:var(--muted);font-size:15px}
-.tip{display:flex;gap:12px;align-items:flex-start}
-.tip svg{color:var(--accent);margin-top:1px}
-.opts{display:flex;flex-direction:column}
-.opt{border:0;background:transparent;text-align:left;display:flex;gap:12px;align-items:center;padding:12px 16px;position:relative;width:100%}
-.opt+.opt::before{content:"";position:absolute;top:0;left:52px;right:0;border-top:.5px solid var(--sep)}
-.opt .radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--sep2);flex:none;display:grid;place-items:center}
-.opt.on .radio{border-color:var(--accent);background:var(--accent)}
-.opt.on .radio::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent-text)}
-.opt b{display:block;font-weight:600}
-.opt span{color:var(--muted);font-size:14px}
-textarea.field{width:100%;border:0;outline:none;background:transparent;resize:vertical;padding:14px 16px;min-height:90px;display:block}
-.seg{display:flex;background:var(--fill);border-radius:10px;padding:2px;gap:2px}
-.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:7px 6px;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap}
-.seg button.on{background:var(--card-solid);box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.out{white-space:pre-wrap;padding:16px;min-height:72px;overflow-wrap:anywhere}
-.out:empty::before{content:attr(data-ph);color:var(--muted)}
-.chat{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.bub{max-width:85%;padding:9px 14px;border-radius:20px;white-space:pre-wrap;overflow-wrap:anywhere}
-.bub.u{align-self:flex-end;background:var(--accent);color:var(--accent-text);border-bottom-right-radius:6px}
-.bub.a{align-self:flex-start;background:var(--card-solid);border:.5px solid var(--edge);border-bottom-left-radius:6px}
-.composer{display:flex;margin:0;gap:8px;align-items:center;border-radius:999px;padding:5px 5px 5px 16px}
-.composer input{flex:1;min-width:0;border:0;outline:none;background:transparent;padding:8px 0}
-.send{width:36px;height:36px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-text);display:grid;place-items:center;flex:none}
-.send:disabled{opacity:.45}
-.send svg{width:18px;height:18px;stroke-width:2.2}
-.ok{color:var(--ok)}
-
-/* bottom tab bar */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:25;border-radius:0;border:0;border-top:.5px solid var(--sep);box-shadow:0 -4px 20px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;gap:0;padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));background:var(--bar);transition:transform .28s ease}
-.tabbar[hidden]{display:none}
-.tab{flex:1;min-width:0;max-width:110px;border:0;background:transparent;border-radius:22px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 5px;color:var(--muted);font-size:10.5px;font-weight:600}
-.tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.tab svg{width:24px;height:24px}
-.tab.on{color:var(--accent);background:var(--tint)}
-
-/* progress + toast */
-.busy{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(0,0,0,.25);padding:16px}
-.busy[hidden]{display:none}
-.busy .card{border-radius:var(--r-lg);padding:22px;width:min(320px,100%);text-align:center;box-shadow:var(--shadow);border:.5px solid var(--edge)}
-.spinner{width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:3px solid var(--fill2);border-top-color:var(--accent);animation:spin .9s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.busy b{display:block;font-size:17px}
-.busy p{margin:4px 0 14px;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
-.spin-sm{width:16px;height:16px;border-radius:50%;border:2px solid color-mix(in srgb,currentColor 35%,transparent);border-top-color:currentColor;animation:spin .8s linear infinite}
-.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));z-index:45;background:var(--text);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:var(--shadow)}
-.toast[hidden]{display:none}
-
-/* live camera */
-.cam{position:fixed;inset:0;z-index:60;background:#000;color:#fff}
-.cam[hidden]{display:none}
-.cam video,.cam svg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.cam polygon{fill:rgba(10,132,255,.22);stroke:#64d2ff;stroke-width:4;vector-effect:non-scaling-stroke;stroke-linejoin:round;transition:opacity .15s}
-.cam polygon.lock{fill:rgba(52,199,89,.25);stroke:#34c759}
-.cam-top{position:absolute;left:0;right:0;top:0;padding:calc(10px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px;background:linear-gradient(rgba(0,0,0,.55),transparent)}
-.cam-x{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;display:grid;place-items:center;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.cam-status{flex:1;text-align:center;font-weight:600;font-size:15px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-.cam-auto{border:0;border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px;background:rgba(255,255,255,.18);color:#fff;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
-.cam-auto.on{background:#ffd60a;color:#000}
-.cam-bottom{position:absolute;left:0;right:0;bottom:0;padding:18px max(20px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));display:flex;align-items:center;justify-content:space-between;background:linear-gradient(transparent,rgba(0,0,0,.6))}
-.shutter{width:74px;height:74px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.9);box-shadow:inset 0 0 0 3px #000}
-.shutter:active{transform:scale(.94)}
-.cam-thumb{width:54px;height:70px;border-radius:8px;overflow:hidden;background:rgba(255,255,255,.12)}
-.cam-thumb img{width:100%;height:100%;object-fit:cover}
-.cam-done{min-width:54px;border:0;background:none;color:#ffd60a;font-weight:600;font-size:17px;padding:8px 0;text-align:right}
-.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
-.flash.go{animation:flash .35s ease-out}
-@keyframes flash{0%{opacity:.85}100%{opacity:0}}
-
-/* sheets */
-.sheet-wrap{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center}
-.sheet-wrap[hidden]{display:none}
-.sheet{background:var(--bg-sheet);width:min(680px,100%);max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:8px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px));box-shadow:0 -10px 40px rgba(0,0,0,.25)}
-.grabber{width:36px;height:5px;border-radius:3px;background:var(--sep2);margin:0 auto 6px}
-.sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 8px}
-.sheet-h h3{margin:0;font-size:20px;letter-spacing:-.02em}
-.stage{position:relative;background:#111;border-radius:14px;overflow:hidden;touch-action:none;user-select:none}
-.stage img{display:block;width:100%;max-height:56vh;object-fit:contain}
-.stage svg{position:absolute;inset:0;width:100%;height:100%}
-.stage polygon{fill:rgba(10,132,255,.18);stroke:#0a84ff;stroke-width:2;vector-effect:non-scaling-stroke}
-.stage circle{fill:#fff;stroke:#0a84ff;stroke-width:3;vector-effect:non-scaling-stroke;cursor:grab}
-.result-pv{display:block;max-width:100%;max-height:40vh;margin:0 auto;border-radius:10px;box-shadow:var(--shadow)}
-/* bottom bars slide away while scrolling down */
-.dock.away,.tabbar.away{transform:translateY(calc(100% + 2px))}
-.quick.away{transform:translateY(calc(66px + env(safe-area-inset-bottom,0px)));opacity:0;pointer-events:none}
-.quick.low{bottom:calc(6px + env(safe-area-inset-bottom,0px))}
-@media (prefers-reduced-motion:reduce){.dock,.tabbar,.quick{transition:none}}
-.clear-x{position:absolute;top:10px;right:10px;z-index:2;border:0;border-radius:999px;background:var(--fill);color:var(--text);display:inline-flex;align-items:center;gap:4px;padding:5px 10px 5px 7px;font-size:13px;font-weight:600}
-.clear-x svg{width:15px;height:15px;stroke-width:2.2}
-.clear-x[hidden]{display:none}
-#inputGroup:has(.clear-x:not([hidden])) textarea.doc{padding-top:44px}
-.dock,.tabbar{background:color-mix(in srgb,var(--card-solid) 93%,transparent)}
-.quick{justify-content:safe center}
-.acode{display:grid;gap:6px;padding:12px 16px;position:relative}
-.acode+.acode::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--sep)}
-.acode .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.acode .val{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;background:var(--fill);border-radius:8px;padding:6px 9px;overflow-wrap:anywhere}
-.acode .acts{display:flex;gap:6px;flex-wrap:wrap}
-.acode .meta{font-size:13px;color:var(--muted)}
-.pill.on{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
-.pill.off{background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad)}
-.btn.danger{background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad)}
-.acreated{margin-top:10px;border-radius:14px;padding:12px;background:color-mix(in srgb,var(--ok) 10%,transparent);display:grid;gap:8px}
-</style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0d1117" />
+  <title>LetterPilot — работа с документами</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="i-house" viewBox="0 0 24 24"><path d="M3.5 10.5 12 3.8l8.5 6.7"/><path d="M5.5 9v10.2a.8.8 0 0 0 .8.8H10v-5.5h4V20h3.7a.8.8 0 0 0 .8-.8V9"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5"/><circle cx="12" cy="12" r="6.6"/></symbol>
-  <symbol id="i-letter" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m3.8 7 8.2 6 8.2-6"/></symbol>
-  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3.5 8V5.8a2.3 2.3 0 0 1 2.3-2.3H8M16 3.5h2.2a2.3 2.3 0 0 1 2.3 2.3V8M20.5 16v2.2a2.3 2.3 0 0 1-2.3 2.3H16M8 20.5H5.8a2.3 2.3 0 0 1-2.3-2.3V16"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/></symbol>
-  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m3.5 17 5-4.5 3.5 3 3-2.5 5.5 4.5"/></symbol>
-  <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M8.5 13.5h7M8.5 17h4.5"/></symbol>
-  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.5c.6 3.9 2.6 5.9 6.5 6.5-3.9.6-5.9 2.6-6.5 6.5-.6-3.9-2.6-5.9-6.5-6.5 3.9-.6 5.9-2.6 6.5-6.5z"/><path d="M18.5 15.5c.3 1.6 1 2.3 2.5 2.5-1.5.3-2.2 1-2.5 2.5-.3-1.5-1-2.2-2.5-2.5 1.5-.2 2.2-.9 2.5-2.5z"/></symbol>
-  <symbol id="i-translate" viewBox="0 0 24 24"><path d="M3.5 5.5h9M8 3.5v2M10.8 5.5c-.8 3.6-3.3 6.4-7 8"/><path d="M5.6 8.6c1 2 2.8 3.6 5 4.4"/><path d="m12.5 20.5 4-9.5 4 9.5M13.8 17.5h5.4"/></symbol>
-  <symbol id="i-checklist" viewBox="0 0 24 24"><path d="m3.5 6.5 1.6 1.6 3-3M3.5 12.5l1.6 1.6 3-3M3.5 18.5l1.6 1.6 3-3"/><path d="M11 6.5h9.5M11 12.5h9.5M11 18.5h9.5"/></symbol>
-  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6.5c-1.8-1.4-4.6-2-8-2v13c3.4 0 6.2.6 8 2 1.8-1.4 4.6-2 8-2v-13c-3.4 0-6.2.6-8 2z"/><path d="M12 6.5v13"/></symbol>
-  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 17.5h6M10 20.5h4"/><path d="M12 3.5a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2v1h5v-1c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3.5z"/></symbol>
-  <symbol id="i-reply" viewBox="0 0 24 24"><path d="M14.5 4.5 19.5 9.5 9 20H4v-5z"/><path d="m12.5 6.5 5 5"/></symbol>
-  <symbol id="i-bubble" viewBox="0 0 24 24"><path d="M20.5 11.5c0 4.1-3.8 7.5-8.5 7.5-1.2 0-2.3-.2-3.3-.6L4 20l1.3-3.6A7 7 0 0 1 3.5 11.5C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.5z"/><path d="M10 9.5a2 2 0 1 1 2.7 1.9c-.4.2-.7.6-.7 1.1v.5M12 15.2v.1"/></symbol>
-  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></symbol>
-  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></symbol>
-  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".9"/></symbol>
-  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.1"/></symbol>
-  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
-  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
-  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l.8 13a1.5 1.5 0 0 0 1.5 1.5h6.4a1.5 1.5 0 0 0 1.5-1.5l.8-13"/></symbol>
-  <symbol id="i-wand" viewBox="0 0 24 24"><path d="m4 20 11-11M13 7l4 4"/><path d="M18 3.5v3M16.5 5h3M20 10v2M19 11h2M10 3v2M9 4h2"/></symbol>
-  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
-</svg>
-<div class="backdrop" aria-hidden="true"></div>
-
-<header class="topbar" id="topbar">
-  <div class="in">
-    <button class="iconbtn" id="homeBtn" data-i18n-title="home" title="Home"><svg class="i"><use href="#i-house"/></svg></button>
-    <div class="tb-title"><span class="appicon"><svg class="i"><use href="#i-letter"/></svg></span>LetterPilot</div>
-    <button class="newbtn" id="newBtn" hidden><svg class="i"><use href="#i-plus"/></svg><span data-i18n="newShort">New</span></button>
-    <button class="iconbtn" id="setBtn" data-i18n-title="settings" title="Settings"><svg class="i"><use href="#i-gear"/></svg></button>
-  </div>
-</header>
-
-<main>
-  <section id="home">
-    <h1 class="large" data-i18n="heroTitle">Understand any letter.</h1>
-    <p class="lead" data-i18n="heroSub">Translation, a plain-language explanation, deadlines, advice and a ready reply.</p>
-
-    <div class="group glass" id="inputGroup" style="position:relative">
-      <button class="clear-x" id="clearTop" hidden><svg class="i"><use href="#i-x"/></svg><span data-i18n="clear">Clear</span></button>
-      <textarea class="doc" id="docText" data-i18n-ph="pastePh" placeholder="Paste the text of a letter, notice, invoice or contract in any language"></textarea>
-      <input type="file" id="scanIn" accept="image/*" capture="environment" hidden>
-      <input type="file" id="photoIn" accept="image/png,image/jpeg,image/webp,image/gif,image/heic" multiple hidden>
-      <input type="file" id="pdfIn" accept="application/pdf" hidden>
-      <div class="pages" id="pages"></div>
-      <div class="hint" id="pagesHint" hidden data-i18n="scanHint">Pages are cropped and straightened automatically. Tap a page to adjust it.</div>
-    </div>
-
-    <div class="group glass" style="margin-top:14px">
-      <div class="list">
-        <div class="row"><label for="lang" data-i18n="explainIn">Explain in</label><select id="lang"></select></div>
-        <div class="row"><label for="ctx" data-i18n="aboutYou">About you</label><input type="text" id="ctx" data-i18n-ph="aboutPh" placeholder="Optional"></div>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">AI</div>
+        <div class="brand-text">
+          <h1>LetterPilot <span>2.0</span></h1>
+          <p id="statusSubtitle">Готов к разбору документов</p>
+        </div>
       </div>
-    </div>
-
-    <div class="err" id="err" hidden></div>
-    <p class="note" id="noClaude" hidden data-i18n="noClaude">Open this page in Claude to analyze documents.</p>
-
-    <div id="histWrap" hidden>
-      <div class="section-h" style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="recent">Recent</span><button class="linkbtn small" id="wipeBtn" data-i18n="clearHistory">Clear</button></div>
-      <div class="group glass"><div class="list" id="hist"></div></div>
-    </div>
-
-    <div class="section-h" data-i18n="featTitle">What LetterPilot does</div>
-    <div class="group feat" id="feat"></div>
-  </section>
-
-  <section id="results" hidden>
-    <div class="group glass sum">
-      <div class="pills" id="pills"></div>
-      <h2 id="rTitle"></h2>
-      <div class="muted" id="rFrom"></div>
-      <div class="want"><svg class="i"><use href="#i-target"/></svg><div><b data-i18n="want">What they want</b><span id="rWant"></span></div></div>
-      <p id="rSummary"></p>
-    </div>
-
-    <div id="invWrap" hidden>
-      <div class="section-h" data-i18n="invoice">Invoice to pay</div>
-      <div class="group glass"><div class="list" id="invList"></div></div>
-      <p class="note" data-i18n="invCheck">Check the details against the original before paying: the numbers are read by AI.</p>
-    </div>
-
-    <div class="pane on" id="p-translation">
-      <div class="pane-h"><h3 data-i18n="tTranslation">Translation</h3><button class="btn sec sm" id="copyTr"><svg class="i"><use href="#i-copy"/></svg><span data-i18n="copy">Copy</span></button></div>
-      <div class="group glass"><div class="colh"><div data-i18n="original">Original</div><div data-i18n="translation">Translation</div></div><div id="paras"></div></div>
-    </div>
-
-    <div class="pane" id="p-todo">
-      <div id="dlWrap"><div class="section-h" data-i18n="deadlines">Deadlines</div><div class="group glass"><div class="list" id="deadlines"></div></div></div>
-      <div class="section-h" data-i18n="steps">What to do</div>
-      <div class="group glass"><div class="list" id="steps"></div></div>
-      <div id="amWrap"><div class="section-h" data-i18n="amounts">Amounts &amp; references</div><div class="group glass"><div class="list" id="amounts"></div></div></div>
-      <div id="riskWrap"><div class="section-h" data-i18n="ignored">If you do nothing</div><div class="group glass pad" id="risk"></div></div>
-    </div>
-
-    <div class="pane" id="p-terms">
-      <div class="pane-h"><h3 data-i18n="tTerms">Terms</h3></div>
-      <div class="group glass"><div class="list" id="terms"></div></div>
-    </div>
-
-    <div class="pane" id="p-tips">
-      <div class="pane-h"><h3 data-i18n="tipsTitle">How to reply</h3></div>
-      <div class="group glass"><div class="list" id="tips"></div></div>
-      <div id="toneWrap"><div class="section-h" data-i18n="tone">Tone of the letter</div><div class="group glass pad" id="tone"></div></div>
-    </div>
-
-    <div class="pane" id="p-reply">
-      <div class="pane-h"><h3 data-i18n="tReply">Reply</h3></div>
-      <div class="section-h" data-i18n="position">Your position</div>
-      <div class="group glass"><div class="opts" id="opts"></div></div>
-      <div class="section-h" data-i18n="notes">What do you want to say?</div>
-      <div class="group glass"><textarea class="field" id="notes" data-i18n-ph="notesPh" placeholder=""></textarea></div>
-      <div class="group glass" style="margin-top:14px"><div class="list">
-        <div class="row"><label for="replyLang" data-i18n="replyLang">Reply language</label><select id="replyLang"></select></div>
-        <div class="row"><label data-i18n="style">Style</label><div class="seg" id="styleSeg" style="flex:1"></div></div>
-      </div></div>
-      <div class="actions"><button class="btn wide" id="draftBtn"><svg class="i"><use href="#i-reply"/></svg><span data-i18n="write">Write reply</span></button></div>
-      <div class="err" id="draftErr" hidden></div>
-      <div class="pane-h" style="margin-top:20px"><h3 data-i18n="letter">Letter</h3><button class="btn sec sm" id="copyDraft"><svg class="i"><use href="#i-copy"/></svg><span data-i18n="copy">Copy</span></button></div>
-      <div class="group glass"><div class="out" id="draft" data-ph=""></div></div>
-      <div id="draftTrWrap"><div class="section-h" data-i18n="letterTr">Translation of your letter</div><div class="group glass"><div class="out" id="draftTr" data-ph=""></div></div></div>
-    </div>
-
-    <div class="pane" id="p-ask">
-      <div class="pane-h"><h3 data-i18n="tAsk">Ask</h3></div>
-      <p class="muted" style="margin:0 4px 12px" data-i18n="askIntro">Ask anything about this document.</p>
-      <div class="chat" id="chat"></div>
-      <form class="composer glass group" id="chatForm"><input type="text" id="chatIn" autocomplete="off" data-i18n-ph="askPh" placeholder="Your question"><button class="send" id="chatBtn" aria-label="Send"><svg class="i"><use href="#i-up"/></svg></button></form>
-      <div class="err" id="chatErr" hidden></div>
-    </div>
-
-    <div class="actions" style="margin-top:22px"><button class="btn sec wide" id="newBtn2"><svg class="i"><use href="#i-plus"/></svg><span data-i18n="newDoc">New document</span></button></div>
-    <p class="note" style="text-align:center;margin-top:16px" data-i18n="disclaimer">LetterPilot helps you understand a document but does not replace a lawyer.</p>
-  </section>
-</main>
-
-<div class="dock glass" id="dock">
-  <button class="dk" id="scanBtn"><svg class="i"><use href="#i-scan"/></svg><span data-i18n="dkScan">Scan</span></button>
-  <button class="dk" id="photoBtn"><svg class="i"><use href="#i-photo"/></svg><span data-i18n="photos">Photos</span></button>
-  <button class="dk" id="pdfBtn"><svg class="i"><use href="#i-pdf"/></svg><span data-i18n="pdf">PDF</span></button>
-  <button class="btn go" id="goBtn"><svg class="i"><use href="#i-sparkle"/></svg><span data-i18n="analyze">Analyze</span></button>
-</div>
-<div class="quick" id="quick" hidden></div>
-<nav class="tabbar glass" id="tabbar" hidden>
-  <button class="tab on" data-tab="translation"><svg class="i"><use href="#i-translate"/></svg><span data-i18n="tabTr">Translation</span></button>
-  <button class="tab" data-tab="todo"><svg class="i"><use href="#i-checklist"/></svg><span data-i18n="tabTodo">To do</span></button>
-  <button class="tab" data-tab="terms"><svg class="i"><use href="#i-book"/></svg><span data-i18n="tTerms">Terms</span></button>
-  <button class="tab" data-tab="tips"><svg class="i"><use href="#i-bulb"/></svg><span data-i18n="tTips">Tips</span></button>
-  <button class="tab" data-tab="reply"><svg class="i"><use href="#i-reply"/></svg><span data-i18n="tReply">Reply</span></button>
-  <button class="tab" data-tab="ask"><svg class="i"><use href="#i-bubble"/></svg><span data-i18n="tAsk">Ask</span></button>
-</nav>
-
-<div class="cam" id="cam" hidden>
-  <video id="camVideo" playsinline muted autoplay></video>
-  <svg id="camSvg" preserveAspectRatio="xMidYMid slice"><polygon id="camPoly"/></svg>
-  <div class="flash" id="flash"></div>
-  <div class="cam-top"><button class="cam-x" id="camClose" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button><span class="cam-status" id="camStatus"></span><button class="cam-auto" id="camAuto"></button></div>
-  <div class="cam-bottom"><div class="cam-thumb" id="camThumb"></div><button class="shutter" id="camShutter" aria-label="Capture"></button><button class="cam-done" id="camDone"></button></div>
-</div>
-<div class="busy" id="busy" hidden><div class="card glass"><div class="spinner"></div><b id="busyT"></b><p id="busyP"></p><button class="btn sec sm" id="stopBtn" data-i18n="stop">Stop</button></div></div>
-<div class="toast" id="toast" hidden></div>
-
-<div class="sheet-wrap" id="setSheet" hidden>
-  <div class="sheet" role="dialog" aria-modal="true">
-    <div class="grabber"></div>
-    <div class="sheet-h"><h3 data-i18n="settings">Settings</h3><button class="btn sec sm" data-close data-i18n="done">Done</button></div>
-    <div class="section-h" data-i18n="uiLang">Interface language</div>
-    <div class="seg" id="uiSeg"><button data-v="en">English</button><button data-v="ru">Русский</button></div>
-    <div id="keySection" hidden>
-      <div class="section-h" data-i18n="apiKey">LetterPilot access code</div>
-      <div class="group glass"><div class="list"><div class="row"><input type="password" id="apiKey" placeholder="••••••" autocomplete="off" style="text-align:left;color:var(--text)"></div></div></div>
-      <p class="note" id="codeStatus" hidden></p>
-      <p class="note" data-i18n="apiKeyNote"></p>
-      <div id="adminSection" hidden>
-      <div class="section-h" data-i18n="adminH">Administrator</div>
-      <div class="group glass"><div class="list"><button class="row hrow" id="adminOpen"><span data-i18n="adminOpen">Manage access codes</span><svg class="i"><use href="#i-chev"/></svg></button></div></div>
+      <div class="header-actions">
+        <button class="icon-btn" id="btnNewDoc" title="Новый документ" aria-label="Новый документ">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btnHistory" title="История" aria-label="История">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="btnSettings" title="Настройки API" aria-label="Настройки API">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09c-.66 0-1.25.4-1.51 1z"/>
+          </svg>
+        </button>
       </div>
+    </header>
+
+    <!-- Main Scrollable Content -->
+    <main class="app-main" id="appMain">
+
+      <!-- INPUT VIEW (shown initially or when adding a new document) -->
+      <section class="view active" id="viewInput">
+        <div class="card compact-card">
+          <div class="row-between mb-8">
+            <label class="label-sm" for="targetLang">Язык перевода и разбора</label>
+            <button class="chip-btn accent" id="btnLoadSample">⚡ Пример документа</button>
+          </div>
+          <select id="targetLang" class="input-select">
+            <option value="Русский" selected>Русский</option>
+            <option value="Suomi">Suomi (Финский)</option>
+            <option value="English">English (Английский)</option>
+            <option value="Deutsch">Deutsch (Немецкий)</option>
+            <option value="Українська">Українська</option>
+            <option value="Español">Español</option>
+            <option value="Français">Français</option>
+          </select>
+        </div>
+
+        <div class="card compact-card">
+          <label class="label-sm mb-6" for="docTextInput">Текст документа, письма или сообщения</label>
+          <textarea
+            id="docTextInput"
+            class="input-textarea"
+            rows="6"
+            placeholder="Вставьте текст на любом языке, либо прикрепите скриншот, фото или PDF ниже..."
+          ></textarea>
+
+          <!-- Upload Zone -->
+          <div class="upload-bar">
+            <label class="upload-btn" for="fileInput">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+              <span>Фото / Скрин / PDF</span>
+              <input type="file" id="fileInput" accept="image/*,.pdf,.txt" multiple hidden />
+            </label>
+            <button class="btn-ghost-sm" id="btnClearInput">Очистить</button>
+          </div>
+
+          <!-- Attached Files Preview -->
+          <div id="filePreviewList" class="file-list"></div>
+        </div>
+
+        <!-- API Key Warning Banner (auto-hidden when key or proxy is set) -->
+        <div id="apiNotice" class="notice-banner hidden">
+          <span>🔑 Введите код доступа в настройках (⚙), чтобы работать с документами.</span>
+        </div>
+
+        <button class="btn-primary btn-full" id="btnAnalyze">
+          <span class="btn-label">Разобрать и перевести</span>
+          <span class="spinner hidden" id="analyzeSpinner"></span>
+        </button>
+      </section>
+
+      <!-- TAB 1: РАЗБОР (ANALYSIS) -->
+      <section class="view" id="viewAnalysis">
+        <div id="analysisEmpty" class="empty-state">
+          <p>Сначала загрузите текст, скриншот или PDF для разбора.</p>
+          <button class="btn-secondary" data-goto="viewInput">Загрузить документ</button>
+        </div>
+
+        <div id="analysisContent" class="hidden">
+          <div class="meta-strip">
+            <span class="badge badge-lang" id="resLang">—</span>
+            <span class="badge badge-type" id="resType">—</span>
+            <span class="badge badge-urgency" id="resUrgency">—</span>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">📌 Главная суть</h2>
+            <p id="resSummary" class="body-text"></p>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">⚠️ Важные нюансы, сроки и риски</h2>
+            <div id="resNuances" class="nuance-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="row-between">
+              <h2 class="card-title mb-0">🌐 Полный перевод</h2>
+              <div class="btn-group">
+                <button class="chip-btn" id="btnToggleTrans">Показать</button>
+                <button class="chip-btn" id="btnCopyTrans">Копировать</button>
+              </div>
+            </div>
+            <div id="resTranslationWrap" class="translation-box hidden">
+              <p id="resTranslation" class="body-text pre-wrap"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: ЧТО ДЕЛАТЬ (ACTIONS) -->
+      <section class="view" id="viewActions">
+        <div id="actionsEmpty" class="empty-state">
+          <p>После разбора документа здесь появится пошаговый план действий.</p>
+          <button class="btn-secondary" data-goto="viewInput">Загрузить документ</button>
+        </div>
+
+        <div id="actionsContent" class="hidden">
+          <div class="card">
+            <h2 class="card-title">✅ Пошаговый план действий</h2>
+            <p class="muted-sm mb-10">Отмечайте выполненные шаги или нажмите «Подробнее», чтобы AI объяснил шаг в чате.</p>
+            <div id="actionChecklist" class="checklist"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: ОТВЕТИТЬ (REPLY GENERATOR) -->
+      <section class="view" id="viewReply">
+        <div id="replyEmpty" class="empty-state">
+          <p>Загрузите документ, чтобы сгенерировать готовый ответ на языке оригинала.</p>
+          <button class="btn-secondary" data-goto="viewInput">Загрузить документ</button>
+        </div>
+
+        <div id="replyContent" class="hidden">
+          <div class="card">
+            <h2 class="card-title">✉️ Сформировать ответ</h2>
+            <label class="label-sm mb-6">Быстрая реакция</label>
+            <div class="chips-wrap" id="replyIntentChips">
+              <button class="chip-select active" data-intent="Согласиться и подтвердить">Согласиться</button>
+              <button class="chip-select" data-intent="Уточнить детали и задать вопросы">Уточнить детали</button>
+              <button class="chip-select" data-intent="Попросить дополнительное время / отсрочку">Попросить отсрочку</button>
+              <button class="chip-select" data-intent="Вежливо отказаться или оспорить">Отказать / Оспорить</button>
+              <button class="chip-select" data-intent="Подтвердить получение документа">Подтвердить получение</button>
+            </div>
+
+            <label class="label-sm mt-10 mb-6" for="replyTone">Тон письма</label>
+            <select id="replyTone" class="input-select mb-10">
+              <option value="Официальный и деловой">Официальный / Деловой</option>
+              <option value="Вежливый и нейтральный" selected>Вежливый / Нейтральный</option>
+              <option value="Короткий для мессенджера">Короткий (SMS / WhatsApp)</option>
+              <option value="Строгий и настойчивый">Строгий / Настойчивый</option>
+            </select>
+
+            <label class="label-sm mb-6" for="replyCustomNote">Дополнительные пожелания (необязательно)</label>
+            <textarea
+              id="replyCustomNote"
+              class="input-textarea"
+              rows="2"
+              placeholder="Например: напиши, что смогу оплатить в пятницу, номер договора 4521..."
+            ></textarea>
+
+            <button class="btn-primary btn-full mt-10" id="btnGenReply">
+              <span class="btn-label">Сгенерировать ответ</span>
+              <span class="spinner hidden" id="replySpinner"></span>
+            </button>
+          </div>
+
+          <div id="replyResultCard" class="card hidden">
+            <div class="row-between mb-6">
+              <h3 class="card-title mb-0">📤 Текст для отправки (<span id="replyOrigLang">Оригинал</span>)</h3>
+              <button class="chip-btn" id="btnCopyReply">Копировать</button>
+            </div>
+            <div id="replyOrigText" class="reply-box pre-wrap"></div>
+
+            <h3 class="card-title mt-12 mb-6">🔍 Перевод вашего ответа (для проверки)</h3>
+            <div id="replyTransText" class="reply-box muted-box pre-wrap"></div>
+
+            <div class="share-row mt-12">
+              <button class="btn-secondary flex-1" id="btnShareEmail">📧 Email</button>
+              <button class="btn-whatsapp flex-1" id="btnShareWhatsApp">💬 WhatsApp</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: ЧАТ AI -->
+      <section class="view" id="viewChat">
+        <div class="chat-container">
+          <div id="chatMessages" class="chat-messages">
+            <div class="chat-bubble ai">
+              Привет! Я помню текущий документ и его разбор. Спросите меня о любых нюансах, законах, терминах или дальнейших действиях.
+            </div>
+          </div>
+
+          <div class="chat-quick-bar">
+            <button class="chip-btn quick-q">Какие риски, если проигнорировать?</button>
+            <button class="chip-btn quick-q">Объясни сложные термины</button>
+            <button class="chip-btn quick-q">Что спросить в ответ?</button>
+          </div>
+
+          <form id="chatForm" class="chat-input-bar">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Спросить AI по документу..." autocomplete="off" />
+            <button type="submit" class="chat-send-btn" id="btnSendChat" aria-label="Отправить">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar: Мои действия -->
+    <nav class="bottom-nav" aria-label="Мои действия">
+      <button class="nav-item active" data-tab="viewInput">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/>
+        </svg>
+        <span>Ввод</span>
+      </button>
+      <button class="nav-item" data-tab="viewAnalysis">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+        <span>Разбор</span>
+      </button>
+      <button class="nav-item" data-tab="viewActions">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        <span>Что делать</span>
+      </button>
+      <button class="nav-item" data-tab="viewReply">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/>
+        </svg>
+        <span>Ответить</span>
+      </button>
+      <button class="nav-item" data-tab="viewChat">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>Чат AI</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-backdrop" data-close="settingsModal"></div>
+    <div class="modal-sheet">
+      <div class="row-between mb-12">
+        <h2>⚙️ Подключение</h2>
+        <button class="icon-btn" data-close="settingsModal">✕</button>
+      </div>
+
+      <label class="label-sm mb-6" for="cfgAccessToken">Код доступа LetterPilot</label>
+      <input type="password" id="cfgAccessToken" class="input-text mb-10" autocomplete="off" placeholder="Введите код доступа" />
+
+      <label class="label-sm mb-6" for="cfgProvider">Сервис ИИ</label>
+      <select id="cfgProvider" class="input-select mb-10">
+        <option value="auto">Автоматически: NVIDIA, затем Gemini</option>
+        <option value="gemini">Gemini</option>
+        <option value="nvidia">NVIDIA</option>
+      </select>
+      <p class="muted-sm mb-12">Ключи Gemini и NVIDIA хранятся в Cloudflare. Код доступа действует только до закрытия вкладки.</p>
+
+      <button class="btn-primary btn-full" id="btnSaveSettings">Сохранить настройки</button>
     </div>
   </div>
-</div>
 
-<div class="sheet-wrap" id="adminSheet" hidden>
-  <div class="sheet" role="dialog" aria-modal="true">
-    <div class="grabber"></div>
-    <div class="sheet-h"><h3 data-i18n="adminTitle">Access codes</h3><button class="btn sec sm" data-close data-i18n="done">Done</button></div>
-    <p class="muted small" style="margin:0 0 6px" data-i18n="adminLead">Each person gets their own code. Limit per code: 10 requests a minute, 200 a day.</p>
-    <div class="err" id="adminErr" hidden></div>
-    <div id="adminPanel" hidden>
-      <div class="section-h" data-i18n="adminNew">New code for…</div>
-      <div class="group glass"><div class="list"><div class="row"><input type="text" id="adminName" maxlength="60" data-i18n-ph="adminNamePh" placeholder="e.g. Friend Misha" style="text-align:left;color:var(--text)"><button class="btn sm" id="adminCreate" data-i18n="adminCreate">Create</button></div></div></div>
-      <div id="adminCreated"></div>
-      <div class="section-h" style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="adminAll">All codes</span><button class="linkbtn small" id="adminRefresh" data-i18n="adminRefresh">Refresh</button></div>
-      <div class="group glass"><div class="list" id="adminList"></div></div>
+  <!-- History Modal -->
+  <div id="historyModal" class="modal hidden">
+    <div class="modal-backdrop" data-close="historyModal"></div>
+    <div class="modal-sheet">
+      <div class="row-between mb-12">
+        <h2>🕒 История разборов</h2>
+        <button class="icon-btn" data-close="historyModal">✕</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+      <button class="btn-ghost-sm mt-10" id="btnClearHistory">Очистить историю</button>
     </div>
   </div>
-</div>
 
-<div class="sheet-wrap" id="scanSheet" hidden>
-  <div class="sheet" role="dialog" aria-modal="true">
-    <div class="grabber"></div>
-    <div class="sheet-h"><h3 data-i18n="editPage">Edit page</h3><button class="btn sm" id="scanDone" data-i18n="done">Done</button></div>
-    <p class="muted small" style="margin:0 0 10px" data-i18n="dragCorners">Drag the corners to the edges of the page.</p>
-    <div class="stage" id="stage"><img id="stageImg" alt=""><svg id="stageSvg"><polygon id="quadPoly"/></svg></div>
-    <div class="actions" style="margin-top:10px">
-      <button class="btn sec sm" id="autoBtn"><svg class="i"><use href="#i-wand"/></svg><span data-i18n="autoDetect">Auto detect</span></button>
-      <button class="btn sec sm" id="fullBtn"><svg class="i"><use href="#i-expand"/></svg><span data-i18n="wholeImage">Whole image</span></button>
-      <button class="btn sec sm" id="delPage" style="color:var(--bad)"><svg class="i"><use href="#i-trash"/></svg><span data-i18n="deletePage">Delete</span></button>
-    </div>
-    <div class="section-h" data-i18n="filter">Filter</div>
-    <div class="seg" id="filterSeg"></div>
-    <div style="margin-top:12px"><img class="result-pv" id="resultPv" alt=""></div>
-  </div>
-</div>
-<script>
-(() => {
-"use strict";
-const $ = id => document.getElementById(id);
-const store = {
-  get(k, d) { try { const v = localStorage.getItem("lp2_" + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem("lp2_" + k, JSON.stringify(v)); return true; } catch { return false; } },
-  del(k) { try { localStorage.removeItem("lp2_" + k); } catch {} }
-};
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const icon = (name, cls = "i") => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
 
-/* ================= i18n ================= */
-const inClaudeText = (claudeMsg, webMsg) => (window.claude?.use ? claudeMsg : webMsg);
-const I18N = {
-  en: {
-    roleOk: "✓ Code accepted", roleAdmin: "✓ Administrator: code management is available below", roleBad: "Code not found or disabled", adminH: "Administrator", adminOpen: "Manage access codes", adminTitle: "Access codes", adminLead: "Each person gets their own code. Limit per code: 10 requests a minute, 200 a day.", adminPw: "Administrator password", adminLogin: "Sign in", adminPwNote: "Saved on this device only. Never share it: it can create and delete codes.", adminNew: "New code for…", adminNamePh: "e.g. Friend Misha", adminCreate: "Create", adminAll: "All codes", adminRefresh: "Refresh", adminBadPw: "Wrong administrator password.", adminNone: "No codes yet. Create the first one above.", adminOn: "Active", adminOff: "Disabled", adminCreatedOn: "Created", adminLast: "Last used", adminNever: "not used yet", adminDisable: "Disable", adminEnable: "Enable", adminDelete: "Delete", adminDelQ: "Delete this code for good?", adminYes: "Yes, delete", adminCancel: "Cancel", adminShare: "Share", adminMade: "Code created. Send it to this person: they enter it in LetterPilot → ⚙️ Settings.", adminShareText: "Your LetterPilot access code (enter it in ⚙️ Settings):", adminNet: "The server didn't answer. Try again.",
-    camDenied: "No camera access. Take a photo instead.", camAutoOn: "Auto", camAutoOff: "Manual", camPoint: "Point the camera at a document", camFound: "Document found", camHold: "Hold still…", camSaved: "Page saved. Next page?", camNext: "Turn the page or tap Done",
-    apiKey: "LetterPilot access code", apiKeyNote: "Needed only on this website. Enter your personal access code (not an AI provider key). It stays saved in this browser until you clear the site data; documents are sent through the LetterPilot server to NVIDIA first when configured, and to Google Gemini if needed.", needKey: "Enter your access code in Settings to analyze documents.", badKey: "The access code was rejected. Check it in Settings.",
-    home: "Home", settings: "Settings", newShort: "New", newDoc: "New document", heroTitle: "Understand any letter.",
-    heroSub: "Translation, a plain-language explanation, deadlines, advice and a ready reply.",
-    pastePh: "Paste the text of a letter, notice, invoice or contract in any language",
-    scan: "Scan", photos: "Photos", pdf: "PDF",
-    scanHint: "Pages are cropped and straightened automatically. Tap a page to adjust it.",
-    explainIn: "Explain in", aboutYou: "About you", aboutPh: "Optional, e.g. I rent a flat in Finland",
-    analyze: "Analyze", sample: "Try an example", clear: "Clear",
-    noClaude: "Open this page in Claude (claude.ai or the app) to analyze documents. It uses your Claude account, no API key needed.",
-    recent: "Recent", clearHistory: "Clear", featTitle: "What LetterPilot does",
-    f1: "Full translation", f1d: "Paragraph by paragraph, original side by side.",
-    f2: "What they want", f2d: "Who wrote, why, and what is expected of you.",
-    f3: "Deadlines and steps", f3d: "Dates, amounts and a step-by-step plan.",
-    f4: "Hard terms", f4d: "Legal and official words explained simply.",
-    f5: "Advice", f5d: "How to answer and what to watch out for.",
-    f6: "Ready reply", f6d: "A letter in the sender's language, plus a translation for you.",
-    want: "What they want", from: "From", urgent: "Urgent", hasDeadlines: "Has deadlines", notUrgent: "Not urgent", replyNeeded: "Reply needed",
-    tabTr: "Translate", tabTodo: "Plan", dkScan: "Scan", tTranslation: "Translation", tTodo: "To do", tTerms: "Terms", tTips: "Tips", tReply: "Reply", tAsk: "Ask",
-    copy: "Copy", copied: "Copied", qCopyTr: "Copy", qReply: "Reply", qAsk: "Ask", qCopyPlan: "Copy plan", qCopyLetter: "Copy letter", original: "Original", translation: "Translation",
-    deadlines: "Deadlines", steps: "What to do", amounts: "Amounts & references", ignored: "If you do nothing",
-    noTerms: "No difficult terms found.", tipsTitle: "How to reply", tone: "Tone of the letter",
-    position: "Your position", notes: "What do you want to say?", notesPh: "In your own words, any language. E.g. I agree, but please move the date to the end of the month.",
-    replyLang: "Reply language", style: "Style", sFormal: "Formal", sNeutral: "Neutral", sFriendly: "Friendly", sFirm: "Firm",
-    write: "Write reply", letter: "Letter", letterPh: "Your letter will appear here", letterTr: "Translation of your letter", letterTrPh: "So you know what you are sending",
-    askIntro: "Ask anything about this document: Is this mandatory? Can I appeal? What does this sentence mean?", askPh: "Your question",
-    disclaimer: "LetterPilot helps you understand a document but does not replace a lawyer. Check important decisions with a professional.",
-    stop: "Stop", done: "Done", uiLang: "Interface language", theme: "Theme",
-    skAuto: "Auto", skAutoD: "Follows light and dark mode", skAqua: "Aqua", skAquaD: "Light, frosted glass", skGraphite: "Graphite", skGraphiteD: "True dark",
-    skTitanium: "Titanium", skTitaniumD: "Brushed metal, black buttons", skMidnight: "Midnight", skMidnightD: "Deep blue glass",
-    editPage: "Edit page", dragCorners: "Drag the corners to the edges of the page.", autoDetect: "Auto detect", wholeImage: "Whole image", deletePage: "Delete",
-    filter: "Filter", fDoc: "Document", fColor: "Color", fGray: "Gray", fBw: "B&W",
-    autoCropped: "Scanned", page: "Page", pdfText: "PDF text", pages: "pages",
-    reading: "Reading the document", thinking: "Thinking… {s} s", writing: "Writing… {n} characters", readingPdf: "Opening PDF…", scanning: "Scanning page…",
-    eEmpty: "Paste text, scan a page or add a PDF first.", eNoClaude: "Claude is not available in this window. Open the page in Claude.",
-    eNotGranted: "You did not allow this page to use Claude. Reload the page to allow it.", eDisabled: "Claude is not available for this account.",
-    eRate: "Too many requests or your usage limit is reached. Try again a bit later.", eSession: "Please sign in to Claude again.",
-    eImage: "This image could not be read. Try another photo (JPEG or PNG).", eImagesOff: "Images can't be sent from this window. Paste the text instead.",
-    eTooLarge: "The document is too large. Split it into parts.", eRefused: "Claude declined to process this document.", eJson: "The answer came back in the wrong format. Try again.",
-    eGeneric: inClaudeText("Couldn't reach Claude. Try again.", "The AI service didn't answer. Try again."), reason: "Reason", eTooMany: "Too many pages for one request (max {n}). Remove some pages.",
-    ePdf: "This PDF couldn't be opened.", eFormat: "This file type isn't supported.", eChoose: "Choose a position or write what you want to say.",
-    eCopy: "Couldn't copy. Select the text and copy it manually.", truncated: "The answer was cut short. Try a shorter document.",
-    addCal: "Add to calendar", calDone: "Calendar event created", dToday: "today", dTomorrow: "tomorrow", dIn: "in {n} days", dOverdue: "overdue",
-    invoice: "Invoice to pay", invCheck: "Check the details against the original before paying: the numbers are read by AI.",
-    invRecipient: "Recipient", invAmount: "Amount", invDue: "Due date", invIban: "IBAN", invBic: "BIC", invRef: "Payment reference", invBarcode: "Virtual barcode",
-    invBadSum: "The checksum doesn't match. Compare this number with the original.", invMismatch: "Doesn't match the barcode. Compare with the original.",
-    calPay: "Pay", calReminder: "Reminder from LetterPilot"
-  },
-  ru: {
-    roleOk: "✓ Код принят", roleAdmin: "✓ Администратор: ниже доступно управление кодами", roleBad: "Код не найден или отключён", adminH: "Администратор", adminOpen: "Управление кодами", adminTitle: "Коды доступа", adminLead: "У каждого человека свой код. Лимит на код: 10 запросов в минуту, 200 в день.", adminPw: "Пароль администратора", adminLogin: "Войти", adminPwNote: "Сохраняется только на этом устройстве. Никому не давайте: с ним можно создавать и удалять коды.", adminNew: "Новый код для…", adminNamePh: "Например: Друг Миша", adminCreate: "Создать", adminAll: "Все коды", adminRefresh: "Обновить", adminBadPw: "Неверный пароль администратора.", adminNone: "Кодов пока нет. Создайте первый выше.", adminOn: "Работает", adminOff: "Отключён", adminCreatedOn: "Создан", adminLast: "Последний раз", adminNever: "ещё не пользовались", adminDisable: "Отключить", adminEnable: "Включить", adminDelete: "Удалить", adminDelQ: "Удалить этот код навсегда?", adminYes: "Да, удалить", adminCancel: "Отмена", adminShare: "Поделиться", adminMade: "Код создан. Отправьте его этому человеку: он вводит его в LetterPilot → ⚙️ Настройки.", adminShareText: "Твой код доступа к LetterPilot (вводится в ⚙️ Настройках):", adminNet: "Сервер не ответил. Попробуйте ещё раз.",
-    camDenied: "Нет доступа к камере. Сделайте фото.", camAutoOn: "Авто", camAutoOff: "Вручную", camPoint: "Наведите камеру на документ", camFound: "Документ найден", camHold: "Не двигайте…", camSaved: "Страница сохранена. Следующая?", camNext: "Переверните страницу или нажмите «Готово»",
-    apiKey: "Код доступа LetterPilot", apiKeyNote: "Нужен только на этом сайте. Введите свой код доступа (не API-ключ). Сохраняется в этом браузере, пока вы не очистите данные сайта; документы идут через сервер LetterPilot сначала в NVIDIA, если сервис подключён, а при необходимости — в Google Gemini.", needKey: "Введите код доступа в настройках, чтобы разбирать документы.", badKey: "Код доступа не принят. Проверьте его в настройках.",
-    home: "Домой", settings: "Настройки", newShort: "Новый", newDoc: "Новый документ", heroTitle: "Поймите любое письмо.",
-    heroSub: "Перевод, объяснение простыми словами, сроки, советы и готовый ответ.",
-    pastePh: "Вставьте текст письма, уведомления, счёта или договора на любом языке",
-    scan: "Сканировать", photos: "Фото", pdf: "PDF",
-    scanHint: "Страницы обрезаются и выравниваются автоматически. Нажмите на страницу, чтобы поправить.",
-    explainIn: "Объяснить на", aboutYou: "О вас", aboutPh: "Необязательно, напр.: снимаю квартиру в Финляндии",
-    analyze: "Разобрать", sample: "Пример", clear: "Очистить",
-    noClaude: "Чтобы разбирать документы, откройте страницу в Claude (claude.ai или приложение). Используется ваш аккаунт Claude, ключ API не нужен.",
-    recent: "Недавние", clearHistory: "Очистить", featTitle: "Что умеет LetterPilot",
-    f1: "Полный перевод", f1d: "По абзацам, оригинал рядом.",
-    f2: "Что от вас хотят", f2d: "Кто пишет, зачем и чего ждут от вас.",
-    f3: "Сроки и шаги", f3d: "Даты, суммы и пошаговый план.",
-    f4: "Сложные термины", f4d: "Юридические и официальные слова простым языком.",
-    f5: "Советы", f5d: "Как ответить и на что обратить внимание.",
-    f6: "Готовый ответ", f6d: "Письмо на языке отправителя и перевод для вас.",
-    want: "Что от вас хотят", from: "От", urgent: "Срочно", hasDeadlines: "Есть сроки", notUrgent: "Не срочно", replyNeeded: "Нужен ответ",
-    tabTr: "Перевод", tabTodo: "План", dkScan: "Сканер", tTranslation: "Перевод", tTodo: "Что делать", tTerms: "Термины", tTips: "Советы", tReply: "Ответить", tAsk: "Спросить",
-    copy: "Копировать", copied: "Скопировано", qCopyTr: "Копировать", qReply: "Ответить", qAsk: "Спросить", qCopyPlan: "Копировать план", qCopyLetter: "Копировать письмо", original: "Оригинал", translation: "Перевод",
-    deadlines: "Сроки", steps: "Что сделать", amounts: "Суммы и реквизиты", ignored: "Если ничего не делать",
-    noTerms: "Сложных терминов не найдено.", tipsTitle: "Как ответить", tone: "Тон письма",
-    position: "Ваша позиция", notes: "Что вы хотите сказать?", notesPh: "Своими словами, на любом языке. Напр.: согласен, но прошу перенести срок на конец месяца.",
-    replyLang: "Язык ответа", style: "Стиль", sFormal: "Официально", sNeutral: "Нейтрально", sFriendly: "Дружелюбно", sFirm: "Твёрдо",
-    write: "Написать ответ", letter: "Письмо", letterPh: "Здесь появится ваше письмо", letterTr: "Перевод вашего письма", letterTrPh: "Чтобы вы знали, что отправляете",
-    askIntro: "Спросите что угодно об этом документе: это обязательно? Можно ли оспорить? Что значит эта фраза?", askPh: "Ваш вопрос",
-    disclaimer: "LetterPilot помогает понять документ, но не заменяет юриста. Важные решения проверяйте у специалиста.",
-    stop: "Стоп", done: "Готово", uiLang: "Язык интерфейса", theme: "Тема",
-    skAuto: "Авто", skAutoD: "Светлая или тёмная, как в системе", skAqua: "Aqua", skAquaD: "Светлая, матовое стекло", skGraphite: "Graphite", skGraphiteD: "Глубокая тёмная",
-    skTitanium: "Titanium", skTitaniumD: "Металл, чёрные кнопки", skMidnight: "Midnight", skMidnightD: "Тёмно-синее стекло",
-    editPage: "Страница", dragCorners: "Перетащите углы к краям листа.", autoDetect: "Найти лист", wholeImage: "Всё фото", deletePage: "Удалить",
-    filter: "Фильтр", fDoc: "Документ", fColor: "Цвет", fGray: "Серый", fBw: "Ч/Б",
-    autoCropped: "Скан", page: "Стр.", pdfText: "Текст PDF", pages: "стр.",
-    reading: "Читаю документ", thinking: "Думаю… {s} с", writing: "Пишу… {n} символов", readingPdf: "Открываю PDF…", scanning: "Сканирую страницу…",
-    eEmpty: "Сначала вставьте текст, отсканируйте страницу или добавьте PDF.", eNoClaude: "Claude недоступен в этом окне. Откройте страницу в Claude.",
-    eNotGranted: "Вы не разрешили странице использовать Claude. Обновите страницу, чтобы разрешить.", eDisabled: "Claude недоступен для этого аккаунта.",
-    eRate: "Слишком много запросов или достигнут лимит. Попробуйте чуть позже.", eSession: "Войдите в Claude заново.",
-    eImage: "Не получилось прочитать картинку. Попробуйте другое фото (JPEG или PNG).", eImagesOff: "Из этого окна нельзя отправлять картинки. Вставьте текст.",
-    eTooLarge: "Документ слишком большой. Разделите его на части.", eRefused: "Claude отказался обрабатывать этот документ.", eJson: "Ответ пришёл в неверном формате. Попробуйте ещё раз.",
-    eGeneric: inClaudeText("Не удалось связаться с Claude. Попробуйте ещё раз.", "Сервис ИИ не ответил. Попробуйте ещё раз."), reason: "Причина", eTooMany: "Слишком много страниц для одного запроса (максимум {n}). Уберите лишние.",
-    ePdf: "Не получилось открыть этот PDF.", eFormat: "Этот тип файла не поддерживается.", eChoose: "Выберите позицию или напишите, что хотите сказать.",
-    eCopy: "Не получилось скопировать. Выделите текст и скопируйте вручную.", truncated: "Ответ обрезан. Попробуйте документ покороче.",
-    addCal: "Добавить в календарь", calDone: "Событие для календаря создано", dToday: "сегодня", dTomorrow: "завтра", dIn: "через {n} дн.", dOverdue: "просрочено",
-    invoice: "Счёт к оплате", invCheck: "Перед оплатой сверьте реквизиты с оригиналом: цифры распознаёт ИИ.",
-    invRecipient: "Получатель", invAmount: "Сумма", invDue: "Срок оплаты", invIban: "IBAN", invBic: "BIC", invRef: "Номер платежа", invBarcode: "Виртуальный штрихкод",
-    invBadSum: "Контрольная сумма не сходится. Сверьте этот номер с оригиналом.", invMismatch: "Не совпадает со штрихкодом. Сверьте с оригиналом.",
-    calPay: "Оплатить", calReminder: "Напоминание от LetterPilot"
-  }
-};
-let ui = store.get("ui", (navigator.language || "en").startsWith("ru") ? "ru" : "en");
-const t = (k, vars) => { let s = (I18N[ui] && I18N[ui][k]) || I18N.en[k] || k; if (vars) for (const v in vars) s = s.replace("{" + v + "}", vars[v]); return s; };
-function applyI18n() {
-  document.documentElement.lang = ui;
-  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
-  document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
-  document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); el.setAttribute("aria-label", t(el.dataset.i18nTitle)); });
-  if (!inClaude) $("noClaude").textContent = t("needKey");
-  $("draft").dataset.ph = t("letterPh"); $("draftTr").dataset.ph = t("letterTrPh");
-  renderFeatures(); renderStyleSeg(); renderFilterSeg(); renderPages(); renderHistory();
-  document.querySelectorAll("#uiSeg button").forEach(b => b.classList.toggle("on", b.dataset.v === ui));
-  if (current) render(false);
-}
-
-/* ================= look: Aqua only ================= */
-delete document.documentElement.dataset.skin;
-$("uiSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return; ui = b.dataset.v; store.set("ui", ui); applyI18n(); };
-
-/* ================= sheets, toast ================= */
-function openSheet(id) { $(id).hidden = false; }
-function closeSheet(id) { $(id).hidden = true; }
-document.querySelectorAll(".sheet-wrap").forEach(w => {
-  w.addEventListener("click", e => { if (e.target === w || e.target.closest("[data-close]")) { if (w.id === "scanSheet") finishEdit(); else closeSheet(w.id); } });
-});
-document.addEventListener("keydown", e => { if (e.key === "Escape") { if (!$("scanSheet").hidden) finishEdit(); closeSheet("setSheet"); } });
-$("setBtn").onclick = () => openSheet("setSheet");
-let toastTimer;
-function toast(msg) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 1600); }
-function showErr(msg, id = "err") { const el = $(id); el.textContent = msg; el.hidden = !msg; }
-function hideErr(id = "err") { $(id).hidden = true; }
-
-/* ================= features ================= */
-function renderFeatures() {
-  const F = [["translate", "#0a84ff", "f1"], ["target", "#5e5ce6", "f2"], ["calendar", "#ff453a", "f3"], ["book", "#ff9f0a", "f4"], ["bulb", "#30b0c7", "f5"], ["reply", "#34c759", "f6"]];
-  $("feat").innerHTML = F.map(([ic, c, k]) => `<div><span class="ic" style="background:${c}">${icon(ic)}</span><div><b>${esc(t(k))}</b><p>${esc(t(k + "d"))}</p></div></div>`).join("");
-}
-
-/* ================= languages ================= */
-const LANGS = ["English", "Русский", "Українська", "Suomi", "Svenska", "Deutsch", "Français", "Español", "Italiano", "Polski", "Eesti", "Latviešu", "Lietuvių", "Türkçe", "العربية", "فارسی", "中文", "日本語", "한국어", "Português", "Nederlands", "Čeština", "Română", "Magyar", "Български", "Қазақша", "Oʻzbekcha", "Հայերեն", "ქართული", "Azərbaycan"];
-const guessLang = () => ({ ru: "Русский", uk: "Українська", fi: "Suomi", sv: "Svenska", de: "Deutsch", fr: "Français", es: "Español", pl: "Polski", et: "Eesti", tr: "Türkçe" })[(navigator.language || "en").slice(0, 2)] || "English";
-$("lang").innerHTML = LANGS.map(l => `<option>${esc(l)}</option>`).join("");
-$("lang").value = store.get("lang", guessLang());
-$("lang").onchange = () => store.set("lang", $("lang").value);
-
-/* ================= Claude (viewer's account) ================= */
-let sample = null, maxImages = 0;
-const inClaude = !!window.claude?.use;
-// On the website, requests go through the LetterPilot Cloudflare Worker; no AI key is ever in the browser.
-const WORKER_URL = "https://letterpilot-ai.asl-icopal.workers.dev";
-// The access code stays in this browser until the site data is cleared (moved over from the older per-tab storage).
-const tokenGet = () => { try { let v = localStorage.getItem("lp_test_token") || ""; if (!v) { v = sessionStorage.getItem("lp_test_token") || ""; if (v) localStorage.setItem("lp_test_token", v); } return v; } catch { return ""; } };
-const tokenSet = v => { try { if (v) localStorage.setItem("lp_test_token", v); else localStorage.removeItem("lp_test_token"); } catch {} };
-function parseJsonLoose(s) {
-  try { return JSON.parse(s); } catch {}
-  const f = s.match(/```(?:json)?\s*([\s\S]*?)```/); if (f) { try { return JSON.parse(f[1]); } catch {} }
-  const i = s.indexOf("{"), j = s.lastIndexOf("}"); if (i >= 0 && j > i) { try { return JSON.parse(s.slice(i, j + 1)); } catch {} }
-  throw { code: "invalid_json", text: s };
-}
-function makeApiSample() {
-  const toB64 = b => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(b); });
-  async function run(input, o = {}) {
-    const token = tokenGet(); if (!token) throw { code: "no_key" };
-    const msgs = [];
-    for (const m of (typeof input === "string" ? [{ role: "user", content: input }] : input)) {
-      const last = msgs[msgs.length - 1];
-      if (last && last.role === m.role) last.content += "\n\n" + m.content; else msgs.push({ role: m.role, content: m.content });
-    }
-    if (o.images && o.images.length) {
-      const last = msgs[msgs.length - 1];
-      const imgs = await Promise.all([...o.images].map(async b => ({ type: "image", source: { type: "base64", media_type: b.type || "image/jpeg", data: await toB64(b) } })));
-      last.content = [...imgs, { type: "text", text: last.content }];
-    }
-    let res, data;
-    try {
-      res = await fetch(WORKER_URL + "/api", {
-        method: "POST", signal: o.signal,
-        headers: { "Content-Type": "application/json", "X-LetterPilot-Token": token },
-        body: JSON.stringify({ analysis: o.analysis === true, max_tokens: o.modelTier === "quick" ? 8000 : 16000, messages: msgs })
-      });
-      data = await res.json().catch(() => ({}));
-    } catch (e) {
-      if (o.signal?.aborted) throw { code: "cancelled" };
-      throw { code: "upstream_error" };
-    }
-    if (!res.ok) {
-      const detail = [data.error, data.status ? "API " + data.status : "", data.detail].filter(Boolean).join(" · ").slice(0, 300);
-      throw { code: res.status === 401 ? "auth" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : "upstream_error", detail };
-    }
-    if (data.stop_reason === "refusal") throw { code: "refused" };
-    const text = (data.content || []).filter(p => p.type === "text").map(p => p.text).join("");
-    if (!text.trim()) throw { code: "empty_completion" };
-    o.onText && o.onText({ text, delta: text });
-    return { text, truncated: data.stop_reason === "max_tokens" };
-  }
-  const s = (i, o) => run(i, o);
-  s.json = async (i, o) => parseJsonLoose((await run(i, { ...o, analysis: true })).text);
-  s.limits = async () => ({ maxPromptBytes: 262144, images: { maxCount: 10 } });
-  return s;
-}
-const ready = (inClaude ? window.claude.use("sample") : Promise.resolve(makeApiSample())).then(async s => {
-  sample = s;
-  if (!inClaude) { $("keySection").hidden = false; $("noClaude").hidden = !!tokenGet(); $("noClaude").textContent = t("needKey"); }
-  if (!s) { $("noClaude").hidden = false; return null; }
-  try { const lim = await s.limits(); maxImages = lim?.images?.maxCount || 0; } catch { maxImages = 0; }
-  return s;
-});
-$("apiKey").value = inClaude ? "" : tokenGet();
-$("apiKey").addEventListener("input", () => { tokenSet($("apiKey").value.trim()); $("noClaude").hidden = !!$("apiKey").value.trim(); });
-function errText(e) {
-  switch (e?.code) {
-    case "not_granted": return t("eNotGranted");
-    case "sampling_disabled": case "capability_disabled": case "not_declared": case "capability_removed": return t("eDisabled");
-    case "rate_limited": return t("eRate") + (e?.detail ? "\n" + e.detail : "");
-    case "session_expired": return t("eSession");
-    case "image_rejected": return t("eImage");
-    case "images_unavailable": return t("eImagesOff");
-    case "prompt_too_large": return t("eTooLarge");
-    case "refused": return t("eRefused");
-    case "invalid_json": return t("eJson");
-    case "cancelled": return "";
-    case "no_key": openSheet("setSheet"); return t("needKey");
-    case "auth": return t("badKey");
-    default: return t("eGeneric") + (e?.detail ? "\n" + t("reason") + ": " + e.detail : "");
-  }
-}
-
-/* ================= pages: scanned images + PDF text ================= */
-let pages = []; // {kind:"img", src:Image, srcUrl, quad|null, filter, blob, url, auto} | {kind:"text", name, text, count}
-function syncClear() { $("clearTop").hidden = !($("docText").value.trim() || pages.length); }
-function renderPages() {
-  setTimeout(syncClear);
-  $("pages").innerHTML = pages.map((p, i) => p.kind === "text"
-    ? `<div class="pg txt"><button class="th" data-i="${i}" disabled>${icon("pdf")}<span>${esc(p.name)}</span>${esc(t("pdfText"))} · ${p.count} ${esc(t("pages"))}</button><button class="x" data-del="${i}" aria-label="Remove">×</button></div>`
-    : `<div class="pg"><button class="th" data-i="${i}" aria-label="${esc(t("page"))} ${i + 1}"><img src="${p.url}" alt=""></button>${p.auto ? `<span class="tag">${esc(t("autoCropped"))}</span>` : ""}<button class="x" data-del="${i}" aria-label="Remove">×</button></div>`).join("");
-  $("pagesHint").hidden = !pages.some(p => p.kind === "img");
-}
-$("pages").onclick = e => {
-  const d = e.target.closest("[data-del]");
-  if (d) { removePage(+d.dataset.del); return; }
-  const b = e.target.closest("button.th"); if (b && !b.disabled) openEditor(+b.dataset.i);
-};
-function removePage(i) { const p = pages[i]; if (p?.url) URL.revokeObjectURL(p.url); if (p?.srcUrl) URL.revokeObjectURL(p.srcUrl); pages.splice(i, 1); renderPages(); }
-
-$("scanBtn").onclick = () => { if (canLiveCam()) openCam(); else $("scanIn").click(); };
-$("photoBtn").onclick = () => $("photoIn").click();
-$("pdfBtn").onclick = () => $("pdfIn").click();
-$("scanIn").onchange = e => { addFiles([...e.target.files]); e.target.value = ""; };
-$("photoIn").onchange = e => { addFiles([...e.target.files]); e.target.value = ""; };
-$("pdfIn").onchange = e => { addFiles([...e.target.files]); e.target.value = ""; };
-const ig = $("inputGroup");
-ig.addEventListener("dragover", e => { e.preventDefault(); ig.style.outline = "2px solid var(--accent)"; });
-ig.addEventListener("dragleave", () => { ig.style.outline = ""; });
-ig.addEventListener("drop", e => { e.preventDefault(); ig.style.outline = ""; addFiles([...e.dataTransfer.files]); });
-document.addEventListener("paste", e => {
-  const fs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith("image/") || f.type === "application/pdf");
-  if (fs.length) { e.preventDefault(); addFiles(fs); }
-});
-
-async function addFiles(files) {
-  hideErr();
-  for (const f of files) {
-    try {
-      if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) await addPdf(f);
-      else if (f.type === "text/plain") $("docText").value = ($("docText").value ? $("docText").value + "\n\n" : "") + await f.text();
-      else if (f.type.startsWith("image/")) await addImage(f);
-      else showErr(t("eFormat"));
-    } catch (err) { console.warn(err); showErr(f.type === "application/pdf" ? t("ePdf") : t("eImage")); }
-  }
-  renderPages();
-}
-function loadImage(blob) {
-  return new Promise((res, rej) => {
-    const url = URL.createObjectURL(blob), img = new Image();
-    img.onload = () => res({ img, url }); img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("image")); };
-    img.src = url;
-  });
-}
-async function addImage(blob, opts = {}) {
-  busy(true, t("scanning"), "");
-  try {
-    const { img, url } = await loadImage(blob);
-    const quad = opts.quad !== undefined ? opts.quad : (opts.noScan ? null : detectQuad(img));
-    const p = { kind: "img", src: img, srcUrl: url, quad, filter: quad ? "doc" : "color", auto: !!quad };
-    await renderPage(p);
-    pages.push(p);
-  } finally { busy(false); }
-}
-
-/* ---- document detection (like phone scanners): candidate regions -> quadrilateral -> scored by edge strength along its border ---- */
-function srcSize(s) { return [s.naturalWidth || s.videoWidth || s.width, s.naturalHeight || s.videoHeight || s.height]; }
-const detCanvas = document.createElement("canvas");
-function detectQuad(src, withScore) {
-  const [W0, H0] = srcSize(src); if (!W0 || !H0) return null;
-  const sc = Math.min(1, 360 / Math.max(W0, H0)), w = Math.max(16, Math.round(W0 * sc)), h = Math.max(16, Math.round(H0 * sc)), n = w * h;
-  detCanvas.width = w; detCanvas.height = h;
-  const ctx = detCanvas.getContext("2d", { willReadFrequently: true }); ctx.drawImage(src, 0, 0, w, h);
-  const d = ctx.getImageData(0, 0, w, h).data;
-  let R = new Float32Array(n), G = new Float32Array(n), B = new Float32Array(n);
-  for (let i = 0; i < n; i++) { R[i] = d[i * 4]; G[i] = d[i * 4 + 1]; B[i] = d[i * 4 + 2]; }
-  R = boxBlur(R, w, h, 2); G = boxBlur(G, w, h, 2); B = boxBlur(B, w, h, 2);
-  const L = new Float32Array(n); for (let i = 0; i < n; i++) L[i] = 0.299 * R[i] + 0.587 * G[i] + 0.114 * B[i];
-  const grad = new Float32Array(n);
-  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const i = y * w + x;
-    const gx = L[i - w + 1] + 2 * L[i + 1] + L[i + w + 1] - L[i - w - 1] - 2 * L[i - 1] - L[i + w - 1];
-    const gy = L[i + w - 1] + 2 * L[i + w] + L[i + w + 1] - L[i - w - 1] - 2 * L[i - w] - L[i - w + 1];
-    grad[i] = Math.hypot(gx, gy) / 4; }
-  const cands = [];
-  // A: region grown from the brightest spot near the centre, stopped by colour change
-  let seed = -1, best = -1;
-  for (let y = Math.round(h * .3); y < h * .7; y += 2) for (let x = Math.round(w * .3); x < w * .7; x += 2) { const i = y * w + x; const v = L[i] - grad[i] * 2; if (v > best) { best = v; seed = i; } }
-  for (const T of [26, 40, 58]) { const m = growRegion(seed, R, G, B, w, h, T); if (m) cands.push(m); }
-  // B: largest bright component after Otsu threshold
-  const ot = otsuMask(L, n); if (ot) cands.push(largestComponent(ot, w, h));
-  let bestQ = null, bestS = 0;
-  for (const m of cands) {
-    if (!m || m.count < n * 0.1) continue;
-    const q = maskToQuad(m.mask, w, h); if (!q) continue;
-    const s = scoreQuad(q, grad, w, h); if (s > bestS) { bestS = s; bestQ = q; }
-  }
-  if (!bestQ || bestS < 14) return null;
-  const qcx = bestQ.reduce((s, p) => s + p[0], 0) / 4, qcy = bestQ.reduce((s, p) => s + p[1], 0) / 4;
-  const quad = bestQ.map(([x, y]) => { const dd = Math.hypot(x - qcx, y - qcy) || 1, k = 1 + 2.2 / dd;
-    return [Math.max(0, Math.min(W0, (qcx + (x - qcx) * k) / sc)), Math.max(0, Math.min(H0, (qcy + (y - qcy) * k) / sc))]; });
-  return withScore ? { quad, score: bestS } : quad;
-}
-function growRegion(seed, R, G, B, w, h, T) {
-  if (seed < 0) return null;
-  const n = w * h, mask = new Uint8Array(n), q = new Int32Array(n); let head = 0, tail = 0, cnt = 0;
-  let mr = R[seed], mg = G[seed], mb = B[seed];
-  q[tail++] = seed; mask[seed] = 1;
-  while (head < tail) { const p = q[head++]; cnt++;
-    if (cnt % 256 === 0) { mr = (mr * 3 + R[p]) / 4; mg = (mg * 3 + G[p]) / 4; mb = (mb * 3 + B[p]) / 4; }
-    const x = p % w, y = (p / w) | 0;
-    for (const nb of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, y > 0 ? p - w : -1, y < h - 1 ? p + w : -1]) {
-      if (nb < 0 || mask[nb]) continue;
-      const dr = R[nb] - mr, dg = G[nb] - mg, db = B[nb] - mb, ds = Math.abs(R[nb] - R[p]) + Math.abs(G[nb] - G[p]) + Math.abs(B[nb] - B[p]);
-      if (Math.sqrt(dr * dr + dg * dg + db * db) < T && ds < T * 0.9) { mask[nb] = 1; q[tail++] = nb; }
-    } }
-  return { mask, count: cnt };
-}
-function otsuMask(L, n) {
-  const hist = new Array(256).fill(0); for (let i = 0; i < n; i++) hist[Math.min(255, L[i] | 0)]++;
-  let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
-  let sB = 0, wB = 0, best = 0, th = 128;
-  for (let i = 0; i < 256; i++) { wB += hist[i]; if (!wB) continue; const wF = n - wB; if (!wF) break; sB += i * hist[i]; const v = wB * wF * (sB / wB - (sum - sB) / wF) ** 2; if (v > best) { best = v; th = i; } }
-  const m = new Uint8Array(n); for (let i = 0; i < n; i++) m[i] = L[i] > th ? 1 : 0; return m;
-}
-function largestComponent(mask, w, h) {
-  const n = w * h, lab = new Int32Array(n), q = new Int32Array(n); let bestL = 0, bestC = 0, cur = 0;
-  for (let s = 0; s < n; s++) { if (!mask[s] || lab[s]) continue; cur++; let hd = 0, tl = 0, c = 0; q[tl++] = s; lab[s] = cur;
-    while (hd < tl) { const p = q[hd++]; c++; const x = p % w, y = (p / w) | 0;
-      if (x > 0 && mask[p - 1] && !lab[p - 1]) { lab[p - 1] = cur; q[tl++] = p - 1; }
-      if (x < w - 1 && mask[p + 1] && !lab[p + 1]) { lab[p + 1] = cur; q[tl++] = p + 1; }
-      if (y > 0 && mask[p - w] && !lab[p - w]) { lab[p - w] = cur; q[tl++] = p - w; }
-      if (y < h - 1 && mask[p + w] && !lab[p + w]) { lab[p + w] = cur; q[tl++] = p + w; } }
-    if (c > bestC) { bestC = c; bestL = cur; } }
-  const m = new Uint8Array(n); for (let i = 0; i < n; i++) m[i] = lab[i] === bestL ? 1 : 0; return { mask: m, count: bestC };
-}
-function maskToQuad(mask, w, h) {
-  const pts = [];
-  for (let y = 0; y < h; y++) { let l = -1, r = -1; for (let x = 0; x < w; x++) if (mask[y * w + x]) { if (l < 0) l = x; r = x; } if (l >= 0) { pts.push([l, y]); if (r !== l) pts.push([r, y]); } }
-  if (pts.length < 8) return null;
-  let hull = convexHull(pts);
-  while (hull.length > 4) { // drop the vertex whose removal changes the area least
-    let mi = 0, ma = Infinity;
-    for (let i = 0; i < hull.length; i++) { const a = hull[(i + hull.length - 1) % hull.length], b = hull[i], c = hull[(i + 1) % hull.length];
-      const ar = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])); if (ar < ma) { ma = ar; mi = i; } }
-    hull.splice(mi, 1); }
-  if (hull.length < 4) return null;
-  return orderQuad(hull);
-}
-function convexHull(p) {
-  p = p.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
-  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
-  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
-  return lo.slice(0, -1).concat(up.slice(0, -1));
-}
-function orderQuad(q) { // TL, TR, BR, BL
-  const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;
-  const s = q.slice().sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
-  let k = 0; s.forEach((p, i) => { if (p[0] + p[1] < s[k][0] + s[k][1]) k = i; });
-  return s.slice(k).concat(s.slice(0, k));
-}
-function scoreQuad(q, grad, w, h) {
-  const area = Math.abs(polyArea(q)) / (w * h);
-  if (area < 0.12 || area > 0.985) return 0;
-  // convex, with sane angles
-  for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4], c = q[(i + 2) % 4];
-    const v1 = [a[0] - b[0], a[1] - b[1]], v2 = [c[0] - b[0], c[1] - b[1]];
-    const cos = (v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(...v1) * Math.hypot(...v2) || 1);
-    if (Math.abs(cos) > 0.6) return 0; }
-  let minE = Infinity, tot = 0;
-  for (let i = 0; i < 4; i++) { const a = q[i], b = q[(i + 1) % 4]; let s = 0, c = 0;
-    const onBorder = (a[0] < 2 && b[0] < 2) || (a[1] < 2 && b[1] < 2) || (a[0] > w - 3 && b[0] > w - 3) || (a[1] > h - 3 && b[1] > h - 3);
-    for (let t = 0.08; t <= 0.92; t += 0.03) { const x = Math.round(a[0] + (b[0] - a[0]) * t), y = Math.round(a[1] + (b[1] - a[1]) * t);
-      let m = 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const xx = x + dx, yy = y + dy; if (xx > 0 && yy > 0 && xx < w - 1 && yy < h - 1) m = Math.max(m, grad[yy * w + xx]); }
-      s += m; c++; }
-    const e = onBorder ? 0 : s / c; minE = Math.min(minE, e); tot += e; }
-  return Math.min(minE * 1.6, tot / 4) * (0.7 + 0.3 * Math.min(1, area / 0.4));
-}
-function polyArea(p) { let a = 0; for (let i = 0; i < p.length; i++) { const [x1, y1] = p[i], [x2, y2] = p[(i + 1) % p.length]; a += x1 * y2 - x2 * y1; } return a / 2; }
-function boxBlur(src, w, h, r) {
-  const tmp = new Float32Array(w * h), out = new Float32Array(w * h), k = 2 * r + 1;
-  for (let y = 0; y < h; y++) { let acc = 0; for (let x = -r; x <= r; x++) acc += src[y * w + Math.min(w - 1, Math.max(0, x))];
-    for (let x = 0; x < w; x++) { tmp[y * w + x] = acc / k; acc += src[y * w + Math.min(w - 1, x + r + 1)] - src[y * w + Math.max(0, x - r)]; } }
-  for (let x = 0; x < w; x++) { let acc = 0; for (let y = -r; y <= r; y++) acc += tmp[Math.min(h - 1, Math.max(0, y)) * w + x];
-    for (let y = 0; y < h; y++) { out[y * w + x] = acc / k; acc += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x]; } }
-  return out;
-}
-
-/* ---- perspective warp + filters ---- */
-function homography(src, dst) { // maps dst -> src; points [[x,y]x4]
-  const A = [], b = [];
-  for (let i = 0; i < 4; i++) { const [x, y] = dst[i], [u, v] = src[i];
-    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
-    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v); }
-  for (let c = 0; c < 8; c++) { let m = c; for (let r = c + 1; r < 8; r++) if (Math.abs(A[r][c]) > Math.abs(A[m][c])) m = r;
-    [A[c], A[m]] = [A[m], A[c]]; [b[c], b[m]] = [b[m], b[c]];
-    for (let r = 0; r < 8; r++) { if (r === c) continue; const f = A[r][c] / A[c][c]; for (let k = c; k < 8; k++) A[r][k] -= f * A[c][k]; b[r] -= f * b[c]; } }
-  return b.map((v, i) => v / A[i][i]);
-}
-async function renderPage(p) {
-  const img = p.src, W0 = img.naturalWidth, H0 = img.naturalHeight;
-  const cap = 2200, ss = Math.min(1, cap / Math.max(W0, H0));
-  const sw = Math.round(W0 * ss), sh = Math.round(H0 * ss);
-  const sc = document.createElement("canvas"); sc.width = sw; sc.height = sh;
-  const sctx = sc.getContext("2d", { willReadFrequently: true }); sctx.drawImage(img, 0, 0, sw, sh);
-  let out;
-  if (p.quad) {
-    const q = p.quad.map(([x, y]) => [x * ss, y * ss]), dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
-    let W = Math.max(dist(q[0], q[1]), dist(q[3], q[2])), H = Math.max(dist(q[0], q[3]), dist(q[1], q[2]));
-    const f = Math.min(1, 1800 / Math.max(W, H)); W = Math.max(16, Math.round(W * f)); H = Math.max(16, Math.round(H * f));
-    const Hm = homography(q, [[0, 0], [W, 0], [W, H], [0, H]]);
-    const sd = sctx.getImageData(0, 0, sw, sh).data;
-    out = new ImageData(W, H); const od = out.data;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      const den = Hm[6] * x + Hm[7] * y + 1, u = (Hm[0] * x + Hm[1] * y + Hm[2]) / den, v = (Hm[3] * x + Hm[4] * y + Hm[5]) / den;
-      const x0 = Math.max(0, Math.min(sw - 2, u | 0)), y0 = Math.max(0, Math.min(sh - 2, v | 0)), fx = Math.min(1, Math.max(0, u - x0)), fy = Math.min(1, Math.max(0, v - y0));
-      const i00 = (y0 * sw + x0) * 4, i10 = i00 + 4, i01 = i00 + sw * 4, i11 = i01 + 4, o = (y * W + x) * 4;
-      for (let c = 0; c < 3; c++) od[o + c] = (sd[i00 + c] * (1 - fx) + sd[i10 + c] * fx) * (1 - fy) + (sd[i01 + c] * (1 - fx) + sd[i11 + c] * fx) * fy;
-      od[o + 3] = 255;
-    }
-  } else out = sctx.getImageData(0, 0, sw, sh);
-  applyFilter(out, p.filter);
-  const oc = document.createElement("canvas"); oc.width = out.width; oc.height = out.height; oc.getContext("2d").putImageData(out, 0, 0);
-  const blob = await new Promise(r => oc.toBlob(r, "image/jpeg", 0.88));
-  if (p.url) URL.revokeObjectURL(p.url);
-  p.blob = blob; p.url = URL.createObjectURL(blob);
-}
-function applyFilter(im, f) {
-  const d = im.data, n = im.width * im.height;
-  if (f === "color") { // auto levels
-    const h = new Array(256).fill(0); for (let i = 0; i < n; i++) h[(0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]) | 0]++;
-    let lo = 0, hi = 255, acc = 0; while (lo < 255 && (acc += h[lo]) < n * 0.01) lo++; acc = 0; while (hi > 0 && (acc += h[hi]) < n * 0.01) hi--;
-    if (hi - lo < 30) return; const k = 255 / (hi - lo);
-    for (let i = 0; i < n * 4; i++) if ((i & 3) !== 3) d[i] = (d[i] - lo) * k;
-    return;
-  }
-  const L = new Float32Array(n); for (let i = 0; i < n; i++) L[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
-  let res = L;
-  if (f === "doc" || f === "bw") { // flatten lighting: divide by a blurred background
-    const r = Math.max(8, Math.round(Math.max(im.width, im.height) / 28));
-    const bg = boxBlur(boxBlur(L, im.width, im.height, r), im.width, im.height, r);
-    res = new Float32Array(n);
-    for (let i = 0; i < n; i++) { let v = L[i] / Math.max(1, bg[i]) * 255; v = 255 * Math.pow(Math.min(1, Math.max(0, (v - 40) / 205)), 1.5); res[i] = v; }
-    const soft = boxBlur(res, im.width, im.height, 1);
-    for (let i = 0; i < n; i++) res[i] = Math.max(0, Math.min(255, res[i] + 0.8 * (res[i] - soft[i])));
-    if (f === "bw") for (let i = 0; i < n; i++) res[i] = res[i] > 165 ? 255 : res[i] < 110 ? 0 : (res[i] - 110) * 4.6;
-  } else { // gray with stretch
-    const h = new Array(256).fill(0); for (let i = 0; i < n; i++) h[L[i] | 0]++;
-    let lo = 0, hi = 255, acc = 0; while (lo < 255 && (acc += h[lo]) < n * 0.01) lo++; acc = 0; while (hi > 0 && (acc += h[hi]) < n * 0.01) hi--;
-    const k = 255 / Math.max(30, hi - lo); res = L.map(v => (v - lo) * k);
-  }
-  for (let i = 0; i < n; i++) { const v = res[i]; d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = v; }
-}
-
-
-/* ---- live camera scanner (works where the page may use the camera: the standalone site) ---- */
-const canLiveCam = () => !!(navigator.mediaDevices?.getUserMedia) && !inClaude && window.isSecureContext;
-let camStream = null, camTimer = null, camHist = [], camHold = 0, camCooldown = 0, camAuto = store.get("camAuto", true), camCount = 0, camLastShot = null, camBusy = false;
-async function openCam() {
-  try {
-    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false });
-  } catch (e) {
-    console.warn(e); toast(t("camDenied")); $("scanIn").click(); return;
-  }
-  const v = $("camVideo"); v.srcObject = camStream; await v.play().catch(() => {});
-  camHist = []; camHold = 0; camCooldown = 0; camCount = 0; camLastShot = null;
-  $("cam").hidden = false; document.body.style.overflow = "hidden";
-  renderCamUi(); camLoop();
-}
-function closeCam() {
-  clearTimeout(camTimer); camTimer = null;
-  if (camStream) camStream.getTracks().forEach(tr => tr.stop()); camStream = null;
-  $("cam").hidden = true; document.body.style.overflow = ""; renderPages();
-}
-function renderCamUi() {
-  $("camAuto").textContent = camAuto ? t("camAutoOn") : t("camAutoOff");
-  $("camAuto").classList.toggle("on", camAuto);
-  $("camDone").textContent = camCount ? `${t("done")} (${camCount})` : t("done");
-}
-function camLoop() {
-  if (!camStream) return;
-  const v = $("camVideo");
-  if (v.videoWidth && !camBusy) {
-    const r = detectQuad(v, true), W = v.videoWidth, H = v.videoHeight, diag = Math.hypot(W, H);
-    $("camSvg").setAttribute("viewBox", `0 0 ${W} ${H}`);
-    const poly = $("camPoly");
-    if (r) {
-      poly.setAttribute("points", r.quad.map(p => p.join(",")).join(" ")); poly.style.opacity = 1;
-      camHist.push(r.quad); if (camHist.length > 4) camHist.shift();
-      const moved = camHist.length < 2 ? 1 : Math.max(...camHist[0].map((p, i) => Math.hypot(p[0] - r.quad[i][0], p[1] - r.quad[i][1]))) / diag;
-      const sameAsLast = camLastShot && Math.max(...camLastShot.map((p, i) => Math.hypot(p[0] - r.quad[i][0], p[1] - r.quad[i][1]))) / diag < 0.06;
-      if (moved < 0.018 && Date.now() > camCooldown && !sameAsLast) camHold++; else camHold = Math.max(0, camHold - 1);
-      const need = 5;
-      poly.classList.toggle("lock", camHold > 0);
-      $("camStatus").textContent = sameAsLast ? t("camNext") : camHold > 0 && camAuto ? t("camHold") : t("camFound");
-      if (camAuto && camHold >= need) { camShoot(r.quad); }
-    } else {
-      poly.style.opacity = 0; camHist = []; camHold = 0;
-      if (camLastShot && Date.now() > camCooldown) camLastShot = null; // page removed: ready for the next one
-      $("camStatus").textContent = t("camPoint");
-    }
-  }
-  camTimer = setTimeout(camLoop, 160);
-}
-async function camShoot(quad) {
-  const v = $("camVideo"); if (!v.videoWidth || camBusy) return;
-  camBusy = true; camHold = 0;
-  const W = v.videoWidth, H = v.videoHeight, c = document.createElement("canvas"); c.width = W; c.height = H;
-  c.getContext("2d").drawImage(v, 0, 0, W, H);
-  $("flash").classList.remove("go"); void $("flash").offsetWidth; $("flash").classList.add("go");
-  try {
-    const q = quad || detectQuad(c);
-    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.95));
-    const { img, url } = await loadImage(blob);
-    const p = { kind: "img", src: img, srcUrl: url, quad: q, filter: q ? "doc" : "color", auto: !!q };
-    await renderPage(p); pages.push(p); camCount++;
-    $("camThumb").innerHTML = `<img src="${p.url}" alt="">`;
-    camLastShot = q; camCooldown = Date.now() + 1500;
-    $("camStatus").textContent = t("camSaved");
-  } finally { camBusy = false; renderCamUi(); }
-}
-$("camClose").onclick = closeCam;
-$("camDone").onclick = closeCam;
-$("camShutter").onclick = () => camShoot(camHist[camHist.length - 1] || null);
-$("camAuto").onclick = () => { camAuto = !camAuto; store.set("camAuto", camAuto); camHold = 0; renderCamUi(); };
-
-/* ---- page editor sheet ---- */
-let editing = -1, editQuad = null, dragIdx = -1, editDirty = false;
-const FILTERS = [["doc", "fDoc"], ["color", "fColor"], ["gray", "fGray"], ["bw", "fBw"]];
-function renderFilterSeg() {
-  const p = pages[editing];
-  $("filterSeg").innerHTML = FILTERS.map(([v, k]) => `<button data-v="${v}" class="${p && p.filter === v ? "on" : ""}">${esc(t(k))}</button>`).join("");
-}
-function openEditor(i) {
-  editing = i; const p = pages[i]; editDirty = false;
-  const W = p.src.naturalWidth, H = p.src.naturalHeight;
-  editQuad = (p.quad || [[0, 0], [W, 0], [W, H], [0, H]]).map(a => a.slice());
-  $("stageImg").src = p.srcUrl;
-  $("stageSvg").setAttribute("viewBox", `0 0 ${W} ${H}`);
-  $("stageSvg").setAttribute("preserveAspectRatio", "xMidYMid meet");
-  drawQuad(); renderFilterSeg(); $("resultPv").src = p.url;
-  openSheet("scanSheet");
-}
-function drawQuad() {
-  const svg = $("stageSvg"), p = pages[editing], r = Math.max(p.src.naturalWidth, p.src.naturalHeight) * 0.022;
-  $("quadPoly").setAttribute("points", editQuad.map(a => a.join(",")).join(" "));
-  svg.querySelectorAll("circle").forEach(c => c.remove());
-  editQuad.forEach(([x, y], i) => { const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", r); c.dataset.i = i; svg.appendChild(c); });
-}
-function svgPoint(e) { const svg = $("stageSvg"), pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); }
-$("stageSvg").addEventListener("pointerdown", e => {
-  const c = e.target.closest("circle"); let i;
-  if (c) i = +c.dataset.i;
-  else { const pt = svgPoint(e); let bd = Infinity; editQuad.forEach(([x, y], k) => { const dd = Math.hypot(x - pt.x, y - pt.y); if (dd < bd) { bd = dd; i = k; } }); }
-  dragIdx = i; $("stageSvg").setPointerCapture(e.pointerId); e.preventDefault(); moveCorner(e);
-});
-$("stageSvg").addEventListener("pointermove", e => { if (dragIdx >= 0) moveCorner(e); });
-$("stageSvg").addEventListener("pointerup", () => { if (dragIdx >= 0) { dragIdx = -1; editDirty = true; refreshPreview(); } });
-function moveCorner(e) {
-  const p = pages[editing], pt = svgPoint(e);
-  editQuad[dragIdx] = [Math.max(0, Math.min(p.src.naturalWidth, pt.x)), Math.max(0, Math.min(p.src.naturalHeight, pt.y))];
-  drawQuad();
-}
-let pvTimer;
-function refreshPreview() {
-  clearTimeout(pvTimer);
-  pvTimer = setTimeout(async () => { const p = pages[editing]; if (!p) return; p.quad = isFull(editQuad, p) ? null : editQuad.map(a => a.slice()); p.auto = false; await renderPage(p); $("resultPv").src = p.url; }, 120);
-}
-function isFull(q, p) { const W = p.src.naturalWidth, H = p.src.naturalHeight; return q.every(([x, y], i) => Math.hypot(x - [0, W, W, 0][i], y - [0, 0, H, H][i]) < 2); }
-$("filterSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return; pages[editing].filter = b.dataset.v; renderFilterSeg(); refreshPreview(); };
-$("autoBtn").onclick = () => { const p = pages[editing]; const q = detectQuad(p.src); if (q) { editQuad = q; drawQuad(); refreshPreview(); } else toast(ui === "ru" ? "Лист не найден, поправьте углы вручную" : "No page found, adjust the corners by hand"); };
-$("fullBtn").onclick = () => { const p = pages[editing], W = p.src.naturalWidth, H = p.src.naturalHeight; editQuad = [[0, 0], [W, 0], [W, H], [0, H]]; drawQuad(); refreshPreview(); };
-$("delPage").onclick = () => { const i = editing; closeSheet("scanSheet"); editing = -1; removePage(i); };
-$("scanDone").onclick = finishEdit;
-function finishEdit() { closeSheet("scanSheet"); editing = -1; renderPages(); }
-
-/* ---- PDF (pdf.js, loaded on first use) ---- */
-const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-let pdfReady = null;
-function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
-function loadPdfJs() {
-  if (!pdfReady) pdfReady = (async () => {
-    await loadScript(PDFJS + "pdf.worker.min.js"); // defines a main-thread worker, so no Web Worker is needed
-    await loadScript(PDFJS + "pdf.min.js");
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js";
-    return window.pdfjsLib;
-  })().catch(e => { pdfReady = null; throw e; });
-  return pdfReady;
-}
-async function addPdf(file) {
-  busy(true, t("readingPdf"), "");
-  try {
-    const lib = await loadPdfJs();
-    const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
-    const N = Math.min(doc.numPages, 40); let text = "";
-    for (let i = 1; i <= N; i++) {
-      const tc = await (await doc.getPage(i)).getTextContent();
-      let line = "", out = ""; let lastY = null;
-      for (const it of tc.items) { const y = it.transform[5]; if (lastY !== null && Math.abs(y - lastY) > 2) { out += line.trimEnd() + "\n"; line = ""; } line += it.str + (it.hasEOL ? "\n" : ""); lastY = y; }
-      out += line; text += (N > 1 ? `\n--- ${i} ---\n` : "") + out.replace(/\n{3,}/g, "\n\n");
-    }
-    if (text.replace(/\s|-|\d/g, "").length > 80 * Math.min(N, 3)) {
-      pages.push({ kind: "text", name: file.name, text: text.trim(), count: N });
-    } else { // scanned PDF: render pages to images
-      const R = Math.min(doc.numPages, maxImages || 10);
-      for (let i = 1; i <= R; i++) {
-        busy(true, t("readingPdf"), `${i} / ${R}`);
-        const page = await doc.getPage(i), vp0 = page.getViewport({ scale: 1 }), s = Math.min(3, 1700 / Math.max(vp0.width, vp0.height)), vp = page.getViewport({ scale: s });
-        const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
-        const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.88));
-        const { img, url } = await loadImage(blob);
-        const p = { kind: "img", src: img, srcUrl: url, quad: null, filter: "color", auto: false };
-        await renderPage(p); pages.push(p);
-      }
-    }
-  } finally { busy(false); }
-}
-
-/* ================= busy overlay ================= */
-let ctl = null, tick = null;
-function busy(on, title, sub) {
-  $("busy").hidden = !on; $("stopBtn").hidden = !ctl;
-  if (on) { $("busyT").textContent = title || ""; $("busyP").textContent = sub || ""; }
-}
-$("stopBtn").onclick = () => ctl?.abort();
-
-/* ================= analysis ================= */
-const today = () => new Date().toISOString().slice(0, 10);
-const RULES = lang => `You are LetterPilot, an assistant for people who received a letter or document in a language they don't fully understand (from authorities, employers, landlords, banks, schools, doctors). Don't just translate: make the document understandable — who wrote it, what they want, the deadlines, what to do and what happens if the person does nothing. Write every explanation in ${lang}, simply and warmly, no bureaucratese. Never invent anything: if part of a photo is unreadable, say so. Today is ${today()}.`;
-const SHAPE = lang => `Reply with ONLY one JSON object of this shape (all fields required; every explanatory field in ${lang}):
-{
- "source_language": "language of the original, named in ${lang}",
- "document_type": "1-4 words",
- "title": "short headline: what the document is about",
- "sender": "who sent it, or empty string",
- "urgency": "low" | "medium" | "high",
- "what_they_want": "1-2 sentences: exactly what is expected of the reader",
- "summary": "the gist in 2-4 sentences",
- "paragraphs": [{"original": "exact original text of the paragraph", "translation": "exact full translation into ${lang}", "note": "hidden meaning, requirement or legal consequence, else empty string"}],
- "deadlines": [{"date": "date as written", "iso_date": "the same date as YYYY-MM-DD, or empty string if no exact calendar date can be worked out", "what": "what to do by then"}],
- "amounts": ["amounts, account numbers, references, case numbers, phones, addresses"],
- "invoice": {"is_invoice": true | false, "recipient": "payee name", "amount": "amount to pay as a plain number with a dot, e.g. 1234.50, no currency or spaces", "currency": "ISO 4217 code, e.g. EUR", "due_date": "due date as written", "due_date_iso": "YYYY-MM-DD", "iban": "payee IBAN exactly as printed", "bic": "BIC/SWIFT", "reference": "payment reference exactly as printed (Finnish viitenumero, RF creditor reference, OCR number, etc.)", "barcode": "Finnish virtual barcode (virtuaaliviivakoodi, 54 digits) if printed"},
- "action_steps": ["concrete step-by-step plan"],
- "if_ignored": "what happens if nothing is done",
- "terms": [{"term": "difficult term from the original", "meaning": "explanation"}],
- "reply_tips": ["practical advice on replying: what to mention, attach, avoid; whether a reply is needed"],
- "tone": "tone and formality of the sender's letter",
- "reply_options": [{"label": "1-3 words", "description": "one sentence"}],
- "reply_needed": true | false
-}
-Rules: "paragraphs" must cover the WHOLE document in order, nothing skipped. urgency "high" = deadline within 2 weeks, a fine, or legal consequences. Give 2-4 reply_options (e.g. agree, ask for more time, dispute, ask for clarification). "invoice": is_invoice is true only when the reader is asked to pay money (invoice, payment reminder, fine, fee); otherwise false and every other invoice field is an empty string. Unknown invoice fields are empty strings. Copy every digit of amounts, IBANs, references and barcodes exactly, never guess a digit. If the document is already in ${lang}, translation repeats the original and the notes carry the explanation.`;
-
-let current = null;
-$("goBtn").onclick = async () => {
-  hideErr();
-  const text = $("docText").value.trim(), imgs = pages.filter(p => p.kind === "img"), texts = pages.filter(p => p.kind === "text");
-  if (!text && !pages.length) return showErr(t("eEmpty"));
-  await ready;
-  if (!sample) return showErr(t("eNoClaude"));
-  if (imgs.length && maxImages && imgs.length > maxImages) return showErr(t("eTooMany", { n: maxImages }));
-  const lang = $("lang").value, ctx = $("ctx").value.trim();
-  let docText = [text, ...texts.map(p => p.text)].filter(Boolean).join("\n\n");
-  if (docText.length > 120000) docText = docText.slice(0, 120000);
-  const prompt = `${RULES(lang)}
-
-Reader's language: ${lang}.${ctx ? `\nAbout the reader: ${ctx}` : ""}
-${imgs.length ? `\n${imgs.length} scanned page image(s) of the document are attached, in page order. Read the text from them.` : ""}
-${docText ? `\nDocument text:\n<document>\n${docText}\n</document>\n` : ""}
-Analyze the document. ${SHAPE(lang)}`;
-
-  ctl = new AbortController();
-  const t0 = Date.now(); let chars = 0;
-  busy(true, t("reading"), t("thinking", { s: 0 }));
-  tick = setInterval(() => { $("busyP").textContent = chars ? t("writing", { n: chars }) : t("thinking", { s: Math.round((Date.now() - t0) / 1000) }); }, 500);
-  try {
-    const opts = { signal: ctl.signal, onText: ({ text }) => { chars = text.length; } };
-    if (imgs.length) opts.images = imgs.map(p => p.blob);
-    const r = await sample.json(prompt, opts);
-    if (!r || !Array.isArray(r.paragraphs)) throw { code: "invalid_json" };
-    const doc = docText || r.paragraphs.map(p => p.original).join("\n\n");
-    current = { id: Date.now(), date: new Date().toISOString(), lang, ctx, doc, result: normalize(r), chat: [] };
-    saveHistory(current);
-    render(true);
-  } catch (e) { const m = errText(e); if (m) showErr(m); }
-  finally { clearInterval(tick); ctl = null; busy(false); }
-};
-function normalize(r) {
-  const a = v => Array.isArray(v) ? v : [];
-  const inv = r.invoice && typeof r.invoice === "object" ? r.invoice : {};
-  return { ...r, paragraphs: a(r.paragraphs), deadlines: a(r.deadlines), amounts: a(r.amounts), action_steps: a(r.action_steps), terms: a(r.terms), reply_tips: a(r.reply_tips), reply_options: a(r.reply_options), invoice: inv };
-}
-
-/* ================= results ================= */
-let quietScrollUntil = 0;
-const pageScroll = (top, smooth) => { quietScrollUntil = Date.now() + 900; ["tabbar", "dock", "quick", "topbar"].forEach(id => $(id).classList.remove("away", "low", "hide")); window.scrollTo({ top, behavior: smooth && !matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "auto" }); };
-let tab = "translation", selectedOpt = null, styleIdx = 0;
-const STYLES = [["sFormal", "formal and polite"], ["sNeutral", "polite and neutral"], ["sFriendly", "friendly and simple"], ["sFirm", "firm but polite, standing one's ground"]];
-function renderStyleSeg() { $("styleSeg").innerHTML = STYLES.map(([k], i) => `<button data-i="${i}" class="${i === styleIdx ? "on" : ""}">${esc(t(k))}</button>`).join(""); }
-$("styleSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return; styleIdx = +b.dataset.i; renderStyleSeg(); };
-const rowList = (items, f) => items.map(f).join("");
-
-/* ================= deadlines → calendar ================= */
-const pad2 = n => String(n).padStart(2, "0");
-function validIso(y, m, d) {
-  const dt = new Date(Date.UTC(+y, +m - 1, +d));
-  return dt.getUTCFullYear() === +y && dt.getUTCMonth() === +m - 1 && dt.getUTCDate() === +d ? `${y}-${pad2(m)}-${pad2(d)}` : "";
-}
-// Exact calendar date from the AI's iso field, else from the date as written (31.12.2026, 2026-12-31, 31/12/2026).
-function isoOf(iso, raw) {
-  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(iso || "").trim());
-  if (m) return validIso(m[1], m[2], m[3]);
-  const s = String(raw || "");
-  if ((m = /\b(\d{4})-(\d{1,2})-(\d{1,2})\b/.exec(s))) return validIso(m[1], m[2], m[3]);
-  if ((m = /\b(\d{1,2})[./](\d{1,2})[./](\d{4})\b/.exec(s))) return validIso(m[3], m[2], m[1]);
-  return "";
-}
-function daysTo(iso) {
-  const [y, m, d] = iso.split("-").map(Number), now = new Date();
-  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
-}
-function leftChip(n) {
-  const txt = n < 0 ? t("dOverdue") : n === 0 ? t("dToday") : n === 1 ? t("dTomorrow") : t("dIn", { n });
-  return `<span class="left ${n < 0 ? "past" : n <= 7 ? "soon" : ""}">${esc(txt)}</span>`;
-}
-const icsText = s => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
-// RFC 5545: lines longer than 75 octets are folded; never split a UTF-8 character.
-function icsFold(line) {
-  const enc = new TextEncoder(); let out = "", cur = "", len = 0;
-  for (const ch of line) {
-    const b = enc.encode(ch).length;
-    if (len + b > (out ? 74 : 75)) { out += (out ? "\r\n " : "") + cur; cur = ""; len = 0; }
-    cur += ch; len += b;
-  }
-  return out ? out + "\r\n " + cur : cur;
-}
-function buildIcs({ uid, iso, summary, description }) {
-  const day = iso.replace(/-/g, ""), [y, m, d] = iso.split("-").map(Number);
-  const next = new Date(Date.UTC(y, m - 1, d + 1)), end = `${next.getUTCFullYear()}${pad2(next.getUTCMonth() + 1)}${pad2(next.getUTCDate())}`;
-  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
-  const alarm = trig => ["BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:" + icsText(summary), "TRIGGER:" + trig, "END:VALARM"];
-  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//LetterPilot//LetterPilot AI//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
-    "BEGIN:VEVENT", "UID:" + uid, "DTSTAMP:" + stamp, "DTSTART;VALUE=DATE:" + day, "DTEND;VALUE=DATE:" + end,
-    "SUMMARY:" + icsText(summary), "DESCRIPTION:" + icsText(description), "TRANSP:TRANSPARENT",
-    // all-day event: 09:00 the day before, and 09:00 on the day
-    ...alarm("-PT15H"), ...alarm("PT9H"),
-    "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
-}
-async function addToCalendar(ev) {
-  const ics = buildIcs(ev), name = `letterpilot-${ev.iso}.ics`;
-  const file = new File([ics], name, { type: "text/calendar" });
-  // Inside the iPhone/Android app a download link does nothing: hand the file to the system share sheet.
-  if (window.Capacitor && navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: ev.summary }); return; } catch (e) { if (e?.name === "AbortError") return; }
-  }
-  const url = URL.createObjectURL(file), a = document.createElement("a");
-  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
-  toast(t("calDone"));
-}
-function docLine() { const r = current.result; return [r.title, r.sender && `${t("from")}: ${r.sender}`].filter(Boolean).join("\n"); }
-$("deadlines").onclick = e => {
-  const b = e.target.closest("[data-cal]"); if (!b || !current) return;
-  const d = current.result.deadlines[+b.dataset.cal], iso = isoOf(d.iso_date, d.date); if (!iso) return;
-  addToCalendar({ uid: `lp-${current.id}-dl${b.dataset.cal}@letterpilot`, iso, summary: d.what, description: `${d.date}: ${d.what}\n\n${docLine()}\n\n${t("calReminder")}` });
-};
-
-/* ================= invoice card ================= */
-const compact = s => String(s || "").replace(/\s+/g, "").toUpperCase();
-function mod97(s) { let r = 0; for (const ch of s) { const v = /[A-Z]/.test(ch) ? String(ch.charCodeAt(0) - 55) : ch; for (const dg of v) r = (r * 10 + +dg) % 97; } return r; }
-const ibanOk = v => { const s = compact(v); return /^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(s) && mod97(s.slice(4) + s.slice(0, 4)) === 1; };
-// Finnish viitenumero: weights 7-3-1 from the right; RF creditor reference: ISO 11649 (mod 97).
-function refCheck(v, finnish) {
-  const s = compact(v);
-  if (/^RF\d{2}[A-Z0-9]{1,21}$/.test(s)) return mod97(s.slice(4) + s.slice(0, 4)) === 1;
-  if (finnish && /^\d{4,20}$/.test(s)) {
-    const body = s.slice(0, -1), w = [7, 3, 1]; let sum = 0;
-    for (let i = 0; i < body.length; i++) sum += +body[body.length - 1 - i] * w[i % 3];
-    return (10 - sum % 10) % 10 === +s.slice(-1);
-  }
-  return null; // format we can't check
-}
-// Finnish virtual barcode, versions 4 (national reference) and 5 (RF reference).
-function decodeBarcode(v) {
-  const s = String(v || "").replace(/\D/g, "");
-  if (s.length !== 54 || (s[0] !== "4" && s[0] !== "5")) return null;
-  const iban = "FI" + s.slice(1, 17), amount = (+s.slice(17, 23) + +s.slice(23, 25) / 100);
-  const reference = s[0] === "4" ? s.slice(28, 48).replace(/^0+/, "") : "RF" + s.slice(25, 27) + s.slice(27, 48).replace(/^0+/, "");
-  const yy = s.slice(48, 50), mm = s.slice(50, 52), dd = s.slice(52, 54);
-  return { iban, amount, reference, due: +mm ? validIso("20" + yy, mm, dd) : "" };
-}
-function parseAmount(v) {
-  let s = String(v ?? "").replace(/[^\d.,-]/g, "");
-  if (s.includes(",") && s.includes(".")) s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
-  else s = s.replace(",", ".");
-  const n = parseFloat(s); return isFinite(n) ? n : null;
-}
-const group = (s, n, fromRight) => { if (!fromRight) return s.replace(new RegExp(`(.{${n}})(?=.)`, "g"), "$1 "); const out = []; for (let i = s.length; i > 0; i -= n) out.unshift(s.slice(Math.max(0, i - n), i)); return out.join(" "); };
-let invCopy = {};
-function invoiceData(r) {
-  const v = r.invoice || {}, bc = decodeBarcode(v.barcode);
-  const iban = compact(v.iban) || bc?.iban || "", fi = iban.startsWith("FI") || !!bc;
-  const amount = parseAmount(v.amount) ?? bc?.amount ?? null;
-  const reference = compact(v.reference) || bc?.reference || "";
-  const due = isoOf(v.due_date_iso, v.due_date) || bc?.due || "";
-  const currency = /^[A-Z]{3}$/.test(compact(v.currency)) ? compact(v.currency) : (fi ? "EUR" : "");
-  return { show: !!v.is_invoice && (amount !== null || iban || reference), v, bc, iban, fi, amount, reference, due, currency };
-}
-function renderInvoice(r) {
-  const x = invoiceData(r);
-  $("invWrap").hidden = !x.show; invCopy = {};
-  if (!x.show) { $("invList").innerHTML = ""; return; }
-  const warn = msg => `<span class="wn">${icon("info")}<span>${esc(msg)}</span></span>`;
-  const mism = (a, b) => x.bc && a && b && a !== b ? warn(t("invMismatch")) : "";
-  const copyBtn = k => `<button class="btn sec sm cp" data-copy="${k}" aria-label="${esc(t("copy"))}" title="${esc(t("copy"))}">${icon("copy")}<span class="lbl">${esc(t("copy"))}</span></button>`;
-  const fiHint = w => x.fi ? ` <i>· ${w}</i>` : "";
-  const row = (k, label, value, cls, extra = "", btns = "") => `<div class="row inv"><div class="vb"><span class="lb">${label}</span><span class="v ${cls}" dir="ltr">${esc(value)}</span>${extra}${btns ? `<div class="bts">${btns}</div>` : ""}</div>${copyBtn(k)}</div>`;
-  const rows = [];
-  if (x.v.recipient) { invCopy.recipient = x.v.recipient; rows.push(row("recipient", esc(t("invRecipient")) + fiHint("saaja"), x.v.recipient, "")); }
-  if (x.amount !== null) {
-    let shown; try { shown = x.currency ? new Intl.NumberFormat(ui, { style: "currency", currency: x.currency }).format(x.amount) : x.amount.toFixed(2); } catch { shown = x.amount.toFixed(2) + " " + x.currency; }
-    const comma = x.fi || ui === "ru" || /^(DE|SE|FR|ES|IT|NL|BE|AT|PL|EE|LV|LT|PT|CZ|SK|DK|NO)/.test(x.iban);
-    invCopy.amount = x.amount.toFixed(2).replace(".", comma ? "," : ".");
-    rows.push(row("amount", esc(t("invAmount")) + fiHint("summa"), shown, "amt", x.bc && Math.abs(x.bc.amount - x.amount) > 0.004 && x.bc.amount > 0 ? warn(t("invMismatch")) : ""));
-  }
-  if (x.due) {
-    const [y, m, d] = x.due.split("-"), n = daysTo(x.due);
-    invCopy.due = `${d}.${m}.${y}`;
-    const shown = new Date(+y, +m - 1, +d).toLocaleDateString(ui, { day: "numeric", month: "long", year: "numeric" });
-    const cal = n >= 0 ? `<button class="btn sec sm" data-invcal="1">${icon("calendar")}<span>${esc(t("addCal"))}</span></button>` : "";
-    rows.push(row("due", esc(t("invDue")) + fiHint("eräpäivä"), shown, "", leftChip(n) + mism(x.due, x.bc?.due), cal));
-  }
-  if (x.iban) { invCopy.iban = x.iban; rows.push(row("iban", esc(t("invIban")) + fiHint("tilinumero"), group(x.iban, 4), "mono", (ibanOk(x.iban) ? "" : warn(t("invBadSum"))) + mism(x.iban, x.bc?.iban))); }
-  if (x.v.bic) { invCopy.bic = compact(x.v.bic); rows.push(row("bic", esc(t("invBic")), compact(x.v.bic), "mono")); }
-  if (x.reference) {
-    invCopy.reference = x.reference;
-    const rf = x.reference.startsWith("RF"), ok = refCheck(x.reference, x.fi);
-    rows.push(row("reference", esc(t("invRef")) + fiHint("viitenumero"), rf ? group(x.reference, 4) : group(x.reference, 5, true), "mono", (ok === false ? warn(t("invBadSum")) : "") + mism(x.reference, x.bc?.reference)));
-  }
-  if (x.bc) { invCopy.barcode = String(x.v.barcode).replace(/\D/g, ""); rows.push(row("barcode", esc(t("invBarcode")) + fiHint("virtuaaliviivakoodi"), invCopy.barcode, "mono bc")); }
-  $("invList").innerHTML = rows.join("");
-}
-$("invList").onclick = e => {
-  if (!current) return;
-  const c = e.target.closest("[data-copy]");
-  if (c) return copy(invCopy[c.dataset.copy] || "", "err");
-  if (!e.target.closest("[data-invcal]")) return;
-  const x = invoiceData(current.result); if (!x.due) return;
-  const amt = x.amount !== null ? $("invList").querySelector(".amt")?.textContent || "" : "";
-  const summary = `${t("calPay")}: ${[x.v.recipient, amt].filter(Boolean).join(" — ") || current.result.title}`;
-  const details = [amt && `${t("invAmount")}: ${amt}`, x.v.recipient && `${t("invRecipient")}: ${x.v.recipient}`, x.iban && `IBAN: ${group(x.iban, 4)}`, x.v.bic && `BIC: ${compact(x.v.bic)}`,
-    x.reference && `${t("invRef")}: ${x.reference}`, invCopy.barcode && `${t("invBarcode")}: ${invCopy.barcode}`].filter(Boolean).join("\n");
-  addToCalendar({ uid: `lp-${current.id}-pay@letterpilot`, iso: x.due, summary, description: `${details}\n\n${docLine()}\n\n${t("calReminder")}` });
-};
-
-function render(fresh) {
-  const r = current.result;
-  $("home").hidden = true; $("results").hidden = false; $("tabbar").hidden = false; $("dock").hidden = true; $("newBtn").hidden = false; document.body.classList.add("has-tabs");
-  const u = { high: ["high", "urgent"], medium: ["medium", "hasDeadlines"], low: ["low", "notUrgent"] }[r.urgency];
-  $("pills").innerHTML = (u ? `<span class="pill ${u[0]}">${esc(t(u[1]))}</span>` : "") + `<span class="pill">${esc(r.document_type)}</span><span class="pill">${esc(r.source_language)} → ${esc(current.lang)}</span>` + (r.reply_needed ? `<span class="pill">${esc(t("replyNeeded"))}</span>` : "");
-  $("rTitle").textContent = r.title || "";
-  $("rFrom").textContent = r.sender ? `${t("from")}: ${r.sender}` : "";
-  $("rWant").textContent = r.what_they_want || "";
-  $("rSummary").textContent = r.summary || "";
-  $("paras").innerHTML = rowList(r.paragraphs, p => `<div class="para"><div class="o" dir="auto">${esc(p.original)}</div><div dir="auto">${esc(p.translation)}</div>${p.note ? `<div class="n">${icon("info")}<span>${esc(p.note)}</span></div>` : ""}</div>`);
-  $("dlWrap").hidden = !r.deadlines.length;
-  $("deadlines").innerHTML = rowList(r.deadlines, (d, i) => {
-    const iso = isoOf(d.iso_date, d.date), n = iso ? daysTo(iso) : null;
-    return `<div class="row dl"><span class="d">${esc(d.date)}</span><span class="txt">${esc(d.what)}${iso ? leftChip(n) : ""}</span>${iso && n >= 0 ? `<button class="btn sec sm" data-cal="${i}">${icon("calendar")}<span>${esc(t("addCal"))}</span></button>` : ""}</div>`;
-  });
-  renderInvoice(r);
-  $("steps").innerHTML = rowList(r.action_steps, (s, i) => `<div class="row check"><span class="num">${i + 1}</span><span>${esc(s)}</span></div>`);
-  $("amWrap").hidden = !r.amounts.length;
-  $("amounts").innerHTML = rowList(r.amounts, a => `<div class="row" dir="auto">${esc(a)}</div>`);
-  $("riskWrap").hidden = !r.if_ignored; $("risk").textContent = r.if_ignored || "";
-  $("terms").innerHTML = r.terms.length ? rowList(r.terms, x => `<div class="row term" style="display:block"><b dir="auto">${esc(x.term)}</b><span>${esc(x.meaning)}</span></div>`) : `<div class="row muted">${esc(t("noTerms"))}</div>`;
-  $("tips").innerHTML = rowList(r.reply_tips, x => `<div class="row tip">${icon("bulb")}<span>${esc(x)}</span></div>`);
-  $("toneWrap").hidden = !r.tone; $("tone").textContent = r.tone || "";
-  if (fresh) { selectedOpt = null; $("notes").value = ""; hideErr("draftErr"); hideErr("chatErr"); }
-  $("opts").innerHTML = rowList(r.reply_options, (o, i) => `<button class="opt ${i === selectedOpt ? "on" : ""}" data-i="${i}"><span class="radio"></span><div><b>${esc(o.label)}</b><span>${esc(o.description)}</span></div></button>`);
-  const rl = [...new Set([r.source_language, ...LANGS].filter(Boolean))];
-  const prevRL = $("replyLang").value;
-  $("replyLang").innerHTML = rl.map(l => `<option>${esc(l)}</option>`).join("");
-  if (!fresh && rl.includes(prevRL)) $("replyLang").value = prevRL;
-  $("draft").textContent = current.draft || ""; $("draftTr").textContent = current.draftTr || "";
-  $("draftTrWrap").hidden = !current.draftTr && !!current.draft;
-  renderChat();
-  if (fresh) { setTab("translation"); pageScroll(0); }
-}
-function setTab(name) {
-  tab = name; renderQuick(); ["tabbar", "dock", "quick"].forEach(id => $(id).classList.remove("away", "low"));
-  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
-  document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.id === "p-" + name));
-}
-$("tabbar").onclick = e => {
-  const b = e.target.closest(".tab"); if (!b) return;
-  setTab(b.dataset.tab);
-  const top = $("p-" + b.dataset.tab).getBoundingClientRect().top + window.scrollY - 70;
-  pageScroll(Math.max(0, top), true);
-};
-$("opts").onclick = e => { const b = e.target.closest(".opt"); if (!b) return; selectedOpt = selectedOpt === +b.dataset.i ? null : +b.dataset.i; document.querySelectorAll(".opt").forEach(o => o.classList.toggle("on", +o.dataset.i === selectedOpt)); };
-
-function context() {
-  const r = current.result;
-  return `${RULES(current.lang)}
-
-The document the reader received:
-<document>
-${current.doc.slice(0, 60000)}
-</document>
-Reader's language: ${current.lang}.${current.ctx ? `\nAbout the reader: ${current.ctx}` : ""}
-Analysis so far: ${r.summary} What they want: ${r.what_they_want}
-Deadlines: ${r.deadlines.map(d => d.date + " — " + d.what).join("; ") || "none"}. References: ${r.amounts.join("; ") || "none"}.`;
-}
-
-/* reply */
-const SEP = "=====TRANSLATION=====";
-$("draftBtn").onclick = async () => {
-  hideErr("draftErr");
-  if (!sample) return showErr(t("eNoClaude"), "draftErr");
-  const r = current.result, opt = selectedOpt !== null ? r.reply_options[selectedOpt] : null, notes = $("notes").value.trim();
-  if (!opt && !notes) return showErr(t("eChoose"), "draftErr");
-  const replyLang = $("replyLang").value, same = replyLang === current.lang;
-  const prompt = `${context()}
-
-Write a reply letter to the sender.
-Letter language: ${replyLang}. Style: ${STYLES[styleIdx][1]}.
-${opt ? `Chosen position: ${opt.label} — ${opt.description}` : ""}
-${notes ? `What the reader wants to say (their own words): ${notes}` : ""}
-Requirements: greeting and sign-off customary in that country for this kind of letter; include case numbers, account numbers and references from the document where needed; put placeholders in square brackets for unknown details, e.g. [Your name]. Do not invent facts the reader didn't give.
-First output only the letter text (subject line first if it is an email).${same ? "" : `\nThen, on its own line, exactly ${SEP} followed by an exact translation of the letter into ${current.lang}, so the reader knows what they are sending.`}
-No commentary before or after.`;
-  const btn = $("draftBtn"), label = btn.innerHTML;
-  btn.disabled = true; btn.innerHTML = `<span class="spin-sm"></span><span>${esc(t("write"))}…</span>`;
-  $("draft").textContent = ""; $("draftTr").textContent = ""; $("draftTrWrap").hidden = same;
-  const show = s => { const [a, b = ""] = s.split(SEP); $("draft").textContent = a.trim(); $("draftTr").textContent = b.trim(); };
-  try {
-    const { text, truncated } = await sample(prompt, { cache: false, onText: ({ text }) => show(text) });
-    show(text); if (truncated) showErr(t("truncated"), "draftErr");
-    current.draft = $("draft").textContent; current.draftTr = $("draftTr").textContent; saveHistory(current);
-  } catch (e) { if (e?.text) show(e.text); else if (e?.code === "refused") show(""); const m = errText(e); if (m) showErr(m, "draftErr"); }
-  finally { btn.disabled = false; btn.innerHTML = label; renderQuick(); }
-};
-
-/* ask */
-function renderChat() { $("chat").innerHTML = current.chat.map(m => `<div class="bub ${m.role === "user" ? "u" : "a"}" dir="auto">${esc(m.content)}</div>`).join(""); }
-$("chatForm").onsubmit = async e => {
-  e.preventDefault(); hideErr("chatErr");
-  const q = $("chatIn").value.trim(); if (!q) return;
-  if (!sample) return showErr(t("eNoClaude"), "chatErr");
-  $("chatIn").value = ""; current.chat.push({ role: "user", content: q }); renderChat();
-  const bub = document.createElement("div"); bub.className = "bub a"; bub.setAttribute("dir", "auto"); bub.innerHTML = '<span class="spin-sm" style="display:inline-block"></span>';
-  $("chat").appendChild(bub); bub.scrollIntoView({ block: "nearest" });
-  $("chatBtn").disabled = true;
-  const turns = [{ role: "user", content: `${context()}\n\nThe reader will now ask questions about this document. Answer briefly and to the point, in ${current.lang}, as plain text without markdown.` }, ...current.chat.slice(-12)];
-  try {
-    const { text } = await sample(turns, { modelTier: "quick", cache: false, onText: ({ text }) => { bub.textContent = text; } });
-    current.chat.push({ role: "assistant", content: text }); saveHistory(current); renderChat();
-  } catch (err) { current.chat.pop(); renderChat(); const m = errText(err); if (m) showErr(m, "chatErr"); }
-  finally { $("chatBtn").disabled = false; }
-};
-
-/* copy */
-async function copy(text, errId) { try { await navigator.clipboard.writeText(text); toast(t("copied")); } catch { showErr(t("eCopy"), errId); } }
-$("copyTr").onclick = () => copy(current.result.paragraphs.map(p => p.translation).join("\n\n"), "err");
-$("copyDraft").onclick = () => copy($("draft").textContent, "draftErr");
-
-/* ================= quick actions above the tab bar ================= */
-const chatHome = $("chatForm").parentNode, chatAnchor = $("chatErr");
-function chip(act, ic, k, pri) { return `<button class="chip ${pri ? "pri" : ""}" data-act="${act}">${icon(ic)}<span>${esc(t(k))}</span></button>`; }
-function renderQuick() {
-  const q = $("quick");
-  if (!current) { q.hidden = true; return; }
-  if (tab === "ask") { q.innerHTML = ""; q.appendChild($("chatForm")); q.hidden = false; return; }
-  if ($("chatForm").parentNode !== chatHome) chatHome.insertBefore($("chatForm"), chatAnchor);
-  const sets = {
-    translation: chip("copyTr", "copy", "qCopyTr") + chip("reply", "reply", "qReply", true),
-    todo: chip("copyPlan", "copy", "qCopyPlan") + chip("ask", "bubble", "qAsk") + chip("reply", "reply", "qReply", true),
-    terms: chip("ask", "bubble", "qAsk") + chip("reply", "reply", "qReply", true),
-    tips: chip("ask", "bubble", "qAsk") + chip("reply", "reply", "qReply", true),
-    reply: (current.draft ? chip("copyLetter", "copy", "qCopyLetter") : "") + chip("write", "sparkle", "write", true)
-  };
-  q.innerHTML = sets[tab] || ""; q.hidden = !q.innerHTML;
-}
-$("quick").addEventListener("click", e => {
-  const b = e.target.closest("[data-act]"); if (!b) return;
-  const go = name => { setTab(name); pageScroll($("p-" + name).getBoundingClientRect().top + window.scrollY - 70); };
-  switch (b.dataset.act) {
-    case "copyTr": $("copyTr").click(); break;
-    case "new": newDoc(); break;
-    case "copyPlan": copy(current.result.action_steps.map((s, i) => `${i + 1}. ${s}`).join("\n"), "err"); break;
-    case "copyLetter": $("copyDraft").click(); break;
-    case "reply": go("reply"); break;
-    case "ask": go("ask"); setTimeout(() => $("chatIn").focus(), 50); break;
-    case "write": $("draftBtn").click(); break;
-  }
-});
-
-
-/* ================= access code management (website only) ================= */
-let adminPending = null;
-try { localStorage.removeItem("lp_admin"); } catch {} // the separate admin password field is gone
-async function adminCall(path, body) {
-  let r, data;
-  try {
-    r = await fetch(WORKER_URL + path, { method: body ? "POST" : "GET", headers: { "X-Admin-Token": tokenGet(), ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
-    data = await r.json().catch(() => ({}));
-  } catch { throw new Error(t("adminNet")); }
-  if (!r.ok) throw new Error(r.status === 401 ? t("adminBadPw") : data.error || ("HTTP " + r.status));
-  return data;
-}
-const adminDate = d => d ? new Date(d + "T12:00:00").toLocaleDateString(ui) : t("adminNever");
-async function adminLoad() {
-  hideErr("adminErr");
-  try {
-    const { codes } = await adminCall("/admin/codes");
-    $("adminPanel").hidden = false;
-    codes.sort((a, b) => (b.created || "").localeCompare(a.created || ""));
-    $("adminList").innerHTML = codes.length ? codes.map(c => `<div class="acode">
-      <div class="top"><b>${esc(c.name)}</b><span class="pill ${c.disabled ? "off" : "on"}">${esc(t(c.disabled ? "adminOff" : "adminOn"))}</span></div>
-      <div class="val">${esc(c.code)}</div>
-      <div class="meta">${esc(t("adminCreatedOn"))}: ${esc(adminDate(c.created))} · ${esc(t("adminLast"))}: ${esc(adminDate(c.lastUsed))}</div>
-      ${adminPending === c.code
-        ? `<div class="acts"><span class="small" style="color:var(--bad);align-self:center">${esc(t("adminDelQ"))}</span><button class="btn danger sm" data-adm="del" data-code="${esc(c.code)}">${esc(t("adminYes"))}</button><button class="btn sec sm" data-adm="cancel">${esc(t("adminCancel"))}</button></div>`
-        : `<div class="acts"><button class="btn sec sm" data-adm="share" data-code="${esc(c.code)}">${esc(t("adminShare"))}</button><button class="btn sec sm" data-adm="toggle" data-code="${esc(c.code)}" data-off="${c.disabled ? 1 : 0}">${esc(t(c.disabled ? "adminEnable" : "adminDisable"))}</button><button class="btn danger sm" data-adm="ask" data-code="${esc(c.code)}">${esc(t("adminDelete"))}</button></div>`}
-    </div>`).join("") : `<div class="row muted">${esc(t("adminNone"))}</div>`;
-  } catch (e) { $("adminPanel").hidden = true; showErr(e.message, "adminErr"); }
-}
-async function shareCode(code, btn) {
-  const text = t("adminShareText") + "\n" + code;
-  if (navigator.share) { try { await navigator.share({ text }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
-  try { await navigator.clipboard.writeText(code); toast(t("copied")); } catch { showErr(t("eCopy"), "adminErr"); }
-}
-$("adminOpen").onclick = () => { closeSheet("setSheet"); openSheet("adminSheet"); adminLoad(); };
-
-/* role check: the Administrator section appears only for the administrator's code */
-let roleTimer = null, roleSeq = 0;
-async function checkRole() {
-  if (inClaude) return;
-  const tok = tokenGet(), seq = ++roleSeq, st = $("codeStatus");
-  if (!tok) { st.hidden = true; $("adminSection").hidden = true; return; }
-  try {
-    const r = await fetch(WORKER_URL + "/whoami", { headers: { "X-LetterPilot-Token": tok } });
-    if (seq !== roleSeq) return;
-    const d = await r.json().catch(() => ({}));
-    const ok = r.ok && d.ok;
-    $("adminSection").hidden = !(ok && d.admin);
-    st.hidden = false;
-    st.style.color = ok ? "var(--ok)" : "var(--bad)";
-    st.textContent = ok ? (d.admin ? t("roleAdmin") : t("roleOk")) : t("roleBad");
-  } catch { if (seq === roleSeq) { st.hidden = true; } }
-}
-$("apiKey").addEventListener("input", () => { clearTimeout(roleTimer); roleTimer = setTimeout(checkRole, 600); });
-checkRole();
-$("adminRefresh").onclick = adminLoad;
-$("adminCreate").onclick = async () => {
-  const btn = $("adminCreate"); btn.disabled = true; hideErr("adminErr");
-  try {
-    const c = await adminCall("/admin/codes", { name: $("adminName").value.trim() });
-    $("adminName").value = "";
-    $("adminCreated").innerHTML = `<div class="acreated"><b>${esc(c.name)}</b><span class="small">${esc(t("adminMade"))}</span><div class="val" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;overflow-wrap:anywhere">${esc(c.code)}</div><div><button class="btn sm" data-adm="share" data-code="${esc(c.code)}">${esc(t("adminShare"))}</button></div></div>`;
-    adminLoad();
-  } catch (e) { showErr(e.message, "adminErr"); }
-  finally { btn.disabled = false; }
-};
-$("adminSheet").addEventListener("click", async e => {
-  const b = e.target.closest("[data-adm]"); if (!b) return;
-  const code = b.dataset.code;
-  try {
-    if (b.dataset.adm === "share") return shareCode(code, b);
-    if (b.dataset.adm === "ask") { adminPending = code; return adminLoad(); }
-    if (b.dataset.adm === "cancel") { adminPending = null; return adminLoad(); }
-    if (b.dataset.adm === "del") { adminPending = null; await adminCall("/admin/codes/update", { code, delete: true }); return adminLoad(); }
-    if (b.dataset.adm === "toggle") { await adminCall("/admin/codes/update", { code, disabled: b.dataset.off !== "1" }); return adminLoad(); }
-  } catch (err) { showErr(err.message, "adminErr"); }
-});
-
-/* ================= history (this browser only) ================= */
-function saveHistory(item) {
-  let h = store.get("history", []).filter(x => x.id !== item.id);
-  h.unshift(item); h = h.slice(0, 15);
-  while (!store.set("history", h) && h.length > 1) h.pop();
-  renderHistory();
-}
-function renderHistory() {
-  const h = store.get("history", []);
-  $("histWrap").hidden = !h.length;
-  $("hist").innerHTML = h.map(x => `<button class="row hrow" data-id="${x.id}"><span>${esc(x.result?.title)}</span><small>${new Date(x.date).toLocaleDateString(ui)}</small>${icon("chev")}</button>`).join("");
-}
-$("hist").onclick = e => { const b = e.target.closest(".hrow"); if (!b) return; const x = store.get("history", []).find(i => i.id === +b.dataset.id); if (x) { current = x; current.chat ||= []; current.result = normalize(current.result); render(true); } };
-$("wipeBtn").onclick = () => { store.del("history"); renderHistory(); };
-
-/* ================= navigation ================= */
-function goHome() {
-  $("results").hidden = true; $("tabbar").hidden = true; $("dock").hidden = false; $("newBtn").hidden = true; $("topbar").classList.remove("hide"); $("home").hidden = false; document.body.classList.remove("has-tabs");
-  current = null; renderQuick(); hideErr(); pageScroll(0);
-}
-$("homeBtn").onclick = goHome;
-function newDoc() { $("docText").value = ""; $("ctx").value = ""; while (pages.length) removePage(0); goHome(); $("docText").focus({ preventScroll: true }); }
-$("newBtn").onclick = newDoc; $("newBtn2").onclick = newDoc;
-/* hide the top bar while scrolling down, bring it back on scroll up */
-let lastY = window.scrollY;
-window.addEventListener("scroll", () => {
-  const y = window.scrollY, dy = y - lastY;
-  if (Date.now() < quietScrollUntil) { lastY = y; return; } // scrolling started by the page itself
-  if (Math.abs(dy) < 6) return;
-  const away = dy > 0 && y > 80;
-  $("topbar").classList.toggle("hide", away);
-  const typing = document.activeElement === $("chatIn");
-  ["tabbar", "dock"].forEach(id => $(id).classList.toggle("away", away && !typing));
-  // the question box stays reachable on the Ask tab: it drops to the bottom edge instead of hiding
-  $("quick").classList.toggle("away", away && !typing && tab !== "ask");
-  $("quick").classList.toggle("low", away && tab === "ask");
-  lastY = y;
-}, { passive: true });
-function clearInput() { $("docText").value = ""; while (pages.length) removePage(0); hideErr(); syncClear(); }
-$("clearTop").onclick = () => { clearInput(); $("docText").focus({ preventScroll: true }); };
-$("docText").addEventListener("input", syncClear);
-
-applyI18n();
-syncClear();
-})();
-</script>
-
+  <script src="app.js"></script>
 </body>
 </html>
