@@ -250,7 +250,8 @@ async function callGemini({ contents, systemInstruction = null, jsonMode = false
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || `Ошибка сервера: HTTP ${res.status}`);
+    const detail = Array.isArray(data.details) ? data.details.join("; ") : "";
+    throw new Error([data.error || `Ошибка сервера: HTTP ${res.status}`, detail].filter(Boolean).join(". "));
   }
   const text = data.result || "";
   if (!text) throw new Error("Пустой ответ от модели.");
