@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#eaf4ff" />
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
-  <link rel="stylesheet" href="style.css?v=20261126-mobile1" />
+  <link rel="stylesheet" href="style.css?v=20261126-voice1" />
 </head>
 <body>
   <div class="app-shell">
@@ -129,6 +129,7 @@
               <p id="resTranslation" class="body-text pre-wrap"></p>
             </div>
             <button class="btn-secondary speak-button" id="btnSpeakTranslation" type="button" aria-pressed="false">🔊 Прослушать перевод</button>
+            <audio id="translationAudio" controls class="translation-audio hidden" aria-label="Озвученный перевод"></audio>
           </div>
         </div>
       </section>
@@ -290,6 +291,8 @@
         <option value="nvidia">NVIDIA</option>
       </select>
       <label class="large-text-choice mb-12" for="cfgLargeText"><input type="checkbox" id="cfgLargeText" /> Крупный текст и большие кнопки</label>
+      <label class="label-sm mb-6" for="cfgVoice">Голос для чтения перевода</label>
+      <select id="cfgVoice" class="input-select mb-12"><option value="Sulafat">Тёплый</option><option value="Achernar">Мягкий</option><option value="Kore">Чёткий</option><option value="Charon">Низкий</option></select>
       <p class="muted-sm mb-12">Ключи Gemini и NVIDIA хранятся в Cloudflare. Код доступа сохраняется только в этом браузере на вашем устройстве.</p>
 
       <button class="btn-primary btn-full" id="btnSaveSettings">Сохранить настройки</button>
@@ -331,6 +334,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261126-mobile1"></script>
+  <script src="app.js?v=20261126-voice1"></script>
 </body>
 </html>
+
