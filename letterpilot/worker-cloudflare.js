@@ -70,35 +70,94 @@ async function nvidia(key, input) {
   if (!text?.trim()) throw Error('Empty NVIDIA response');
   return text;
 }
-async function tts(request, env) {
-  if (!await role(bearer(request), env)) return reply({ error: 'Неверный код доступа' }, 401);
-  if (!env.GEMINI_API_KEY) return reply({ error: 'Ключ Gemini не настроен' }, 503);
-  const body = await request.json().catch(() => ({}));
-  const words = String(body.text || '').trim();
-  if (!words || words.length > 2000) return reply({ error: 'Фрагмент для озвучивания должен быть не длиннее 2000 символов' }, 400);
-  const voices = ['Sulafat', 'Achernar', 'Kore', 'Charon'];
-  const voice = voices.includes(body.voice) ? body.voice : 'Sulafat';
-  const upstream = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent', {
-    method: 'POST', headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ text: 'Read aloud naturally and clearly in the original language: ' + words }] }], generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } } }),
-    signal: AbortSignal.timeout(60000)
-  });
-  if (!upstream.ok) return reply({ error: 'Голос Gemini недоступен: HTTP ' + upstream.status }, 502);
-  const data = await upstream.json();
-  const audio = data.candidates?.[0]?.content?.parts?.find(item => item.inlineData?.data)?.inlineData;
-  if (!audio?.data) return reply({ error: 'Gemini не вернул аудио' }, 502);
-  const pcm = Uint8Array.from(atob(audio.data), c => c.charCodeAt(0));
+// Ограничение частоты: не больше N запросов в минуту на один код (в пределах экземпляра воркера).
+const hits = new Map();
+function tooMany(id, max) {
+  const now = Date.now(), list = (hits.get(id) || []).filter(t => now - t < 60000);
+  list.push(now); hits.set(id, list);
+  if (hits.size > 5000) hits.clear();
+  return list.length > max;
+}
+// Голосовые модели: берём доступные этому ключу (новые Flash — первыми), запасные — старые превью.
+let ttsList = null, ttsAt = 0;
+async function ttsModels(key) {
+  if (ttsList && Date.now() - ttsAt < 6 * 3600000) return ttsList;
+  let found = [];
+  try {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', { headers: { 'x-goog-api-key': key }, signal: AbortSignal.timeout(15000) });
+    if (r.ok) {
+      const ver = n => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
+      found = ((await r.json()).models || [])
+        .filter(x => /tts/i.test(x.name) && x.supportedGenerationMethods?.includes('generateContent'))
+        .map(x => x.name.replace(/^models\//, ''))
+        .sort((a, b) => ver(b) - ver(a) || (/flash/.test(b) - /flash/.test(a)) || (/preview/.test(a) - /preview/.test(b)));
+    }
+  } catch {}
+  ttsList = [...new Set([...found, 'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'])].slice(0, 4);
+  ttsAt = Date.now();
+  return ttsList;
+}
+function pcmToWav(pcm, rate) {
   const wav = new Uint8Array(44 + pcm.length);
   const view = new DataView(wav.buffer);
   for (const [offset, word] of [[0, 'RIFF'], [8, 'WAVE'], [12, 'fmt '], [36, 'data']]) for (let i = 0; i < 4; i++) wav[offset + i] = word.charCodeAt(i);
   view.setUint32(4, 36 + pcm.length, true); view.setUint32(16, 16, true);
   view.setUint16(20, 1, true); view.setUint16(22, 1, true);
-  view.setUint32(24, 24000, true); view.setUint32(28, 48000, true);
+  view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true);
   view.setUint16(32, 2, true); view.setUint16(34, 16, true); view.setUint32(40, pcm.length, true);
   wav.set(pcm, 44);
+  return wav;
+}
+function toBase64(bytes) {
   let binary = '';
-  for (let i = 0; i < wav.length; i += 8192) binary += String.fromCharCode(...wav.subarray(i, i + 8192));
-  return reply({ audio: btoa(binary), mimeType: 'audio/wav' });
+  for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  return btoa(binary);
+}
+async function tts(request, env) {
+  const code = bearer(request);
+  if (!await role(code, env)) return reply({ error: 'Неверный код доступа' }, 401);
+  if (!env.GEMINI_API_KEY) return reply({ error: 'Ключ Gemini не настроен' }, 503);
+  if (tooMany('tts:' + await digest(code), 40)) return reply({ error: 'Слишком много запросов голоса, подождите минуту' }, 429);
+  const body = await request.json().catch(() => ({}));
+  const words = String(body.text || '').trim();
+  if (!words || words.length > 2000) return reply({ error: 'Фрагмент для озвучивания должен быть не длиннее 2000 символов' }, 400);
+  const voices = ['Sulafat', 'Achernar', 'Kore', 'Charon'];
+  const voice = voices.includes(body.voice) ? body.voice : 'Sulafat';
+  const payload = JSON.stringify({
+    contents: [{ parts: [{ text: 'Say in a calm, warm and clear voice: ' + words }] }],
+    generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } }
+  });
+  const deadline = Date.now() + 55000, tried = [];
+  for (const model of await ttsModels(env.GEMINI_API_KEY)) {
+    const left = deadline - Date.now();
+    if (left < 5000) break;
+    let upstream;
+    try {
+      upstream = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+        method: 'POST', headers: { 'x-goog-api-key': env.GEMINI_API_KEY, 'Content-Type': 'application/json' }, body: payload,
+        signal: AbortSignal.timeout(Math.min(40000, left))
+      });
+    } catch { tried.push(model + ': нет ответа'); continue; }
+    if (!upstream.ok) {
+      let msg = '';
+      try { msg = ((await upstream.json()).error || {}).message || ''; } catch {}
+      tried.push(model + ': HTTP ' + upstream.status + (msg ? ' ' + msg.slice(0, 120) : ''));
+      if (upstream.status === 404) ttsList = null;
+      if (upstream.status === 401 || upstream.status === 403) break;
+      continue;
+    }
+    const data = await upstream.json();
+    const audio = data.candidates?.[0]?.content?.parts?.find(item => item.inlineData?.data)?.inlineData;
+    if (!audio?.data) { tried.push(model + ': без аудио'); continue; }
+    const mime = String(audio.mimeType || '');
+    if (/^audio\/(wav|x-wav|mpeg|mp3|ogg|webm)/i.test(mime)) return reply({ audio: audio.data, mimeType: mime.split(';')[0], model });
+    const rate = Number((mime.match(/rate=(\d+)/) || [])[1]) || 24000;
+    const pcm = Uint8Array.from(atob(audio.data), c => c.charCodeAt(0));
+    return reply({ audio: toBase64(pcmToWav(pcm, rate)), mimeType: 'audio/wav', model });
+  }
+  console.warn('TTS failed', tried.join(' | '));
+  const busy = tried.length && tried.every(t => / (429|500|503) |нет ответа/.test(t));
+  return reply({ error: busy ? 'Голос Gemini сейчас перегружен, попробуйте через минуту' : 'Голос Gemini недоступен', details: tried }, busy ? 503 : 502);
 }
 export default { async fetch(request, env) {
   const path = new URL(request.url).pathname;
@@ -113,7 +172,9 @@ export default { async fetch(request, env) {
   }
   if (path !== '/api/generate') return reply({ error: 'Not found' }, 404);
   if (request.method !== 'POST') return reply({ error: 'Method not allowed' }, 405);
-  if (!await role(bearer(request), env)) return reply({ error: 'Неверный код доступа' }, 401);
+  const userCode = bearer(request);
+  if (!await role(userCode, env)) return reply({ error: 'Неверный код доступа' }, 401);
+  if (tooMany('gen:' + await digest(userCode), 30)) return reply({ error: 'Слишком много запросов, подождите минуту' }, 429);
   if (Number(request.headers.get('Content-Length') || 0) > 11_000_000) return reply({ error: 'Слишком большой файл' }, 413);
   let input;
   try { input = await request.json(); } catch { return reply({ error: 'Неверный JSON' }, 400); }
