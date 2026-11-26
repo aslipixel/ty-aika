@@ -4,11 +4,14 @@
  */
 
 const STORAGE_HIST = "docai_v2_history";
+const STORAGE_CONFIG = "letterpilot_v2_config";
 
 const state = {
   config: {
     accessToken: "",
-    provider: "auto"
+    provider: "auto",
+    largeText: false,
+    adminToken: ""
   },
   attachedFiles: [], // { name, mimeType, base64, textContent? }
   rawInputText: "",
@@ -36,12 +39,27 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function loadConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}");
+    state.config.accessToken = typeof saved.accessToken === "string" ? saved.accessToken : "";
+    state.config.provider = ["auto", "gemini", "nvidia"].includes(saved.provider) ? saved.provider : "auto";
+    state.config.largeText = saved.largeText === true;
+    state.config.adminToken = typeof saved.adminToken === "string" ? saved.adminToken : "";
+  } catch (e) { /* Storage may be unavailable in private browsing. */ }
+  $("cfgAccessToken").value = state.config.accessToken;
   $("cfgProvider").value = state.config.provider;
+  $("cfgLargeText").checked = state.config.largeText;
+  $("cfgAdminToken").value = state.config.adminToken;
+  document.body.classList.toggle("large-text", state.config.largeText);
 }
 
 function saveConfig() {
   state.config.accessToken = $("cfgAccessToken").value.trim();
   state.config.provider = $("cfgProvider").value;
+  state.config.largeText = $("cfgLargeText").checked;
+  document.body.classList.toggle("large-text", state.config.largeText);
+  try { localStorage.setItem(STORAGE_CONFIG, JSON.stringify(state.config)); }
+  catch (e) { showToast("Браузер не разрешает сохранить код на устройстве"); return; }
   closeModal("settingsModal");
   showToast("Настройки сохранены");
 }
@@ -88,6 +106,11 @@ function bindEvents() {
   });
 
   $("btnSaveSettings").addEventListener("click", saveConfig);
+  $("btnOpenAdmin").addEventListener("click", () => { closeModal("settingsModal"); openModal("adminModal"); if (state.config.adminToken) loadFriendCodes(); });
+  $("btnCreateAdmin").addEventListener("click", createAdminCode);
+  $("btnLoadCodes").addEventListener("click", loadFriendCodes);
+  $("btnCreateFriend").addEventListener("click", createFriendCode);
+  $("btnCopyNewCode").addEventListener("click", () => copyText($("newCodeValue").textContent));
   $("btnClearHistory").addEventListener("click", () => {
     state.history = [];
     localStorage.removeItem(STORAGE_HIST);
@@ -136,6 +159,7 @@ Laskutusosasto / Billing Department`;
     if (!state.currentAnalysis) return;
     copyText(state.currentAnalysis.full_translation || "");
   });
+  $("btnSpeakTranslation").addEventListener("click", toggleTranslationSpeech);
 
   // Reply intent chips
   $("replyIntentChips").addEventListener("click", (e) => {
@@ -184,6 +208,78 @@ function switchTab(tabId) {
 
 function openModal(id) { $(id).classList.remove("hidden"); }
 function closeModal(id) { $(id).classList.add("hidden"); }
+
+const API_BASE = "https://letterpilot-v2.asl-icopal.workers.dev";
+function adminMessage(message) { $("adminMessage").textContent = message; }
+function showNewCode(code) {
+  $("newCodeValue").textContent = code;
+  $("newCodeBox").classList.remove("hidden");
+}
+async function adminRequest(path, method = "GET", body = null, useOwner = false) {
+  const token = useOwner ? state.config.accessToken : $("cfgAdminToken").value.trim();
+  if (!token) throw new Error(useOwner ? "Сначала сохраните код доступа в настройках" : "Введите админский код");
+  const res = await fetch(API_BASE + path, {
+    method,
+    headers: { "Authorization": `Bearer ${encodeURIComponent(token)}`, "Content-Type": "application/json" },
+    ...(body ? { body: JSON.stringify(body) } : {})
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Ошибка HTTP ${res.status}`);
+  return data;
+}
+async function createAdminCode() {
+  adminMessage("Создаю админский код...");
+  try {
+    const data = await adminRequest("/api/admin/init", "POST", null, true);
+    $("cfgAdminToken").value = data.code;
+    state.config.adminToken = data.code;
+    localStorage.setItem(STORAGE_CONFIG, JSON.stringify(state.config));
+    showNewCode(data.code);
+    adminMessage("Админский код создан. Скопируйте его сейчас.");
+  } catch (e) { adminMessage(e.message); }
+}
+async function loadFriendCodes() {
+  adminMessage("Загружаю список...");
+  try {
+    state.config.adminToken = $("cfgAdminToken").value.trim();
+    localStorage.setItem(STORAGE_CONFIG, JSON.stringify(state.config));
+    const data = await adminRequest("/api/admin/codes");
+    const list = $("friendCodeList");
+    list.replaceChildren();
+    for (const item of data.codes || []) {
+      const row = document.createElement("div");
+      row.className = "history-item";
+      const name = document.createElement("strong");
+      name.textContent = `${item.name} · …${item.lastFour}`;
+      const status = document.createElement("span");
+      status.textContent = item.disabled ? "Отключён" : "Активен";
+      row.append(name, status);
+      if (!item.disabled) {
+        const button = document.createElement("button");
+        button.className = "btn-secondary mt-10";
+        button.textContent = "Отключить";
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          try { await adminRequest("/api/admin/codes/revoke", "POST", { id: item.id }); await loadFriendCodes(); }
+          catch (e) { adminMessage(e.message); button.disabled = false; }
+        });
+        row.append(button);
+      }
+      list.append(row);
+    }
+    adminMessage(data.codes?.length ? "Список кодов загружен" : "Кодов для друзей пока нет");
+  } catch (e) { adminMessage(e.message); }
+}
+async function createFriendCode() {
+  adminMessage("Создаю код...");
+  try {
+    const data = await adminRequest("/api/admin/codes", "POST", { name: $("friendName").value.trim() });
+    showNewCode(data.code);
+    $("friendName").value = "";
+    await loadFriendCodes();
+    adminMessage("Код создан. Скопируйте его и передайте другу лично.");
+  } catch (e) { adminMessage(e.message); }
+}
 
 // --- File Handling ---
 async function handleFileSelect(e) {
@@ -286,6 +382,16 @@ async function runAnalysis() {
 
   setLoading("btnAnalyze", "analyzeSpinner", true);
   $("statusSubtitle").textContent = "Анализирую документ...";
+  const startedAt = Date.now();
+  const progress = $("analysisProgress");
+  progress.classList.remove("hidden");
+  const updateProgress = () => {
+    const seconds = Math.floor((Date.now() - startedAt) / 1000);
+    const stage = seconds < 10 ? "Отправляю документ" : seconds < 35 ? "ИИ читает и разбирает документ" : "Обработка продолжается, подождите";
+    progress.textContent = `${stage} · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  };
+  updateProgress();
+  const progressTimer = setInterval(updateProgress, 1000);
 
   try {
     const parts = [];
@@ -364,6 +470,8 @@ async function runAnalysis() {
     showRequestError(err);
     $("statusSubtitle").textContent = "Ошибка анализа";
   } finally {
+    clearInterval(progressTimer);
+    progress.classList.add("hidden");
     setLoading("btnAnalyze", "analyzeSpinner", false);
   }
 }
@@ -580,6 +688,51 @@ function copyText(text) {
     () => showToast("Скопировано!"),
     () => showToast("Не удалось скопировать")
   );
+}
+
+let speechRun = 0;
+let speakingTranslation = false;
+function toggleTranslationSpeech() {
+  if (!("speechSynthesis" in window)) {
+    showToast("Озвучивание недоступно в этом браузере");
+    return;
+  }
+  const button = $("btnSpeakTranslation");
+  if (speakingTranslation) {
+    speechRun++;
+    speechSynthesis.cancel();
+    speakingTranslation = false;
+    button.textContent = "🔊 Прослушать перевод";
+    button.setAttribute("aria-pressed", "false");
+    return;
+  }
+  const text = state.currentAnalysis?.full_translation?.trim();
+  if (!text) return showToast("Сначала разберите документ");
+  const languages = { "Русский": "ru-RU", "Suomi": "fi-FI", "English": "en-US", "Deutsch": "de-DE", "Українська": "uk-UA", "Español": "es-ES", "Français": "fr-FR" };
+  const lang = languages[state.targetLang] || "ru-RU";
+  const chunks = text.match(/[\s\S]{1,180}/g) || [];
+  const run = ++speechRun;
+  let index = 0;
+  speakingTranslation = true;
+  button.textContent = "■ Остановить чтение";
+  button.setAttribute("aria-pressed", "true");
+  speechSynthesis.cancel();
+  const next = () => {
+    if (run !== speechRun) return;
+    if (index >= chunks.length) {
+      speakingTranslation = false;
+      button.textContent = "🔊 Прослушать перевод";
+      button.setAttribute("aria-pressed", "false");
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(chunks[index++]);
+    utterance.lang = lang;
+    utterance.rate = 0.9;
+    utterance.onend = next;
+    utterance.onerror = next;
+    speechSynthesis.speak(utterance);
+  };
+  next();
 }
 
 let toastTimer = null;

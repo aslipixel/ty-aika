@@ -584,6 +584,32 @@ html, body {
   grid-template-columns: repeat(5, 1fr);
   flex-shrink: 0;
 }
+.analysis-progress {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 4px 8px 12px;
+}
+.speak-button { width: 100%; margin-top: 10px; min-height: 44px; }
+.admin-code-box { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.admin-code-box code { display: block; margin: 8px 0; overflow-wrap: anywhere; font-size: 14px; }
+.large-text-choice { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+.large-text-choice input { width: 22px; height: 22px; flex: none; accent-color: var(--accent); }
+body.large-text { font-size: 18px; }
+body.large-text .app-header { --header-h: 72px; }
+body.large-text .brand-text h1 { font-size: 19px; }
+body.large-text .brand-text p { font-size: 13px; }
+body.large-text .label-sm, body.large-text .muted-sm, body.large-text .analysis-progress { font-size: 16px; }
+body.large-text .card-title { font-size: 20px; }
+body.large-text .body-text, body.large-text .translation-box { font-size: 19px; line-height: 1.6; }
+body.large-text .input-select, body.large-text .input-text, body.large-text .input-textarea,
+body.large-text .chat-input, body.large-text .btn-primary, body.large-text .btn-secondary,
+body.large-text .chip-btn, body.large-text .upload-btn, body.large-text .btn-ghost-sm { font-size: 18px; }
+body.large-text .btn-primary, body.large-text .btn-secondary, body.large-text .upload-btn { min-height: 50px; }
+body.large-text .nav-item { font-size: 12px; line-height: 1.15; }
+body.large-text .bottom-nav { --nav-h: 76px; }
+body.large-text .row-between, body.large-text .upload-bar { flex-wrap: wrap; }
+body.large-text .icon-btn { width: 40px; height: 40px; }
 
 .nav-item {
   background: none;
@@ -772,6 +798,36 @@ html, body {
 .nav-item { gap: 2px; color: #5b748d; }
 .nav-item.active { color: #086dcb; }
 .nav-item.active svg { background: linear-gradient(145deg, #e5f5ff, #a9d6ff); }
+
+/* Keep controls inside the visible area on narrow phones and iPhone safe areas. */
+.app-header {
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+  gap: 8px;
+}
+.brand { min-width: 0; }
+.brand-text { min-width: 0; }
+.brand-text p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.header-actions { flex-shrink: 0; }
+.app-main {
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+}
+.bottom-nav {
+  height: calc(var(--nav-h) + max(8px, env(safe-area-inset-bottom, 0px)));
+  padding: 0 max(12px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.nav-item { min-width: 0; }
+.nav-item span { max-width: 100%; }
+@media (max-width: 360px) {
+  .app-header { padding-left: 14px; padding-right: 14px; }
+  .brand { gap: 6px; }
+  .header-actions { gap: 3px; }
+  .app-main { padding-left: 14px; padding-right: 14px; }
+  .bottom-nav { padding-left: 8px; padding-right: 8px; }
+  .nav-item { font-size: 9px; }
+}
 
 .input-select, .input-text, .input-textarea, .chat-input {
   background: rgba(255, 255, 255, 0.66);

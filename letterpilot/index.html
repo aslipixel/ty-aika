@@ -2,11 +2,11 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#eaf4ff" />
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
-  <link rel="stylesheet" href="style.css?v=20261126" />
+  <link rel="stylesheet" href="style.css?v=20261126-mobile1" />
 </head>
 <body>
   <div class="app-shell">
@@ -90,6 +90,7 @@
           <span class="btn-label">Разобрать и перевести</span>
           <span class="spinner hidden" id="analyzeSpinner"></span>
         </button>
+        <p id="analysisProgress" class="analysis-progress hidden" role="status" aria-live="polite"></p>
       </section>
 
       <!-- TAB 1: РАЗБОР (ANALYSIS) -->
@@ -127,6 +128,7 @@
             <div id="resTranslationWrap" class="translation-box hidden">
               <p id="resTranslation" class="body-text pre-wrap"></p>
             </div>
+            <button class="btn-secondary speak-button" id="btnSpeakTranslation" type="button" aria-pressed="false">🔊 Прослушать перевод</button>
           </div>
         </div>
       </section>
@@ -287,9 +289,29 @@
         <option value="gemini">Gemini</option>
         <option value="nvidia">NVIDIA</option>
       </select>
-      <p class="muted-sm mb-12">Ключи Gemini и NVIDIA хранятся в Cloudflare. Код доступа действует только до закрытия вкладки.</p>
+      <label class="large-text-choice mb-12" for="cfgLargeText"><input type="checkbox" id="cfgLargeText" /> Крупный текст и большие кнопки</label>
+      <p class="muted-sm mb-12">Ключи Gemini и NVIDIA хранятся в Cloudflare. Код доступа сохраняется только в этом браузере на вашем устройстве.</p>
 
       <button class="btn-primary btn-full" id="btnSaveSettings">Сохранить настройки</button>
+      <button class="btn-secondary btn-full mt-10" id="btnOpenAdmin" type="button">Коды для друзей</button>
+    </div>
+  </div>
+
+  <div id="adminModal" class="modal hidden">
+    <div class="modal-backdrop" data-close="adminModal"></div>
+    <div class="modal-sheet">
+      <div class="row-between mb-12"><h2>Коды для друзей</h2><button class="icon-btn" data-close="adminModal" aria-label="Закрыть">✕</button></div>
+      <p class="muted-sm mb-12">В первый раз создайте админский код с помощью вашего текущего кода доступа. Сохраните новый код в надёжном месте.</p>
+      <button class="btn-secondary btn-full mb-12" id="btnCreateAdmin" type="button">Создать админский код</button>
+      <label class="label-sm mb-6" for="cfgAdminToken">Админский код</label>
+      <input type="password" id="cfgAdminToken" class="input-text mb-10" autocomplete="off" placeholder="Введите админский код" />
+      <button class="btn-secondary btn-full mb-12" id="btnLoadCodes" type="button">Показать коды</button>
+      <label class="label-sm mb-6" for="friendName">Имя друга</label>
+      <input id="friendName" class="input-text mb-10" maxlength="60" placeholder="Например, Анна" />
+      <button class="btn-primary btn-full" id="btnCreateFriend" type="button">Создать код другу</button>
+      <p id="adminMessage" class="muted-sm mt-10" role="status" aria-live="polite"></p>
+      <div id="newCodeBox" class="admin-code-box hidden"><p>Новый код — скопируйте сейчас. Позже он не показывается.</p><code id="newCodeValue"></code><button class="btn-secondary" id="btnCopyNewCode" type="button">Скопировать</button></div>
+      <div id="friendCodeList" class="history-list mt-12"></div>
     </div>
   </div>
 
@@ -309,6 +331,6 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261126-auth4"></script>
+  <script src="app.js?v=20261126-mobile1"></script>
 </body>
 </html>
