@@ -183,8 +183,8 @@ function closeModal(id) { $(id).classList.add("hidden"); }
 async function handleFileSelect(e) {
   const files = Array.from(e.target.files || []);
   for (const file of files) {
-    if (file.size > 8 * 1024 * 1024) {
-      showToast(`Файл ${file.name} больше 8 МБ`);
+    if (file.size > 6 * 1024 * 1024) {
+      showToast(`Файл ${file.name} больше 6 МБ. Выберите меньший файл.`);
       continue;
     }
     if (file.type === "text/plain" || file.name.endsWith(".txt")) {
@@ -209,7 +209,7 @@ function fileToBase64(file) {
       const result = String(reader.result || "");
       resolve(result.split(",")[1] || "");
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error("Телефон не смог прочитать файл. Сохраните его на устройство и выберите снова."));
     reader.readAsDataURL(file);
   });
 }
@@ -236,11 +236,29 @@ async function callGemini({ contents, systemInstruction = null, jsonMode = false
     openModal("settingsModal");
     throw new Error("Введите код доступа в настройках.");
   }
-  const res = await fetch("https://letterpilot-v2.asl-icopal.workers.dev/api/generate", {
+  if (/[^\x21-\x7e]/.test(accessToken)) {
+    throw new Error("В коде доступа есть пробелы или нелатинские символы. Проверьте код LetterPilot в настройках.");
+  }
+  const body = JSON.stringify({ contents, systemInstruction, jsonMode, provider });
+  if (new Blob([body]).size > 10000000) {
+    throw new Error("Вложения слишком большие для отправки. Отправьте один файл до 6 МБ или разделите PDF на части.");
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 150000);
+  let res;
+  try {
+  res = await fetch("https://letterpilot-v2.asl-icopal.workers.dev/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
-    body: JSON.stringify({ contents, systemInstruction, jsonMode, provider })
+    body,
+    signal: controller.signal
   });
+  } catch (err) {
+    if (err.name === "AbortError") throw new Error("Сервер не успел обработать документ. Попробуйте одну страницу или небольшой PDF.");
+    throw new Error("Не удалось отправить документ на сервер. Проверьте интернет, попробуйте файл меньшего размера и оставьте страницу открытой до завершения. Если ошибка повторяется, проверьте без VPN или через другую сеть.");
+  } finally {
+    clearTimeout(timer);
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const detail = Array.isArray(data.details) ? data.details.join("; ") : "";
