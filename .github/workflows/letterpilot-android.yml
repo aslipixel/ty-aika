@@ -8,6 +8,7 @@ on:
       - 'letterpilot/app.js'
       - 'letterpilot/style.css'
       - 'letterpilot-app/**'
+      - '.github/workflows/letterpilot-android.yml'
 permissions:
   contents: write
 jobs:
