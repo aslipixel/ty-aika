@@ -35,6 +35,7 @@ function showRequestError(err) {
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
   loadConfig();
+  checkAdmin();
   loadHistory();
   bindEvents();
 });
@@ -63,6 +64,27 @@ function saveConfig() {
   catch (e) { showToast("Браузер не разрешает сохранить код на устройстве"); return; }
   closeModal("settingsModal");
   showToast("Настройки сохранены");
+  checkAdmin(true);
+}
+
+// Кнопка «Коды для друзей» видна только тому, чей код доступа — админский (или код владельца).
+// Сервер отвечает на список кодов только админу, поэтому этим запросом и проверяем.
+async function checkAdmin(openIfAdmin = false) {
+  const btn = $("btnOpenAdmin");
+  btn.classList.add("hidden");
+  if (!state.config.accessToken) return false;
+  try {
+    await adminRequest("/api/admin/codes");
+  } catch (e) {
+    return false;
+  }
+  btn.classList.remove("hidden");
+  if (openIfAdmin) {
+    showToast("Админский код принят — можно создавать коды для друзей");
+    openModal("adminModal");
+    loadFriendCodes();
+  }
+  return true;
 }
 
 function loadHistory() {
@@ -107,7 +129,7 @@ function bindEvents() {
   });
 
   $("btnSaveSettings").addEventListener("click", saveConfig);
-  $("btnOpenAdmin").addEventListener("click", () => { closeModal("settingsModal"); openModal("adminModal"); if (state.config.adminToken || state.config.accessToken) loadFriendCodes(); });
+  $("btnOpenAdmin").addEventListener("click", () => { closeModal("settingsModal"); openModal("adminModal"); loadFriendCodes(); });
   $("btnCreateAdmin").addEventListener("click", createAdminCode);
   $("btnLoadCodes").addEventListener("click", loadFriendCodes);
   $("btnCreateFriend").addEventListener("click", createFriendCode);
@@ -246,7 +268,7 @@ function confirmTap(button, action) {
   });
 }
 async function adminRequest(path, method = "GET", body = null, useOwner = false) {
-  const token = useOwner ? state.config.accessToken : ($("cfgAdminToken").value.trim() || state.config.accessToken);
+  const token = state.config.accessToken;
   if (!token) throw new Error("Сначала сохраните код доступа в настройках");
   const res = await fetch(API_BASE + path, {
     method,
@@ -271,8 +293,6 @@ async function createAdminCode() {
 async function loadFriendCodes() {
   adminMessage("Загружаю список...");
   try {
-    state.config.adminToken = $("cfgAdminToken").value.trim();
-    localStorage.setItem(STORAGE_CONFIG, JSON.stringify(state.config));
     const data = await adminRequest("/api/admin/codes");
     const list = $("friendCodeList");
     list.replaceChildren();
@@ -346,8 +366,25 @@ async function createFriendCode() {
 async function handleFileSelect(e) {
   const files = Array.from(e.target.files || []);
   for (const file of files) {
+    const isImage = (file.type || "").startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic|heif)$/i.test(file.name);
+    if (isImage && file.size > 1.5 * 1024 * 1024) {
+      // Фото с телефона часто весят 6–15 МБ: уменьшаем и пережимаем в JPEG прямо в браузере.
+      // Для чтения текста хватает 2400 px по длинной стороне.
+      if (file.size > 60 * 1024 * 1024) {
+        showToast(`Фото ${file.name} больше 60 МБ — выберите другое.`);
+        continue;
+      }
+      try {
+        showToast(`Уменьшаю фото ${file.name}...`);
+        const base64 = await compressImage(file);
+        state.attachedFiles.push({ name: file.name.replace(/\.[^.]+$/, "") + ".jpg", mimeType: "image/jpeg", base64 });
+      } catch (err) {
+        showToast(`Не удалось открыть фото ${file.name}. Сохраните его как JPG и выберите снова.`);
+      }
+      continue;
+    }
     if (file.size > 6 * 1024 * 1024) {
-      showToast(`Файл ${file.name} больше 6 МБ. Выберите меньший файл.`);
+      showToast(`Файл ${file.name} больше 6 МБ. Для PDF разделите его на части.`);
       continue;
     }
     if (file.type === "text/plain" || file.name.endsWith(".txt")) {
@@ -363,6 +400,38 @@ async function handleFileSelect(e) {
     }
   }
   renderFileList();
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("decode")); };
+    img.src = url;
+  });
+}
+
+async function compressImage(file, maxSide = 2400, targetBytes = 3 * 1024 * 1024) {
+  const img = await loadImage(file); // браузер сам учитывает поворот фото (EXIF)
+  let side = maxSide;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const scale = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * scale));
+    const h = Math.max(1, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff"; // прозрачный фон PNG → белый, а не чёрный
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    const quality = attempt === 0 ? 0.85 : 0.78;
+    const blob = await new Promise(r => canvas.toBlob(r, "image/jpeg", quality));
+    if (!blob) throw new Error("encode");
+    if (blob.size <= targetBytes || attempt === 4) return fileToBase64(blob);
+    side = Math.round(side * 0.8);
+  }
 }
 
 function fileToBase64(file) {

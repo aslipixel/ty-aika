@@ -295,7 +295,7 @@
       <p class="muted-sm mb-12">Ключи Gemini и NVIDIA хранятся в Cloudflare. Код доступа сохраняется только в этом браузере на вашем устройстве.</p>
 
       <button class="btn-primary btn-full" id="btnSaveSettings">Сохранить настройки</button>
-      <button class="btn-secondary btn-full mt-10" id="btnOpenAdmin" type="button">Коды для друзей</button>
+      <button class="btn-secondary btn-full mt-10 hidden" id="btnOpenAdmin" type="button">Коды для друзей</button>
     </div>
   </div>
 
@@ -303,11 +303,10 @@
     <div class="modal-backdrop" data-close="adminModal"></div>
     <div class="modal-sheet">
       <div class="row-between mb-12"><h2>Коды для друзей</h2><button class="icon-btn" data-close="adminModal" aria-label="Закрыть">✕</button></div>
-      <p class="muted-sm mb-12">Ваш основной код доступа уже даёт право создавать и отключать коды друзей — отдельный админский код не нужен.</p>
+      <p class="muted-sm mb-12">Вы вошли с админским кодом: здесь можно создавать, отключать и удалять коды друзей.</p>
       <button class="btn-secondary btn-full mb-12 hidden" id="btnCreateAdmin" type="button">Создать админский код</button>
-      <label class="label-sm mb-6" for="cfgAdminToken">Отдельный админский код (необязательно)</label>
-      <input type="password" id="cfgAdminToken" class="input-text mb-10" autocomplete="off" placeholder="Можно оставить пустым" />
-      <button class="btn-secondary btn-full mb-12" id="btnLoadCodes" type="button">Показать коды</button>
+      <input type="hidden" id="cfgAdminToken" />
+      <button class="btn-secondary btn-full mb-12 hidden" id="btnLoadCodes" type="button">Обновить список</button>
       <label class="label-sm mb-6" for="friendName">Имя друга</label>
       <input id="friendName" class="input-text mb-10" maxlength="60" placeholder="Например, Анна" />
       <button class="btn-primary btn-full" id="btnCreateFriend" type="button">Создать код другу</button>
