@@ -23,7 +23,8 @@ async function adminApi(request, env, path) {
     await env.LP_CODES.put('LP2:admin', await digest(newCode));
     return reply({ code: newCode });
   }
-  if (await role(code, env) !== 'admin') return reply({ error: 'Неверный админский код' }, 401);
+  const who = await role(code, env);
+  if (who !== 'admin' && who !== 'owner') return reply({ error: 'Этот код не может управлять кодами друзей' }, 401);
   if (path === '/api/admin/codes' && request.method === 'GET') {
     const list = await env.LP_CODES.list({ prefix: 'LP2:code:' });
     const codes = await Promise.all(list.keys.map(async key => ({ id: key.name.slice(9), ...await env.LP_CODES.get(key.name, 'json') })));

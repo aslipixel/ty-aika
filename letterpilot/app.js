@@ -107,7 +107,7 @@ function bindEvents() {
   });
 
   $("btnSaveSettings").addEventListener("click", saveConfig);
-  $("btnOpenAdmin").addEventListener("click", () => { closeModal("settingsModal"); openModal("adminModal"); if (state.config.adminToken) loadFriendCodes(); });
+  $("btnOpenAdmin").addEventListener("click", () => { closeModal("settingsModal"); openModal("adminModal"); if (state.config.adminToken || state.config.accessToken) loadFriendCodes(); });
   $("btnCreateAdmin").addEventListener("click", createAdminCode);
   $("btnLoadCodes").addEventListener("click", loadFriendCodes);
   $("btnCreateFriend").addEventListener("click", createFriendCode);
@@ -218,8 +218,8 @@ function showNewCode(code) {
   $("newCodeBox").classList.remove("hidden");
 }
 async function adminRequest(path, method = "GET", body = null, useOwner = false) {
-  const token = useOwner ? state.config.accessToken : $("cfgAdminToken").value.trim();
-  if (!token) throw new Error(useOwner ? "Сначала сохраните код доступа в настройках" : "Введите админский код");
+  const token = useOwner ? state.config.accessToken : ($("cfgAdminToken").value.trim() || state.config.accessToken);
+  if (!token) throw new Error("Сначала сохраните код доступа в настройках");
   const res = await fetch(API_BASE + path, {
     method,
     headers: { "Authorization": `Bearer ${encodeURIComponent(token)}`, "Content-Type": "application/json" },

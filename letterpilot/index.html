@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
-  <link rel="stylesheet" href="style.css?v=20261127-voice2" />
+  <link rel="stylesheet" href="style.css?v=20261127-admin1" />
 </head>
 <body>
   <div class="app-shell">
@@ -303,10 +303,10 @@
     <div class="modal-backdrop" data-close="adminModal"></div>
     <div class="modal-sheet">
       <div class="row-between mb-12"><h2>Коды для друзей</h2><button class="icon-btn" data-close="adminModal" aria-label="Закрыть">✕</button></div>
-      <p class="muted-sm mb-12">В первый раз создайте админский код с помощью вашего текущего кода доступа. Сохраните новый код в надёжном месте.</p>
-      <button class="btn-secondary btn-full mb-12" id="btnCreateAdmin" type="button">Создать админский код</button>
-      <label class="label-sm mb-6" for="cfgAdminToken">Админский код</label>
-      <input type="password" id="cfgAdminToken" class="input-text mb-10" autocomplete="off" placeholder="Введите админский код" />
+      <p class="muted-sm mb-12">Ваш основной код доступа уже даёт право создавать и отключать коды друзей — отдельный админский код не нужен.</p>
+      <button class="btn-secondary btn-full mb-12 hidden" id="btnCreateAdmin" type="button">Создать админский код</button>
+      <label class="label-sm mb-6" for="cfgAdminToken">Отдельный админский код (необязательно)</label>
+      <input type="password" id="cfgAdminToken" class="input-text mb-10" autocomplete="off" placeholder="Можно оставить пустым" />
       <button class="btn-secondary btn-full mb-12" id="btnLoadCodes" type="button">Показать коды</button>
       <label class="label-sm mb-6" for="friendName">Имя друга</label>
       <input id="friendName" class="input-text mb-10" maxlength="60" placeholder="Например, Анна" />
@@ -333,7 +333,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261127-voice2"></script>
+  <script src="app.js?v=20261127-admin1"></script>
 </body>
 </html>
 
