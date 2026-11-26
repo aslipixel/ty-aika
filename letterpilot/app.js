@@ -21,6 +21,12 @@ const state = {
 
 // DOM helper
 const $ = (id) => document.getElementById(id);
+function showRequestError(err) {
+  const box = $("requestError");
+  box.textContent = "Ошибка: " + (err?.message || String(err));
+  box.classList.remove("hidden");
+  $("appMain").scrollTop = 0;
+}
 
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
@@ -231,6 +237,7 @@ function renderFileList() {
 
 // --- Server API ---
 async function callGemini({ contents, systemInstruction = null, jsonMode = false }) {
+  $("requestError").classList.add("hidden");
   const { accessToken, provider } = state.config;
   if (!accessToken) {
     openModal("settingsModal");
@@ -357,7 +364,7 @@ async function runAnalysis() {
     switchTab("viewAnalysis");
     showToast("Разбор готов!");
   } catch (err) {
-    alert(err.message);
+    showRequestError(err);
     $("statusSubtitle").textContent = "Ошибка анализа";
   } finally {
     setLoading("btnAnalyze", "analyzeSpinner", false);
@@ -472,7 +479,7 @@ async function runReplyGenerator() {
     $("replyTransText").textContent = parsed.translated_reply || "";
     $("replyResultCard").classList.remove("hidden");
   } catch (err) {
-    alert(err.message);
+    showRequestError(err);
   } finally {
     setLoading("btnGenReply", "replySpinner", false);
   }
