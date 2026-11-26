@@ -170,7 +170,15 @@ async function tts(request, env) {
   const busy = tried.length && tried.every(t => / (429|500|503) |нет ответа/.test(t));
   return reply({ error: busy ? 'Голос Gemini сейчас перегружен, попробуйте через минуту' : 'Голос Gemini недоступен', details: tried }, busy ? 503 : 502);
 }
+// Разрешённые источники запросов: сайт на GitHub и приложение (Android: https://localhost, iOS: capacitor://localhost).
+const ORIGINS = ['https://aslipixel.github.io', 'https://localhost', 'capacitor://localhost'];
 export default { async fetch(request, env) {
+  const res = await handle(request, env);
+  const origin = request.headers.get('Origin');
+  if (ORIGINS.includes(origin)) { res.headers.set('Access-Control-Allow-Origin', origin); res.headers.set('Vary', 'Origin'); }
+  return res;
+} };
+async function handle(request, env) {
   const path = new URL(request.url).pathname;
   if (request.method === 'OPTIONS') return reply({});
   const types = { '/': 'text/html; charset=utf-8', '/style.css': 'text/css; charset=utf-8', '/app.js': 'text/javascript; charset=utf-8' };
@@ -209,5 +217,4 @@ export default { async fetch(request, env) {
     catch(e) { errors.push(provider + ': ' + e.message); console.warn('Provider failed', provider, e.message); }
   }
   return reply({ error: 'Сервисы ИИ не ответили', details: errors }, 503);
-} };
-
+}
