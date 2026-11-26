@@ -805,6 +805,7 @@ async function toggleTranslationSpeech() {
     } catch (e) {
       if (run !== speechRun) return;
       for (const controller of speechControllers) controller.abort();
+      console.warn("Gemini TTS failed:", e.message);
       if (!("speechSynthesis" in window)) {
         speakingTranslation = false;
         button.textContent = "🔊 Прослушать перевод";
@@ -812,7 +813,7 @@ async function toggleTranslationSpeech() {
         showToast(e.message);
         return;
       }
-      showToast("Gemini недоступен. Читаю голосом телефона");
+      showToast(`Gemini: ${e.message}. Читаю голосом телефона`);
       button.textContent = "■ Остановить чтение";
       player.pause();
       player.onended = null;
