@@ -591,7 +591,6 @@ html, body {
   padding: 4px 8px 12px;
 }
 .speak-button { width: 100%; margin-top: 10px; min-height: 44px; }
-.translation-audio { display: block; width: 100%; margin-top: 10px; }
 .admin-code-box { margin-top: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
 .admin-code-box code { display: block; margin: 8px 0; overflow-wrap: anywhere; font-size: 14px; }
 .large-text-choice { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
@@ -864,4 +863,3 @@ html, body {
 .toast { background: #173d66; border-color: rgba(255, 255, 255, 0.28); }
 
 :focus-visible { outline: 3px solid rgba(8, 120, 231, 0.48); outline-offset: 2px; }
-
