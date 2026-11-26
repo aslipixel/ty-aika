@@ -696,12 +696,36 @@ function copyText(text) {
 
 let speechRun = 0;
 let speakingTranslation = false;
+const speechControllers = new Set();
+let speechCache = { key: "", parts: [] };
+
+function splitSpeechText(text) {
+  const chunks = [];
+  let remaining = text.trim();
+  const limit = 420;
+  while (remaining.length > limit) {
+    const windowText = remaining.slice(0, limit + 1);
+    const sentences = [...windowText.matchAll(/[.!?…](?=\s|$)/g)]
+      .map(match => match.index + 1)
+      .filter(position => position >= 220);
+    const spaces = [...windowText.matchAll(/\s+/g)];
+    let end = sentences.at(-1) || spaces.at(-1)?.index || limit;
+    if (end < 220) end = limit;
+    chunks.push(remaining.slice(0, end).trim());
+    remaining = remaining.slice(end).trimStart();
+  }
+  if (remaining) chunks.push(remaining);
+  return chunks;
+}
+
 async function toggleTranslationSpeech() {
   const button = $("btnSpeakTranslation");
   const player = $("translationAudio");
   if (speakingTranslation) {
     speechRun++;
+    for (const controller of speechControllers) controller.abort();
     player.pause();
+    player.onended = null;
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     player.removeAttribute("src");
     player.classList.add("hidden");
@@ -713,22 +737,45 @@ async function toggleTranslationSpeech() {
   const text = state.currentAnalysis?.full_translation?.trim();
   if (!text) return showToast("Сначала разберите документ");
   if (!state.config.accessToken) return showToast("Сохраните код доступа в настройках");
-  const chunks = [];
-  let remaining = text;
-  while (remaining.length) {
-    let end = Math.min(1800, remaining.length);
-    if (end < remaining.length) {
-      const boundary = remaining.slice(0, end).search(/\s+\S*$/);
-      if (boundary > 900) end = boundary + 1;
-    }
-    chunks.push(remaining.slice(0, end));
-    remaining = remaining.slice(end);
-  }
+  const chunks = splitSpeechText(text);
+  const voice = state.config.voice;
+  const token = state.config.accessToken;
+  const cacheKey = voice + "\u0000" + text;
+  if (speechCache.key !== cacheKey) speechCache = { key: cacheKey, parts: [] };
+  const cache = speechCache;
+  const pending = new Map();
   const run = ++speechRun;
   let index = 0;
   speakingTranslation = true;
-  button.textContent = "Готовлю живой голос...";
   button.setAttribute("aria-pressed", "true");
+  const prepare = (part) => {
+    if (cache.parts[part]) return Promise.resolve(cache.parts[part]);
+    if (pending.has(part)) return pending.get(part);
+    const controller = new AbortController();
+    speechControllers.add(controller);
+    const timeout = setTimeout(() => controller.abort(), 65000);
+    const request = (async () => {
+      try {
+        const res = await fetch(API_BASE + "/api/tts", {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${encodeURIComponent(token)}` },
+          body: JSON.stringify({ text: chunks[part], voice })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.audio) throw new Error(data.error || "Голос недоступен");
+        cache.parts[part] = data;
+        return data;
+      } catch (error) {
+        return { error };
+      } finally {
+        clearTimeout(timeout);
+        speechControllers.delete(controller);
+      }
+    })();
+    pending.set(part, request);
+    return request;
+  };
   const next = async () => {
     if (run !== speechRun) return;
     if (index >= chunks.length) {
@@ -737,18 +784,19 @@ async function toggleTranslationSpeech() {
       button.setAttribute("aria-pressed", "false");
       return;
     }
-    button.textContent = `Готовлю часть ${index + 1} из ${chunks.length}...`;
+    const part = index;
+    const started = Date.now();
+    button.textContent = `Готовлю часть ${part + 1} из ${chunks.length} · 0 с`;
+    const timer = setInterval(() => {
+      if (run !== speechRun) return clearInterval(timer);
+      button.textContent = `Готовлю часть ${part + 1} из ${chunks.length} · ${Math.floor((Date.now() - started) / 1000)} с`;
+    }, 1000);
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 70000);
-      let data;
-      let res;
-      try {
-        res = await fetch(API_BASE + "/api/tts", { method: "POST", signal: controller.signal, headers: { "Content-Type": "application/json", "Authorization": `Bearer ${encodeURIComponent(state.config.accessToken)}` }, body: JSON.stringify({ text: chunks[index++], voice: state.config.voice }) });
-        data = await res.json();
-      } finally { clearTimeout(timeout); }
-      if (!res.ok || !data.audio) throw new Error(data.error || "Голос недоступен");
+      const data = await prepare(part);
       if (run !== speechRun) return;
+      if (data.error) throw data.error;
+      index = part + 1;
+      if (index < chunks.length) prepare(index);
       player.src = `data:${data.mimeType || "audio/wav"};base64,${data.audio}`;
       player.classList.remove("hidden");
       player.onended = next;
@@ -756,6 +804,7 @@ async function toggleTranslationSpeech() {
       await player.play().catch(() => showToast("Голос готов. Нажмите ▶ на плеере"));
     } catch (e) {
       if (run !== speechRun) return;
+      for (const controller of speechControllers) controller.abort();
       if (!("speechSynthesis" in window)) {
         speakingTranslation = false;
         button.textContent = "🔊 Прослушать перевод";
@@ -765,7 +814,10 @@ async function toggleTranslationSpeech() {
       }
       showToast("Gemini недоступен. Читаю голосом телефона");
       button.textContent = "■ Остановить чтение";
-      const fallback = new SpeechSynthesisUtterance(chunks.slice(index - 1).join(""));
+      player.pause();
+      player.onended = null;
+      player.classList.add("hidden");
+      const fallback = new SpeechSynthesisUtterance(chunks.slice(part).join(" "));
       const langs = { "Русский": "ru-RU", "Suomi": "fi-FI", "English": "en-US", "Deutsch": "de-DE", "Українська": "uk-UA", "Español": "es-ES", "Français": "fr-FR" };
       fallback.lang = langs[state.targetLang] || "ru-RU";
       fallback.onend = fallback.onerror = () => {
@@ -775,6 +827,8 @@ async function toggleTranslationSpeech() {
         button.setAttribute("aria-pressed", "false");
       };
       speechSynthesis.speak(fallback);
+    } finally {
+      clearInterval(timer);
     }
   };
   await next();
