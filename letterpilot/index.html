@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#eaf4ff" />
+  <meta name="theme-color" content="#f2f3f7" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
-  <link rel="stylesheet" href="style.css?v=20261126-voice1" />
+  <link rel="stylesheet" href="style.css?v=20261127-design2" />
 </head>
 <body>
   <div class="app-shell">
@@ -41,14 +42,14 @@
 
     <!-- Main Scrollable Content -->
     <main class="app-main" id="appMain">
-      <div id="requestError" role="alert" class="notice-banner hidden" style="margin-bottom:12px;color:#9b2735;background:#fff1f3;border-color:#f1b9c1;white-space:pre-wrap;overflow-wrap:anywhere"></div>
+      <div id="requestError" role="alert" class="notice-banner error hidden"></div>
 
       <!-- INPUT VIEW (shown initially or when adding a new document) -->
       <section class="view active" id="viewInput">
         <div class="card compact-card">
           <div class="row-between mb-8">
             <label class="label-sm" for="targetLang">Язык перевода и разбора</label>
-            <button class="chip-btn accent" id="btnLoadSample">⚡ Пример документа</button>
+            <button class="chip-btn accent" id="btnLoadSample">Пример документа</button>
           </div>
           <select id="targetLang" class="input-select">
             <option value="Русский" selected>Русский</option>
@@ -108,18 +109,18 @@
           </div>
 
           <div class="card">
-            <h2 class="card-title">📌 Главная суть</h2>
+            <h2 class="card-title"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>Главная суть</h2>
             <p id="resSummary" class="body-text"></p>
           </div>
 
           <div class="card">
-            <h2 class="card-title">⚠️ Важные нюансы, сроки и риски</h2>
+            <h2 class="card-title"><span class="ti warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>Сроки, риски и нюансы</h2>
             <div id="resNuances" class="nuance-list"></div>
           </div>
 
           <div class="card">
             <div class="row-between">
-              <h2 class="card-title mb-0">🌐 Полный перевод</h2>
+              <h2 class="card-title mb-0"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg></span>Полный перевод</h2>
               <div class="btn-group">
                 <button class="chip-btn" id="btnToggleTrans">Показать</button>
                 <button class="chip-btn" id="btnCopyTrans">Копировать</button>
@@ -128,7 +129,7 @@
             <div id="resTranslationWrap" class="translation-box hidden">
               <p id="resTranslation" class="body-text pre-wrap"></p>
             </div>
-            <button class="btn-secondary speak-button" id="btnSpeakTranslation" type="button" aria-pressed="false">🔊 Прослушать перевод</button>
+            <button class="btn-secondary speak-button" id="btnSpeakTranslation" type="button" aria-pressed="false">Прослушать перевод</button>
             <audio id="translationAudio" controls class="translation-audio hidden" aria-label="Озвученный перевод"></audio>
           </div>
         </div>
@@ -143,7 +144,7 @@
 
         <div id="actionsContent" class="hidden">
           <div class="card">
-            <h2 class="card-title">✅ Пошаговый план действий</h2>
+            <h2 class="card-title"><span class="ti ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>Пошаговый план действий</h2>
             <p class="muted-sm mb-10">Отмечайте выполненные шаги или нажмите «Подробнее», чтобы AI объяснил шаг в чате.</p>
             <div id="actionChecklist" class="checklist"></div>
           </div>
@@ -159,7 +160,7 @@
 
         <div id="replyContent" class="hidden">
           <div class="card">
-            <h2 class="card-title">✉️ Сформировать ответ</h2>
+            <h2 class="card-title"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="m22 6-10 7L2 6"/></svg></span>Сформировать ответ</h2>
             <label class="label-sm mb-6">Быстрая реакция</label>
             <div class="chips-wrap" id="replyIntentChips">
               <button class="chip-select active" data-intent="Согласиться и подтвердить">Согласиться</button>
@@ -193,17 +194,17 @@
 
           <div id="replyResultCard" class="card hidden">
             <div class="row-between mb-6">
-              <h3 class="card-title mb-0">📤 Текст для отправки (<span id="replyOrigLang">Оригинал</span>)</h3>
+              <h3 class="card-title mb-0"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></span>Текст для отправки (<span id="replyOrigLang">Оригинал</span>)</h3>
               <button class="chip-btn" id="btnCopyReply">Копировать</button>
             </div>
             <div id="replyOrigText" class="reply-box pre-wrap"></div>
 
-            <h3 class="card-title mt-12 mb-6">🔍 Перевод вашего ответа (для проверки)</h3>
+            <h3 class="card-title mt-12 mb-6"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>Перевод вашего ответа для проверки</h3>
             <div id="replyTransText" class="reply-box muted-box pre-wrap"></div>
 
             <div class="share-row mt-12">
-              <button class="btn-secondary flex-1" id="btnShareEmail">📧 Email</button>
-              <button class="btn-whatsapp flex-1" id="btnShareWhatsApp">💬 WhatsApp</button>
+              <button class="btn-secondary flex-1" id="btnShareEmail">Email</button>
+              <button class="btn-whatsapp flex-1" id="btnShareWhatsApp">WhatsApp</button>
             </div>
           </div>
         </div>
@@ -213,9 +214,7 @@
       <section class="view" id="viewChat">
         <div class="chat-container">
           <div id="chatMessages" class="chat-messages">
-            <div class="chat-bubble ai">
-              Привет! Я помню текущий документ и его разбор. Спросите меня о любых нюансах, законах, терминах или дальнейших действиях.
-            </div>
+            <div class="chat-bubble ai">Привет! Я помню текущий документ и его разбор. Спросите меня о любых нюансах, законах, терминах или дальнейших действиях.</div>
           </div>
 
           <div class="chat-quick-bar">
@@ -277,8 +276,8 @@
     <div class="modal-backdrop" data-close="settingsModal"></div>
     <div class="modal-sheet">
       <div class="row-between mb-12">
-        <h2>⚙️ Подключение</h2>
-        <button class="icon-btn" data-close="settingsModal">✕</button>
+        <h2>Подключение</h2>
+        <button class="icon-btn" data-close="settingsModal" aria-label="Закрыть">✕</button>
       </div>
 
       <label class="label-sm mb-6" for="cfgAccessToken">Код доступа LetterPilot</label>
@@ -290,7 +289,6 @@
         <option value="gemini">Gemini</option>
         <option value="nvidia">NVIDIA</option>
       </select>
-      <label class="large-text-choice mb-12" for="cfgLargeText"><input type="checkbox" id="cfgLargeText" /> Крупный текст и большие кнопки</label>
       <label class="label-sm mb-6" for="cfgVoice">Голос для чтения перевода</label>
       <select id="cfgVoice" class="input-select mb-12"><option value="Sulafat">Тёплый</option><option value="Achernar">Мягкий</option><option value="Kore">Чёткий</option><option value="Charon">Низкий</option></select>
       <p class="muted-sm mb-12">Ключи Gemini и NVIDIA хранятся в Cloudflare. Код доступа сохраняется только в этом браузере на вашем устройстве.</p>
@@ -323,8 +321,8 @@
     <div class="modal-backdrop" data-close="historyModal"></div>
     <div class="modal-sheet">
       <div class="row-between mb-12">
-        <h2>🕒 История разборов</h2>
-        <button class="icon-btn" data-close="historyModal">✕</button>
+        <h2>История разборов</h2>
+        <button class="icon-btn" data-close="historyModal" aria-label="Закрыть">✕</button>
       </div>
       <div id="historyList" class="history-list"></div>
       <button class="btn-ghost-sm mt-10" id="btnClearHistory">Очистить историю</button>
@@ -334,7 +332,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261126-voice4"></script>
+  <script src="app.js?v=20261127-design2"></script>
 </body>
 </html>
 

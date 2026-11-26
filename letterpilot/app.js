@@ -44,24 +44,21 @@ function loadConfig() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}");
     state.config.accessToken = typeof saved.accessToken === "string" ? saved.accessToken : "";
     state.config.provider = ["auto", "gemini", "nvidia"].includes(saved.provider) ? saved.provider : "auto";
-    state.config.largeText = saved.largeText === true;
+    state.config.largeText = false;
     state.config.adminToken = typeof saved.adminToken === "string" ? saved.adminToken : "";
     state.config.voice = ["Sulafat", "Achernar", "Kore", "Charon"].includes(saved.voice) ? saved.voice : "Sulafat";
   } catch (e) { /* Storage may be unavailable in private browsing. */ }
   $("cfgAccessToken").value = state.config.accessToken;
   $("cfgProvider").value = state.config.provider;
-  $("cfgLargeText").checked = state.config.largeText;
   $("cfgAdminToken").value = state.config.adminToken;
   $("cfgVoice").value = state.config.voice;
-  document.body.classList.toggle("large-text", state.config.largeText);
 }
 
 function saveConfig() {
   state.config.accessToken = $("cfgAccessToken").value.trim();
   state.config.provider = $("cfgProvider").value;
-  state.config.largeText = $("cfgLargeText").checked;
+  state.config.largeText = false;
   state.config.voice = $("cfgVoice").value;
-  document.body.classList.toggle("large-text", state.config.largeText);
   try { localStorage.setItem(STORAGE_CONFIG, JSON.stringify(state.config)); }
   catch (e) { showToast("Браузер не разрешает сохранить код на устройстве"); return; }
   closeModal("settingsModal");
@@ -326,7 +323,7 @@ function renderFileList() {
   state.attachedFiles.forEach((f, idx) => {
     const pill = document.createElement("div");
     pill.className = "file-pill";
-    pill.innerHTML = `<span>📎 ${escapeHtml(f.name)}</span><button type="button" aria-label="Удалить">×</button>`;
+    pill.innerHTML = `<span>${escapeHtml(f.name)}</span><button type="button" aria-label="Удалить">×</button>`;
     pill.querySelector("button").addEventListener("click", () => {
       state.attachedFiles.splice(idx, 1);
       renderFileList();
@@ -484,7 +481,7 @@ function renderAnalysis(data) {
   $("analysisEmpty").classList.add("hidden");
   $("analysisContent").classList.remove("hidden");
 
-  $("resLang").textContent = `🌍 ${data.detected_language || "Авто"}`;
+  $("resLang").textContent = `${data.detected_language || "Авто"}`;
   $("resType").textContent = data.doc_type || "Документ";
 
   const urg = $("resUrgency");
@@ -730,7 +727,7 @@ async function toggleTranslationSpeech() {
     player.removeAttribute("src");
     player.classList.add("hidden");
     speakingTranslation = false;
-    button.textContent = "🔊 Прослушать перевод";
+    button.textContent = "Прослушать перевод";
     button.setAttribute("aria-pressed", "false");
     return;
   }
@@ -780,7 +777,7 @@ async function toggleTranslationSpeech() {
     if (run !== speechRun) return;
     if (index >= chunks.length) {
       speakingTranslation = false;
-      button.textContent = "🔊 Прослушать перевод";
+      button.textContent = "Прослушать перевод";
       button.setAttribute("aria-pressed", "false");
       return;
     }
@@ -808,7 +805,7 @@ async function toggleTranslationSpeech() {
       console.warn("Gemini TTS failed:", e.message);
       if (!("speechSynthesis" in window)) {
         speakingTranslation = false;
-        button.textContent = "🔊 Прослушать перевод";
+        button.textContent = "Прослушать перевод";
         button.setAttribute("aria-pressed", "false");
         showToast(e.message);
         return;
@@ -824,7 +821,7 @@ async function toggleTranslationSpeech() {
       fallback.onend = fallback.onerror = () => {
         if (run !== speechRun) return;
         speakingTranslation = false;
-        button.textContent = "🔊 Прослушать перевод";
+        button.textContent = "Прослушать перевод";
         button.setAttribute("aria-pressed", "false");
       };
       speechSynthesis.speak(fallback);
