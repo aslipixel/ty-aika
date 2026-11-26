@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
-  <link rel="stylesheet" href="style.css?v=20261127-design2" />
+  <link rel="stylesheet" href="style.css?v=20261127-voice2" />
 </head>
 <body>
   <div class="app-shell">
@@ -130,7 +130,8 @@
               <p id="resTranslation" class="body-text pre-wrap"></p>
             </div>
             <button class="btn-secondary speak-button" id="btnSpeakTranslation" type="button" aria-pressed="false">Прослушать перевод</button>
-            <audio id="translationAudio" controls class="translation-audio hidden" aria-label="Озвученный перевод"></audio>
+            <button class="btn-ghost-sm clear-speech hidden" id="btnClearSpeech" type="button">Удалить озвучку</button>
+            <audio id="translationAudio" class="hidden" preload="none"></audio>
           </div>
         </div>
       </section>
@@ -332,7 +333,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261127-design2"></script>
+  <script src="app.js?v=20261127-voice2"></script>
 </body>
 </html>
 

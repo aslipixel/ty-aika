@@ -161,6 +161,7 @@ Laskutusosasto / Billing Department`;
     copyText(state.currentAnalysis.full_translation || "");
   });
   $("btnSpeakTranslation").addEventListener("click", toggleTranslationSpeech);
+  $("btnClearSpeech").addEventListener("click", clearSpeech);
 
   // Reply intent chips
   $("replyIntentChips").addEventListener("click", (e) => {
@@ -500,6 +501,7 @@ function renderAnalysis(data) {
   });
 
   $("resTranslation").textContent = data.full_translation || "—";
+  $("btnClearSpeech").classList.add("hidden");
   $("resTranslationWrap").classList.add("hidden");
   $("btnToggleTrans").textContent = "Показать";
 }
@@ -695,6 +697,28 @@ let speechRun = 0;
 let speakingTranslation = false;
 const speechControllers = new Set();
 let speechCache = { key: "", parts: [] };
+let speechNeedsTap = false;
+function speechIdle() {
+  const button = $("btnSpeakTranslation");
+  speakingTranslation = false;
+  speechNeedsTap = false;
+  button.textContent = "Прослушать перевод";
+  button.setAttribute("aria-pressed", "false");
+  $("btnClearSpeech").classList.toggle("hidden", !speechCache.parts.some(Boolean));
+}
+function clearSpeech() {
+  speechRun++;
+  for (const controller of speechControllers) controller.abort();
+  const player = $("translationAudio");
+  player.pause();
+  player.onended = null;
+  player.removeAttribute("src");
+  player.load();
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  speechCache = { key: "", parts: [] };
+  speechIdle();
+  showToast("Озвучка удалена");
+}
 
 function splitSpeechText(text) {
   const chunks = [];
@@ -718,6 +742,12 @@ function splitSpeechText(text) {
 async function toggleTranslationSpeech() {
   const button = $("btnSpeakTranslation");
   const player = $("translationAudio");
+  if (speechNeedsTap) {
+    speechNeedsTap = false;
+    button.textContent = "■ Остановить чтение";
+    player.play().catch(() => {});
+    return;
+  }
   if (speakingTranslation) {
     speechRun++;
     for (const controller of speechControllers) controller.abort();
@@ -725,10 +755,7 @@ async function toggleTranslationSpeech() {
     player.onended = null;
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     player.removeAttribute("src");
-    player.classList.add("hidden");
-    speakingTranslation = false;
-    button.textContent = "Прослушать перевод";
-    button.setAttribute("aria-pressed", "false");
+    speechIdle();
     return;
   }
   const text = state.currentAnalysis?.full_translation?.trim();
@@ -745,6 +772,7 @@ async function toggleTranslationSpeech() {
   let index = 0;
   speakingTranslation = true;
   button.setAttribute("aria-pressed", "true");
+  $("btnClearSpeech").classList.add("hidden");
   const prepare = (part) => {
     if (cache.parts[part]) return Promise.resolve(cache.parts[part]);
     if (pending.has(part)) return pending.get(part);
@@ -776,9 +804,7 @@ async function toggleTranslationSpeech() {
   const next = async () => {
     if (run !== speechRun) return;
     if (index >= chunks.length) {
-      speakingTranslation = false;
-      button.textContent = "Прослушать перевод";
-      button.setAttribute("aria-pressed", "false");
+      speechIdle();
       return;
     }
     const part = index;
@@ -795,10 +821,12 @@ async function toggleTranslationSpeech() {
       index = part + 1;
       if (index < chunks.length) prepare(index);
       player.src = `data:${data.mimeType || "audio/wav"};base64,${data.audio}`;
-      player.classList.remove("hidden");
       player.onended = next;
       button.textContent = "■ Остановить чтение";
-      await player.play().catch(() => showToast("Голос готов. Нажмите ▶ на плеере"));
+      await player.play().catch(() => {
+        speechNeedsTap = true;
+        button.textContent = "▶ Голос готов — нажмите, чтобы слушать";
+      });
     } catch (e) {
       if (run !== speechRun) return;
       for (const controller of speechControllers) controller.abort();
@@ -820,9 +848,7 @@ async function toggleTranslationSpeech() {
       fallback.lang = langs[state.targetLang] || "ru-RU";
       fallback.onend = fallback.onerror = () => {
         if (run !== speechRun) return;
-        speakingTranslation = false;
-        button.textContent = "Прослушать перевод";
-        button.setAttribute("aria-pressed", "false");
+        speechIdle();
       };
       speechSynthesis.speak(fallback);
     } finally {
