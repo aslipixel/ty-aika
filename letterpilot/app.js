@@ -311,10 +311,14 @@ async function loadFriendCodes() {
         renew.disabled = true;
         try {
           const created = await adminRequest("/api/admin/codes", "POST", { name: item.name });
-          await adminRequest("/api/admin/codes/delete", "POST", { id: item.id }).catch(() => {});
+          let oldGone = true;
+          try { await adminRequest("/api/admin/codes/delete", "POST", { id: item.id }); }
+          catch { try { await adminRequest("/api/admin/codes/revoke", "POST", { id: item.id }); } catch { oldGone = false; } }
           showNewCode(created.code, item.name);
           await loadFriendCodes();
-          adminMessage(`Новый код для ${item.name} готов — отправьте его. Старый больше не работает.`);
+          adminMessage(oldGone
+            ? `Новый код для ${item.name} готов — отправьте его. Старый больше не работает.`
+            : `Новый код для ${item.name} готов, но старый код отключить не удалось — он ещё работает. Нажмите «Отключить» у старого кода.`);
           $("newCodeBox").scrollIntoView({ block: "nearest", behavior: "smooth" });
         } catch (e) { adminMessage(e.message); renew.disabled = false; }
       });
