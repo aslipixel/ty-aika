@@ -11,8 +11,7 @@ const state = {
     accessToken: "",
     provider: "auto",
     largeText: false,
-    adminToken: "",
-    voice: "Sulafat"
+    adminToken: ""
   },
   attachedFiles: [], // { name, mimeType, base64, textContent? }
   rawInputText: "",
@@ -46,13 +45,11 @@ function loadConfig() {
     state.config.provider = ["auto", "gemini", "nvidia"].includes(saved.provider) ? saved.provider : "auto";
     state.config.largeText = saved.largeText === true;
     state.config.adminToken = typeof saved.adminToken === "string" ? saved.adminToken : "";
-    state.config.voice = ["Sulafat", "Achernar", "Kore", "Charon"].includes(saved.voice) ? saved.voice : "Sulafat";
   } catch (e) { /* Storage may be unavailable in private browsing. */ }
   $("cfgAccessToken").value = state.config.accessToken;
   $("cfgProvider").value = state.config.provider;
   $("cfgLargeText").checked = state.config.largeText;
   $("cfgAdminToken").value = state.config.adminToken;
-  $("cfgVoice").value = state.config.voice;
   document.body.classList.toggle("large-text", state.config.largeText);
 }
 
@@ -60,7 +57,6 @@ function saveConfig() {
   state.config.accessToken = $("cfgAccessToken").value.trim();
   state.config.provider = $("cfgProvider").value;
   state.config.largeText = $("cfgLargeText").checked;
-  state.config.voice = $("cfgVoice").value;
   document.body.classList.toggle("large-text", state.config.largeText);
   try { localStorage.setItem(STORAGE_CONFIG, JSON.stringify(state.config)); }
   catch (e) { showToast("Браузер не разрешает сохранить код на устройстве"); return; }
@@ -696,14 +692,15 @@ function copyText(text) {
 
 let speechRun = 0;
 let speakingTranslation = false;
-async function toggleTranslationSpeech() {
+function toggleTranslationSpeech() {
+  if (!("speechSynthesis" in window)) {
+    showToast("Озвучивание недоступно в этом браузере");
+    return;
+  }
   const button = $("btnSpeakTranslation");
-  const player = $("translationAudio");
   if (speakingTranslation) {
     speechRun++;
-    player.pause();
-    player.removeAttribute("src");
-    player.classList.add("hidden");
+    speechSynthesis.cancel();
     speakingTranslation = false;
     button.textContent = "🔊 Прослушать перевод";
     button.setAttribute("aria-pressed", "false");
@@ -711,14 +708,16 @@ async function toggleTranslationSpeech() {
   }
   const text = state.currentAnalysis?.full_translation?.trim();
   if (!text) return showToast("Сначала разберите документ");
-  if (!state.config.accessToken) return showToast("Сохраните код доступа в настройках");
-  const chunks = text.match(/[\s\S]{1,1800}/g) || [];
+  const languages = { "Русский": "ru-RU", "Suomi": "fi-FI", "English": "en-US", "Deutsch": "de-DE", "Українська": "uk-UA", "Español": "es-ES", "Français": "fr-FR" };
+  const lang = languages[state.targetLang] || "ru-RU";
+  const chunks = text.match(/[\s\S]{1,180}/g) || [];
   const run = ++speechRun;
   let index = 0;
   speakingTranslation = true;
-  button.textContent = "Готовлю живой голос...";
+  button.textContent = "■ Остановить чтение";
   button.setAttribute("aria-pressed", "true");
-  const next = async () => {
+  speechSynthesis.cancel();
+  const next = () => {
     if (run !== speechRun) return;
     if (index >= chunks.length) {
       speakingTranslation = false;
@@ -726,26 +725,14 @@ async function toggleTranslationSpeech() {
       button.setAttribute("aria-pressed", "false");
       return;
     }
-    button.textContent = `Готовлю часть ${index + 1} из ${chunks.length}...`;
-    try {
-      const res = await fetch(API_BASE + "/api/tts", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${encodeURIComponent(state.config.accessToken)}` }, body: JSON.stringify({ text: chunks[index++], voice: state.config.voice }) });
-      const data = await res.json();
-      if (!res.ok || !data.audio) throw new Error(data.error || "Голос недоступен");
-      if (run !== speechRun) return;
-      player.src = `data:${data.mimeType || "audio/wav"};base64,${data.audio}`;
-      player.classList.remove("hidden");
-      player.onended = next;
-      button.textContent = "■ Остановить чтение";
-      await player.play().catch(() => showToast("Голос готов. Нажмите ▶ на плеере"));
-    } catch (e) {
-      if (run !== speechRun) return;
-      speakingTranslation = false;
-      button.textContent = "🔊 Прослушать перевод";
-      button.setAttribute("aria-pressed", "false");
-      showToast(e.message);
-    }
+    const utterance = new SpeechSynthesisUtterance(chunks[index++]);
+    utterance.lang = lang;
+    utterance.rate = 0.9;
+    utterance.onend = next;
+    utterance.onerror = next;
+    speechSynthesis.speak(utterance);
   };
-  await next();
+  next();
 }
 
 let toastTimer = null;
@@ -764,4 +751,3 @@ function escapeHtml(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
-
