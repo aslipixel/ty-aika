@@ -48,6 +48,16 @@ async function adminApi(request, env, path) {
     await env.LP_CODES.put(key, JSON.stringify({ ...record, disabled: true }));
     return reply({ ok: true });
   }
+  if ((path === '/api/admin/codes/restore' || path === '/api/admin/codes/delete') && request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    if (!/^[a-f0-9]{64}$/.test(body.id || '')) return reply({ error: 'Неверный ID' }, 400);
+    const key = 'LP2:code:' + body.id;
+    const record = await env.LP_CODES.get(key, 'json');
+    if (!record) return reply({ error: 'Код не найден' }, 404);
+    if (path.endsWith('/delete')) await env.LP_CODES.delete(key);
+    else await env.LP_CODES.put(key, JSON.stringify({ ...record, disabled: false }));
+    return reply({ ok: true });
+  }
   return reply({ error: 'Not found' }, 404);
 }
 async function models(key) {

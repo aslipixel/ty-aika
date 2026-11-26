@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
-  <link rel="stylesheet" href="style.css?v=20261127-admin1" />
+  <link rel="stylesheet" href="style.css?v=20261127-codes1" />
 </head>
 <body>
   <div class="app-shell">
@@ -312,7 +312,7 @@
       <input id="friendName" class="input-text mb-10" maxlength="60" placeholder="Например, Анна" />
       <button class="btn-primary btn-full" id="btnCreateFriend" type="button">Создать код другу</button>
       <p id="adminMessage" class="muted-sm mt-10" role="status" aria-live="polite"></p>
-      <div id="newCodeBox" class="admin-code-box hidden"><p>Новый код — скопируйте сейчас. Позже он не показывается.</p><code id="newCodeValue"></code><button class="btn-secondary" id="btnCopyNewCode" type="button">Скопировать</button></div>
+      <div id="newCodeBox" class="admin-code-box hidden"><p class="muted-sm">Новый код — отправьте или скопируйте сейчас. Позже он не показывается.</p><code id="newCodeValue"></code><div class="code-share"><button class="btn-whatsapp" id="btnWaNewCode" type="button">Отправить в WhatsApp</button><button class="btn-secondary" id="btnShareNewCode" type="button">Поделиться</button><button class="btn-secondary" id="btnCopyNewCode" type="button">Скопировать</button></div></div>
       <div id="friendCodeList" class="history-list mt-12"></div>
     </div>
   </div>
@@ -333,7 +333,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261127-admin1"></script>
+  <script src="app.js?v=20261127-codes1"></script>
 </body>
 </html>
 

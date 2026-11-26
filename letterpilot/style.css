@@ -592,3 +592,17 @@ html, body {
   .header-actions { gap: 0; }
   .nav-item { font-size: 10px; }
 }
+
+/* ---------- Коды для друзей ---------- */
+.code-row { cursor: default; }
+.code-row:hover { border-color: var(--border); }
+.code-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.code-head span { font-size: 14px; font-weight: 600; }
+.code-on { color: var(--success) !important; }
+.code-off { color: var(--muted) !important; }
+.code-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip-btn.danger { color: var(--danger); background: var(--danger-soft); }
+.chip-btn.danger.armed { background: var(--danger); color: #fff; }
+.chip-btn:disabled { opacity: .5; cursor: progress; }
+.code-share { display: flex; flex-wrap: wrap; gap: 8px; }
+.code-share .btn-whatsapp { flex: 1 1 100%; }

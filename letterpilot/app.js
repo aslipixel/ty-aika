@@ -112,6 +112,8 @@ function bindEvents() {
   $("btnLoadCodes").addEventListener("click", loadFriendCodes);
   $("btnCreateFriend").addEventListener("click", createFriendCode);
   $("btnCopyNewCode").addEventListener("click", () => copyText($("newCodeValue").textContent));
+  $("btnWaNewCode").addEventListener("click", () => window.open("https://wa.me/?text=" + encodeURIComponent(inviteText(newCodeName, $("newCodeValue").textContent)), "_blank", "noopener"));
+  $("btnShareNewCode").addEventListener("click", () => navigator.share?.({ title: "Код LetterPilot", text: inviteText(newCodeName, $("newCodeValue").textContent) }).catch(() => {}));
   $("btnClearHistory").addEventListener("click", () => {
     state.history = [];
     localStorage.removeItem(STORAGE_HIST);
@@ -213,9 +215,35 @@ function closeModal(id) { $(id).classList.add("hidden"); }
 
 const API_BASE = "https://letterpilot-v2.asl-icopal.workers.dev";
 function adminMessage(message) { $("adminMessage").textContent = message; }
-function showNewCode(code) {
+const LP_URL = "https://aslipixel.github.io/ty-aika/letterpilot/";
+let newCodeName = "";
+function inviteText(name, code) {
+  return `${name ? "Привет, " + name + "!" : "Привет!"} Вот твой код для LetterPilot — помощника с письмами и документами:
+
+${code}
+
+Открой ${LP_URL}, нажми значок настроек вверху справа, вставь код в поле «Код доступа» и нажми «Сохранить настройки».`;
+}
+function showNewCode(code, name = "") {
+  newCodeName = name;
   $("newCodeValue").textContent = code;
+  $("btnShareNewCode").classList.toggle("hidden", !navigator.share);
   $("newCodeBox").classList.remove("hidden");
+}
+function confirmTap(button, action) {
+  let armed = false, timer = 0;
+  const label = button.textContent;
+  button.addEventListener("click", () => {
+    if (!armed) {
+      armed = true;
+      button.textContent = "Точно удалить?";
+      button.classList.add("armed");
+      timer = setTimeout(() => { armed = false; button.textContent = label; button.classList.remove("armed"); }, 4000);
+      return;
+    }
+    clearTimeout(timer);
+    action();
+  });
 }
 async function adminRequest(path, method = "GET", body = null, useOwner = false) {
   const token = useOwner ? state.config.accessToken : ($("cfgAdminToken").value.trim() || state.config.accessToken);
@@ -250,23 +278,49 @@ async function loadFriendCodes() {
     list.replaceChildren();
     for (const item of data.codes || []) {
       const row = document.createElement("div");
-      row.className = "history-item";
+      row.className = "history-item code-row";
+      const head = document.createElement("div");
+      head.className = "code-head";
       const name = document.createElement("strong");
-      name.textContent = `${item.name} · …${item.lastFour}`;
-      const status = document.createElement("span");
-      status.textContent = item.disabled ? "Отключён" : "Активен";
-      row.append(name, status);
-      if (!item.disabled) {
+      name.textContent = item.name;
+      const meta = document.createElement("span");
+      meta.className = item.disabled ? "code-off" : "code-on";
+      meta.textContent = `…${item.lastFour} · ${item.disabled ? "отключён" : "активен"}`;
+      head.append(name, meta);
+      const actions = document.createElement("div");
+      actions.className = "code-actions";
+      const make = (label, cls) => {
         const button = document.createElement("button");
-        button.className = "btn-secondary mt-10";
-        button.textContent = "Отключить";
-        button.addEventListener("click", async () => {
-          button.disabled = true;
-          try { await adminRequest("/api/admin/codes/revoke", "POST", { id: item.id }); await loadFriendCodes(); }
-          catch (e) { adminMessage(e.message); button.disabled = false; }
-        });
-        row.append(button);
-      }
+        button.type = "button";
+        button.className = "chip-btn " + cls;
+        button.textContent = label;
+        actions.append(button);
+        return button;
+      };
+      const run = async (button, path, done) => {
+        button.disabled = true;
+        try { await adminRequest(path, "POST", { id: item.id }); await loadFriendCodes(); adminMessage(done); }
+        catch (e) { adminMessage(e.message); button.disabled = false; }
+      };
+      const toggle = make(item.disabled ? "Включить снова" : "Отключить", "");
+      toggle.addEventListener("click", () => item.disabled
+        ? run(toggle, "/api/admin/codes/restore", `Код ${item.name} снова работает`)
+        : run(toggle, "/api/admin/codes/revoke", `Код ${item.name} отключён`));
+      const renew = make("Новый код и отправить", "accent");
+      renew.addEventListener("click", async () => {
+        renew.disabled = true;
+        try {
+          const created = await adminRequest("/api/admin/codes", "POST", { name: item.name });
+          await adminRequest("/api/admin/codes/delete", "POST", { id: item.id }).catch(() => {});
+          showNewCode(created.code, item.name);
+          await loadFriendCodes();
+          adminMessage(`Новый код для ${item.name} готов — отправьте его. Старый больше не работает.`);
+          $("newCodeBox").scrollIntoView({ block: "nearest", behavior: "smooth" });
+        } catch (e) { adminMessage(e.message); renew.disabled = false; }
+      });
+      const remove = make("Удалить", "danger");
+      confirmTap(remove, () => run(remove, "/api/admin/codes/delete", `Код ${item.name} удалён`));
+      row.append(head, actions);
       list.append(row);
     }
     adminMessage(data.codes?.length ? "Список кодов загружен" : "Кодов для друзей пока нет");
@@ -275,11 +329,12 @@ async function loadFriendCodes() {
 async function createFriendCode() {
   adminMessage("Создаю код...");
   try {
-    const data = await adminRequest("/api/admin/codes", "POST", { name: $("friendName").value.trim() });
-    showNewCode(data.code);
+    const friend = $("friendName").value.trim();
+    const data = await adminRequest("/api/admin/codes", "POST", { name: friend });
+    showNewCode(data.code, friend);
     $("friendName").value = "";
     await loadFriendCodes();
-    adminMessage("Код создан. Скопируйте его и передайте другу лично.");
+    adminMessage("Код создан. Отправьте его другу — позже он не показывается.");
   } catch (e) { adminMessage(e.message); }
 }
 
