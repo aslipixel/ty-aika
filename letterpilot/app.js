@@ -243,9 +243,6 @@ async function callGemini({ contents, systemInstruction = null, jsonMode = false
     openModal("settingsModal");
     throw new Error("Введите код доступа в настройках.");
   }
-  if (/[^\x21-\x7e]/.test(accessToken)) {
-    throw new Error("В коде доступа есть пробелы или нелатинские символы. Проверьте код LetterPilot в настройках.");
-  }
   const body = JSON.stringify({ contents, systemInstruction, jsonMode, provider });
   if (new Blob([body]).size > 10000000) {
     throw new Error("Вложения слишком большие для отправки. Отправьте один файл до 6 МБ или разделите PDF на части.");
@@ -256,7 +253,7 @@ async function callGemini({ contents, systemInstruction = null, jsonMode = false
   try {
   res = await fetch("https://letterpilot-v2.asl-icopal.workers.dev/api/generate", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${encodeURIComponent(accessToken)}` },
     body,
     signal: controller.signal
   });
