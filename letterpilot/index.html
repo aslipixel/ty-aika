@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0d1117" />
+  <meta name="theme-color" content="#eaf4ff" />
   <title>LetterPilot — работа с документами</title>
+  <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,7 +13,7 @@
     <!-- Top Header -->
     <header class="app-header">
       <div class="brand">
-        <div class="brand-logo">AI</div>
+        <div class="brand-logo"><img src="letterpilot-glass.svg" alt="" /></div>
         <div class="brand-text">
           <h1>LetterPilot <span>2.0</span></h1>
           <p id="statusSubtitle">Готов к разбору документов</p>
@@ -82,11 +83,6 @@
 
           <!-- Attached Files Preview -->
           <div id="filePreviewList" class="file-list"></div>
-        </div>
-
-        <!-- API Key Warning Banner (auto-hidden when key or proxy is set) -->
-        <div id="apiNotice" class="notice-banner hidden">
-          <span>🔑 Введите код доступа в настройках (⚙), чтобы работать с документами.</span>
         </div>
 
         <button class="btn-primary btn-full" id="btnAnalyze">

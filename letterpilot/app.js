@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadConfig();
   loadHistory();
   bindEvents();
-  checkApiNotice();
 });
 
 function loadConfig() {
@@ -37,14 +36,8 @@ function loadConfig() {
 function saveConfig() {
   state.config.accessToken = $("cfgAccessToken").value.trim();
   state.config.provider = $("cfgProvider").value;
-  checkApiNotice();
   closeModal("settingsModal");
   showToast("Настройки сохранены");
-}
-
-function checkApiNotice() {
-  const hasAccess = Boolean(state.config.accessToken);
-  $("apiNotice").classList.toggle("hidden", hasAccess);
 }
 
 function loadHistory() {

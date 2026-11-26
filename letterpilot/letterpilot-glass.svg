@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="LetterPilot glass icon">
+  <defs>
+    <linearGradient id="bg" x1=".1" y1="0" x2=".9" y2="1">
+      <stop stop-color="#e9f8ff"/>
+      <stop offset=".44" stop-color="#9ed5ff"/>
+      <stop offset="1" stop-color="#247ee7"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fff" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#d8edff" stop-opacity=".78"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1376d6"/>
+      <stop offset="1" stop-color="#0755b6"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#0957a8" flood-opacity=".23"/></filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <path d="M35 117c70-94 217-117 334-66 33 14 62 35 86 60" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="397" cy="390" r="132" fill="#fff" opacity=".13"/>
+  <g filter="url(#shadow)">
+    <rect x="110" y="82" width="292" height="350" rx="48" fill="url(#paper)" stroke="#fff" stroke-opacity=".9" stroke-width="8"/>
+    <path d="M110 132c31-43 75-50 129-50h113c27 0 50 20 50 48v12H110z" fill="#fff" opacity=".44"/>
+    <path d="M161 197h141M161 245h175M161 293h112" stroke="url(#ink)" stroke-opacity=".6" stroke-width="19" stroke-linecap="round"/>
+    <path d="m179 341 39 34 78-79" fill="none" stroke="url(#ink)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <path d="M374 116c7 26 18 37 44 44-26 7-37 18-44 44-7-26-18-37-44-44 26-7 37-18 44-44z" fill="#fff" opacity=".94"/>
+  <circle cx="410" cy="229" r="8" fill="#fff" opacity=".86"/>
+</svg>
