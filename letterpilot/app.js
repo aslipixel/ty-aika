@@ -35,6 +35,7 @@ function showRequestError(err) {
 // --- Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
   loadConfig();
+  checkAdmin();
   loadHistory();
   bindEvents();
 });
@@ -63,6 +64,27 @@ function saveConfig() {
   catch (e) { showToast("Браузер не разрешает сохранить код на устройстве"); return; }
   closeModal("settingsModal");
   showToast("Настройки сохранены");
+  checkAdmin(true);
+}
+
+// Кнопка «Коды для друзей» видна только тому, чей код доступа — админский (или код владельца).
+// Сервер отвечает на список кодов только админу, поэтому этим запросом и проверяем.
+async function checkAdmin(openIfAdmin = false) {
+  const btn = $("btnOpenAdmin");
+  btn.classList.add("hidden");
+  if (!state.config.accessToken) return false;
+  try {
+    await adminRequest("/api/admin/codes");
+  } catch (e) {
+    return false;
+  }
+  btn.classList.remove("hidden");
+  if (openIfAdmin) {
+    showToast("Админский код принят — можно создавать коды для друзей");
+    openModal("adminModal");
+    loadFriendCodes();
+  }
+  return true;
 }
 
 function loadHistory() {
@@ -107,7 +129,7 @@ function bindEvents() {
   });
 
   $("btnSaveSettings").addEventListener("click", saveConfig);
-  $("btnOpenAdmin").addEventListener("click", () => { closeModal("settingsModal"); openModal("adminModal"); if (state.config.adminToken || state.config.accessToken) loadFriendCodes(); });
+  $("btnOpenAdmin").addEventListener("click", () => { closeModal("settingsModal"); openModal("adminModal"); loadFriendCodes(); });
   $("btnCreateAdmin").addEventListener("click", createAdminCode);
   $("btnLoadCodes").addEventListener("click", loadFriendCodes);
   $("btnCreateFriend").addEventListener("click", createFriendCode);
@@ -246,7 +268,7 @@ function confirmTap(button, action) {
   });
 }
 async function adminRequest(path, method = "GET", body = null, useOwner = false) {
-  const token = useOwner ? state.config.accessToken : ($("cfgAdminToken").value.trim() || state.config.accessToken);
+  const token = state.config.accessToken;
   if (!token) throw new Error("Сначала сохраните код доступа в настройках");
   const res = await fetch(API_BASE + path, {
     method,
@@ -271,8 +293,6 @@ async function createAdminCode() {
 async function loadFriendCodes() {
   adminMessage("Загружаю список...");
   try {
-    state.config.adminToken = $("cfgAdminToken").value.trim();
-    localStorage.setItem(STORAGE_CONFIG, JSON.stringify(state.config));
     const data = await adminRequest("/api/admin/codes");
     const list = $("friendCodeList");
     list.replaceChildren();
