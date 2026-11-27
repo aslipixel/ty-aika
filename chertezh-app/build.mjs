@@ -26,7 +26,8 @@ once(`<link href="${FONTS}" rel="stylesheet">`, '<link href="fonts.css" rel="sty
 html = html.split("fetch('/api/ai'").join(`fetch('${SITE}/api/ai'`);
 if (html.includes("'/api/ai'")) throw Error('Unpatched /api/ai');
 once('const dl=(blob,name)=>{', 'const dl=(blob,name)=>{if(window.nativeDl)return nativeDl(blob,name);');
-once('</head>', '<script src="native.js"></script></head>');
+// Android draws the page under the status bar: push the top bar below it (and a little lower)
+once('</head>', '<style>.appbar{padding-top:calc(max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px),32px) + 10px)}body{padding-bottom:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px))}</style><script src="native.js"></script></head>');
 await writeFile('www/index.html', html);
 await build({ entryPoints: ['native.js'], bundle: true, outfile: 'www/native.js', target: 'chrome90', minify: true });
 console.log('Packaged Чертёж в 3D into www/');
