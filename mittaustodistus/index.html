@@ -333,20 +333,20 @@ header .no{margin-left:0}header .no::before{content:'nro ';font-weight:400;opaci
 
    <div class="card">
     <h2>Шапка</h2>
+    <label for="f_kohde">Kohde — адрес</label><input id="f_kohde">
+    <label for="f_kohde2">Kohde — вторая строка</label><input id="f_kohde2">
+    <label for="f_tyonro">Työnumero (номер проекта)</label><input id="f_tyonro">
+    <label for="f_tilaaja">Tilaaja</label><input id="f_tilaaja">
+    <label for="f_tilaaja2" id="lblT2">Tilaaja — доп. строки (адрес, контакт)</label><textarea id="f_tilaaja2" rows="2" style="min-height:64px"></textarea>
+    <div class="only-full"><label for="f_asnro">ASNR/O</label><input id="f_asnro"></div>
+    <select id="f_alv" hidden><option value=""></option></select>
     <div class="row" style="gap:18px">
      <div class="chk"><input type="checkbox" id="f_osa"><span>Osamittaus</span></div>
      <div class="chk only-full"><input type="checkbox" id="f_loppu"><span>Loppumittaus</span></div>
     </div>
     <div class="two">
      <div><label for="f_nro">Номер документа</label><input id="f_nro" inputmode="numeric"></div>
-     <div><label for="f_tyonro">Työnumero</label><input id="f_tyonro"></div>
     </div>
-    <label for="f_tilaaja">Tilaaja</label><input id="f_tilaaja">
-    <label for="f_tilaaja2" id="lblT2">Tilaaja — доп. строки (адрес, контакт)</label><textarea id="f_tilaaja2" rows="2" style="min-height:64px"></textarea>
-    <div class="only-full"><label for="f_asnro">ASNR/O</label><input id="f_asnro"></div>
-    <select id="f_alv" hidden><option value=""></option></select>
-    <label for="f_kohde">Kohde</label><input id="f_kohde">
-    <label for="f_kohde2">Kohde — вторая строка</label><input id="f_kohde2">
    </div>
 
    <div class="card">
@@ -596,7 +596,7 @@ const FI={
 'Шапка':'Otsikkotiedot','Номер документа':'Asiakirjan numero',
 'Tilaaja — доп. строки (адрес, контакт)':'Tilaaja — lisärivit (osoite, yhteyshenkilö)',
 'Laskutusosoite (адрес для счёта, до 2 строк)':'Laskutusosoite (enintään 2 riviä)',
-'Kohde — вторая строка':'Kohde — toinen rivi',
+'Kohde — адрес':'Kohde — osoite','Työnumero (номер проекта)':'Työnumero (projektinumero)','Kohde — вторая строка':'Kohde — toinen rivi',
 'Työselitys и Määrä':'Työselitys ja määrä','Работа':'Työ','Кол-во':'Määrä','Ед.':'Yks.','+ Строка':'+ Rivi',
 'Редактор раздела':'Avaa editori','Отметки':'Merkinnät',
 'напр. дата или номер счёта':'esim. päivämäärä tai laskun numero',
