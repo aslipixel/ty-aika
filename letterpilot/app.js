@@ -38,7 +38,20 @@ function showRequestError(err) {
 }
 
 // --- Initialization ---
+// Заставка при запуске: логотип мягко появляется, затем приложение плавно проявляется.
+function runIntro() {
+  const splash = $("splash");
+  if (!splash) return;
+  if (reduceMotion()) { splash.remove(); document.body.classList.add("intro-done"); return; }
+  setTimeout(() => {
+    splash.classList.add("fade-out");
+    document.body.classList.add("intro-done");
+    setTimeout(() => splash.remove(), 900);
+  }, 1500);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  runIntro();
   loadConfig();
   checkAdmin();
   loadHistory();
@@ -365,12 +378,25 @@ Laskutusosasto / Billing Department`;
 }
 
 // --- Navigation ---
+// Плавная смена экранов: текущий экран мягко гаснет, новый медленно проявляется.
+let switchTimer = null;
+const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 function switchTab(tabId) {
-  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  const next = $(tabId);
+  const current = document.querySelector(".view.active");
   document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
-  $(tabId).classList.add("active");
   const navBtn = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
   if (navBtn) navBtn.classList.add("active");
+  clearTimeout(switchTimer);
+  document.querySelectorAll(".view.leaving").forEach((v) => v.classList.remove("leaving", "active"));
+  const show = () => {
+    document.querySelectorAll(".view").forEach((v) => { if (v !== next) v.classList.remove("active", "leaving"); });
+    next.classList.add("active");
+    $("appMain").scrollTop = 0;
+  };
+  if (!current || current === next || reduceMotion()) { show(); return; }
+  current.classList.add("leaving");
+  switchTimer = setTimeout(show, 260);
 }
 
 function openModal(id) { $(id).classList.remove("hidden"); }

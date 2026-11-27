@@ -176,3 +176,131 @@ html, body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 2v6h6M8 13h8M8 17h5'/%3E%3C/svg%3E");
 }
 .meta-strip { flex-wrap: wrap; flex-direction: row; }
+
+/* ================= Глянцевое стекло ================= */
+html, body {
+  background:
+    radial-gradient(60% 40% at 85% 8%, rgba(120, 190, 255, 0.45), transparent 70%),
+    radial-gradient(55% 38% at 8% 38%, rgba(160, 120, 255, 0.35), transparent 70%),
+    radial-gradient(70% 45% at 90% 85%, rgba(70, 210, 230, 0.30), transparent 70%),
+    linear-gradient(165deg, #142a4b 0%, #1d3d6b 50%, #28548a 100%) fixed;
+}
+.card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 38%),
+    linear-gradient(145deg, rgba(242, 247, 255, 0.86), rgba(214, 226, 247, 0.74));
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.25),
+    0 18px 40px rgba(5, 15, 35, 0.35);
+}
+.icon-btn, .badge-lang, #btnSaveDoc, .empty-state .btn-secondary, .chat-quick-bar .chip-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.07));
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 6px 16px rgba(5, 15, 35, 0.25);
+  -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%);
+}
+.bottom-nav {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)), rgba(14, 30, 56, 0.55);
+  -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.btn-primary {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(100deg, #e3ebff 0%, #ddd2ff 100%);
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 6px rgba(120, 100, 200, 0.18), 0 14px 32px rgba(5, 15, 35, 0.4);
+}
+.btn-primary:hover { background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 50%),
+    linear-gradient(100deg, #e9efff 0%, #e3d9ff 100%); }
+.chip-btn.accent, .badge-urgency.medium, .brand-text h1 span {
+  background: linear-gradient(180deg, #ffe08a 0%, #f3c24f 55%, #e6a722 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 6px 14px rgba(230, 167, 34, 0.35);
+}
+.badge-type { background: linear-gradient(180deg, #ffffff, #e6edf8); box-shadow: inset 0 1px 0 #fff, 0 6px 14px rgba(5, 15, 35, 0.25); }
+.modal-sheet {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 30%),
+    linear-gradient(180deg, rgba(236, 243, 253, 0.9), rgba(214, 226, 246, 0.9));
+  -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
+  border-top: 1px solid rgba(255, 255, 255, 0.9);
+}
+.chat-bubble.ai { background: linear-gradient(145deg, rgba(242, 247, 255, 0.9), rgba(214, 226, 247, 0.78)); border: 1px solid rgba(255, 255, 255, 0.75); }
+
+/* ================= Медленные плавные переходы ================= */
+.view.active { animation: viewInSlow .75s cubic-bezier(.22, .61, .36, 1) both; }
+.view.active > * { animation: riseIn .8s cubic-bezier(.22, .61, .36, 1) both; }
+.view.active > *:nth-child(2) { animation-delay: .08s; }
+.view.active > *:nth-child(3) { animation-delay: .16s; }
+.view.active > *:nth-child(4) { animation-delay: .24s; }
+.view.active > *:nth-child(5) { animation-delay: .32s; }
+#analysisContent > * { animation: riseIn .8s cubic-bezier(.22, .61, .36, 1) both; }
+#analysisContent > *:nth-child(2) { animation-delay: .08s; }
+#analysisContent > *:nth-child(3) { animation-delay: .16s; }
+#analysisContent > *:nth-child(4) { animation-delay: .24s; }
+#analysisContent > *:nth-child(n+5) { animation-delay: .32s; }
+.view.leaving { animation: viewOut .26s ease-in both; }
+@keyframes viewInSlow { from { opacity: 0; } to { opacity: 1; } }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(22px) scale(.985); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes viewOut { to { opacity: 0; transform: translateY(-8px); filter: blur(3px); } }
+.nav-item, .nav-item svg, .icon-btn, .btn-secondary, .chip-btn { transition: color .35s, background .35s, transform .2s, box-shadow .35s; }
+.nav-item.active::after { animation: dotIn .5s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes dotIn { from { transform: translateX(-50%) scale(0); } to { transform: translateX(-50%) scale(1); } }
+.modal:not(.hidden) .modal-sheet { animation: sheetUpSlow .55s cubic-bezier(.22, .61, .36, 1) both; }
+.modal:not(.hidden) .modal-backdrop { animation: fadeIn .45s ease-out both; }
+@keyframes sheetUpSlow { from { transform: translateY(100%); opacity: .6; } to { transform: none; opacity: 1; } }
+
+/* ================= Заставка при запуске ================= */
+#splash {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background:
+    radial-gradient(60% 40% at 50% 35%, rgba(120, 190, 255, 0.35), transparent 70%),
+    linear-gradient(165deg, #142a4b 0%, #1d3d6b 50%, #28548a 100%);
+  color: #fff;
+  animation: splashAuto .8s ease 3.5s forwards; /* запасной выход, если скрипт не загрузился */
+}
+#splash.fade-out { animation: splashOut .9s cubic-bezier(.4, 0, .2, 1) forwards; }
+.splash-glow {
+  position: absolute; width: 260px; height: 260px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(140, 200, 255, 0.55), transparent 65%);
+  filter: blur(10px); animation: glowPulse 1.6s ease-in-out both;
+}
+.splash-logo {
+  position: relative; width: 96px; height: 96px; border-radius: 28px; padding: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 20px 50px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  animation: logoIn 1s cubic-bezier(.22, .61, .36, 1) both;
+}
+.splash-logo img { width: 100%; height: 100%; display: block; }
+.splash-name { position: relative; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; animation: riseIn .9s .25s cubic-bezier(.22, .61, .36, 1) both; }
+.splash-tag { position: relative; font-size: 15px; color: rgba(255, 255, 255, 0.7); animation: riseIn .9s .45s cubic-bezier(.22, .61, .36, 1) both; }
+@keyframes logoIn { from { opacity: 0; transform: scale(.7); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes glowPulse { from { opacity: 0; transform: scale(.6); } 60% { opacity: 1; } to { opacity: .8; transform: scale(1); } }
+@keyframes splashOut { to { opacity: 0; transform: scale(1.04); filter: blur(6px); visibility: hidden; } }
+@keyframes splashAuto { to { opacity: 0; visibility: hidden; } }
+
+/* Приложение плавно проявляется после заставки */
+body.intro:not(.intro-done) .app-header,
+body.intro:not(.intro-done) .bottom-nav,
+body.intro:not(.intro-done) .app-main { opacity: 0; }
+body.intro-done .app-header { animation: dropIn .9s cubic-bezier(.22, .61, .36, 1) both; }
+body.intro-done .bottom-nav { animation: liftIn .9s .1s cubic-bezier(.22, .61, .36, 1) both; }
+body.intro-done .app-main { animation: viewInSlow .9s .15s ease both; }
+@keyframes dropIn { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+@keyframes liftIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  #splash { display: none; }
+  body.intro .app-header, body.intro .bottom-nav, body.intro .app-main { opacity: 1 !important; animation: none !important; }
+  .view.active, .view.active > *, #analysisContent > *, .view.leaving { animation: none !important; }
+}
