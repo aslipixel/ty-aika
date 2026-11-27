@@ -1,4 +1,4 @@
-/* LetterPilot — тема «Бумага и маркер» (предпросмотр).
+/* LetterPilot — тема «Бумага и маркер», всегда светлая.
    Идея: приложение объясняет бумажные документы, поэтому интерфейс сам похож на аккуратный лист:
    тёплая бумага, тёмные «чернила», глубокий северный бирюзовый вместо стандартного синего
    и жёлтый маркер, которым выделено главное («Что это за документ»).
@@ -6,6 +6,7 @@
    Плоско: тонкие линии и чёткая «бумажная» тень у главной кнопки, без размытого стекла. */
 
 :root {
+  color-scheme: light;
   --bg: #f3f0e8;
   --surface: #fffdf8;
   --surface-2: #f8f5ee;
@@ -32,32 +33,6 @@
   --font: "Onest", "Noto Sans", "Segoe UI", Roboto, system-ui, sans-serif;
   --focus: 0 0 0 3px rgba(13, 107, 99, 0.35);
   --shadow-bar: 0 1px 0 var(--border);
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #11161a;
-    --surface: #192026;
-    --surface-2: #1e262d;
-    --surface-3: #252e36;
-    --border: #2b353e;
-    --border-strong: #3a4651;
-    --text: #eeebe3;
-    --text-2: #d3d0c8;
-    --muted: #9ba3ab;
-    --accent: #4fc2b3;
-    --accent-hover: #6fd3c6;
-    --accent-soft: #123532;
-    --on-accent: #08201d;
-    --marker: #e8c94a;
-    --marker-soft: #2e2a17;
-    --ink-shadow: #000000;
-    --success: #6fd28a;  --success-soft: #14291b;
-    --warning: #f2c14e;  --warning-soft: #2d2410;  --warning-line: #f2c14e;
-    --danger: #ff8a7a;   --danger-soft: #34181a;
-    --info: #4fc2b3;     --info-soft: #123532;
-    --violet: #b9adff;   --violet-soft: #221e38;
-    --focus: 0 0 0 3px rgba(79, 194, 179, 0.45);
-  }
 }
 
 html, body { font-size: 17px; letter-spacing: -0.005em; }
@@ -149,11 +124,6 @@ html, body { font-size: 17px; letter-spacing: -0.005em; }
 
 .empty-state::before { border-radius: 18px; }
 .toast { border-radius: 999px; background: var(--text); color: var(--surface); }
-
-@media (prefers-color-scheme: dark) {
-  .explain-row h3 { background: none; color: var(--marker); padding: 0; }
-  .explain-card { border-color: var(--marker); box-shadow: 4px 4px 0 #000; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .btn-primary, .btn-primary:active { transition: none; transform: none; }
