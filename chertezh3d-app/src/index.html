@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Чертёж в 3D</title>
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+/* VOICE: точный, спокойный, как хороший прораб-объясняющий
+   IDEA: лист рабочего чертежа на кульмане — бумага, графит, красный карандаш проверяющего
+   PICTURE: сам инструмент — распознанный план и объёмная модель рядом
+   COLOUR and TYPE: бумага, графит, красный карандаш, синяя тушь; PT Sans Narrow (близок к чертёжному шрифту) + PT Sans
+   LAYOUT: два рабочих поля сверху, ниже помещения, разбор ИИ и справочник обозначений карточками */
+:root{color-scheme:light dark;--bg:light-dark(#f4f3ee,#121417);--sheet:light-dark(#fff,#1b1e22);--ink:light-dark(#1d2126,#e7e6e1);--mute:light-dark(#5d636b,#a2a7ad);--line:light-dark(#d8d6cd,#30343a);--red:light-dark(#c8261c,#ff6a5c);--blue:light-dark(#1d58b0,#7fb0ff)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);background:var(--bg);color:var(--ink);font:16px/1.55 "PT Sans",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"PT Sans Narrow","Arial Narrow",sans-serif;font-weight:700;line-height:1.05;text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,6vw,48px)}h2{font-size:26px}h3{font-size:19px}
+.band{padding:clamp(20px,3.5vw,48px) max(4vw,14px);max-width:1320px;margin:0 auto}
+.top{padding-bottom:12px}.top p{max-width:68ch;color:var(--mute);margin:10px 0 16px}
+.bar{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:8px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font:700 16px "PT Sans",sans-serif;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--sheet)}.btn.sm{min-height:36px;padding:0 12px;font-size:14px}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.btn:disabled{opacity:.5;cursor:default}
+.work{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding-top:8px}
+.panel{background:var(--sheet);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.ph span{font-size:14px;color:var(--mute);text-align:end}
+.fig2{background:#fff;line-height:0}#c2{width:100%;height:auto;display:block}
+.fig3{position:relative;height:clamp(300px,42vw,460px);background:light-dark(#eef0f2,#0e1013);touch-action:none}
+.fig3 canvas{position:absolute;inset:0;width:100%!important;height:100%!important;cursor:grab}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;padding:14px}
+.ctrls label{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--mute)}
+.ctrls input[type=number]{font-size:16px;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.ctrls input[type=range]{width:100%;min-height:30px;accent-color:var(--red)}
+.chk{flex-direction:row!important;align-items:center;min-height:44px}.chk input{width:22px;height:22px;accent-color:var(--red)}
+.hint{grid-column:1/-1;font-size:13px;color:var(--mute);margin:0}
+.info{padding:14px;font-size:15px;min-height:96px;border-top:1px solid var(--line)}
+.info b{color:var(--red)}
+.rooms{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.room{display:flex;align-items:center;gap:10px;background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+.room i{width:18px;height:18px;border-radius:4px;flex:none}.room b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.sub{color:var(--mute);max-width:72ch;margin:8px 0 0}
+.ai{border-top:1px solid var(--line)}
+.aig{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;margin-top:14px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card p{margin:6px 0 0;font-size:15px}.card small{color:var(--mute)}
+.kv{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:12px}.kv div{font-size:15px}.kv b{color:var(--mute);font-weight:400}
+form{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+form input{flex:1 1 240px;font-size:16px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--sheet);color:var(--ink)}
+.ans{white-space:pre-wrap;margin-top:12px}
+.leg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin-top:16px}
+.leg .card svg{width:100%;height:76px;color:var(--ink);display:block;margin-bottom:8px}
+.leg .card svg .r{stroke:var(--red)}
+.err{color:var(--red)}
+@media(max-width:900px){.work{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:no-preference){.panel{transition:box-shadow .2s}}
+</style></head><body>
+<header class="band top">
+<h1>Строительный чертёж → 3D-модель</h1>
+<p>Загрузите план этажа — фото, скан или картинку. Программа найдёт стены, посчитает площади помещений, поднимет стены в объём и объяснит, что означают обозначения.</p>
+<div class="bar"><label class="btn primary" for="file">Загрузить чертёж</label><input type="file" id="file" accept="image/*" hidden><button class="btn" id="demo">Пример плана</button></div>
+</header>
+<main class="band work">
+<section class="panel"><div class="ph"><h2>Распознавание</h2><span id="stat">—</span></div>
+<div class="fig2"><canvas id="c2" width="640" height="460"></canvas></div>
+<div class="ctrls">
+<label>Реальная ширина изображения, м<input type="number" id="wm" value="14" step="0.5" min="1"></label>
+<label>Высота стен, м<input type="number" id="hm" value="2.7" step="0.1" min="1"></label>
+<label>Отсечка тонких линий: <output id="tho">2</output><input type="range" id="th" min="1" max="8" value="2"></label>
+<label class="chk"><input type="checkbox" id="ov" checked> Подсветить найденное</label>
+<p class="hint">Красным — распознанные стены, цветом — помещения. Если в стены попал текст или размеры — сдвиньте отсечку вправо; если пропали перегородки — влево. Ширину изображения возьмите из размеров на чертеже: от неё зависят площади.</p>
+</div></section>
+<section class="panel"><div class="ph"><h2>3D-модель</h2><button class="btn sm" id="reset">Сбросить вид</button></div>
+<div class="fig3" id="v3"></div>
+<div id="info" class="info">Крутите модель пальцем или мышью, масштаб — щипком или колесом. Нажмите на стену или пол помещения — здесь появится объяснение.</div></section>
+</main>
+<section class="band"><h2>Помещения</h2><p class="sub">Площадь считается по внутреннему контуру стен — так же, как в экспликации помещений на чертеже. Номера совпадают с подписями на плане.</p><div class="rooms" id="rooms"></div></section>
+<section class="band ai" id="aiBox" hidden>
+<h2>Разбор чертежа с помощью Claude</h2>
+<p class="sub">Claude прочитает изображение целиком: тип чертежа, масштаб, надписи, марки и размеры — и объяснит каждое простыми словами.</p>
+<div class="bar" style="margin-top:14px"><button class="btn primary" id="ask">Объяснить чертёж</button></div>
+<div id="aiOut"></div>
+<form id="qf"><input id="q" placeholder="Например: что значит ОК-1 или почему стена толще?" autocomplete="off"><button class="btn">Спросить</button></form>
+<div id="qa" class="ans"></div>
+</section>
+<section class="band"><h2>Условные обозначения на строительных чертежах</h2>
+<p class="sub">Основные графические обозначения по ГОСТ системы проектной документации для строительства (СПДС) — ГОСТ 21.201, 21.101 и 2.306.</p>
+<div class="leg" id="leg"></div></section>
+<script src="three.min.js"></script>
+<script>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(v,d=1)=>v.toFixed(d).replace('.',',');
+const COLORS=['#4e8fe0','#f2a33a','#4bb59a','#c879d8','#e8665c','#8a9d3a','#3fb4d1','#d99a6c','#7f7fe0','#e07fb0'];
+let src=null,W=0,H=0,cell=3,gw=0,gh=0,grid,dgrid,rects=[],rooms=[],roomOf,full=null;
+const c2=$('c2'),x2=c2.getContext('2d');
+
+/* ---------- демонстрационный план ---------- */
+function demo(){
+ const c=document.createElement('canvas');c.width=1000;c.height=730;const g=c.getContext('2d');
+ const S=1000/14,ox=110,oy=130,X=v=>ox+v*S,Y=v=>oy+v*S,L=v=>v*S;
+ g.fillStyle='#fff';g.fillRect(0,0,1000,730);g.fillStyle='#222';g.strokeStyle='#222';g.lineWidth=2;
+ const R=(a,b,c2,d)=>g.fillRect(X(a),Y(b),L(c2-a),L(d-b));
+ R(0,0,10.92,.38);R(0,6.34,10.92,6.72);R(0,0,.38,6.72);R(10.54,0,10.92,6.72);
+ R(5.875,.38,6.125,6.34);R(.38,3.525,5.875,3.675);R(3.125,3.675,3.275,6.34);R(6.125,2.725,10.54,2.875);
+ const line=(a,b,c3,d)=>{g.beginPath();g.moveTo(a,b);g.lineTo(c3,d);g.stroke()};
+ const clear=(a,b,c3,d)=>{g.fillStyle='#fff';g.fillRect(a,b,c3-a,d-b);g.fillStyle='#222'};
+ [['h',1.5,3,0,.38],['h',4,5.2,0,.38],['h',7.4,9.2,0,.38],['h',7.4,9,6.34,6.72],['h',4,5.4,6.34,6.72],['v',1.4,2.6,0,.38],['v',4,5.4,10.54,10.92]].forEach(([o,a,b,p,q])=>{
+  if(o=='h'){clear(X(a),Y(p),X(b),Y(q));[p,(p+q)/2,q].forEach(t=>line(X(a),Y(t),X(b),Y(t)));line(X(a),Y(p),X(a),Y(q));line(X(b),Y(p),X(b),Y(q))}
+  else{clear(X(p),Y(a),X(q),Y(b));[p,(p+q)/2,q].forEach(t=>line(X(t),Y(a),X(t),Y(b)));line(X(p),Y(a),X(q),Y(a));line(X(p),Y(b),X(q),Y(b))}});
+ [['h',1,2,6.34,6.72,-1],['h',1.6,2.5,3.525,3.675,1],['h',4.2,5.1,3.525,3.675,1],['v',4.4,5.2,3.125,3.275,1],['v',1.3,2.2,5.875,6.125,1],['v',4.3,5.2,5.875,6.125,1]].forEach(([o,a,b,p,q,s])=>{
+  const r=L(b-a);g.beginPath();
+  if(o=='h'){clear(X(a),Y(p)-1,X(b),Y(q)+1);const f=Y(s>0?q:p);line(X(a),f,X(a),f+s*r);g.beginPath();s>0?g.arc(X(a),f,r,0,Math.PI/2):g.arc(X(a),f,r,-Math.PI/2,0);g.stroke()}
+  else{clear(X(p)-1,Y(a),X(q)+1,Y(b));const f=X(s>0?q:p);line(f,Y(a),f+s*r,Y(a));g.beginPath();s>0?g.arc(f,Y(a),r,0,Math.PI/2):g.arc(f,Y(a),r,Math.PI/2,Math.PI);g.stroke()}});
+ g.font='bold 20px sans-serif';g.textAlign='center';g.textBaseline='middle';
+ const axis=(x,y,t)=>{g.beginPath();g.arc(x,y,17,0,7);g.stroke();g.fillText(t,x,y+1)};
+ g.setLineDash([16,5,3,5]);
+ [[.19,'1'],[6,'2'],[10.73,'3']].forEach(([v])=>line(X(v),Y(-1.1),X(v),Y(.1)));
+ [[.19],[6.53]].forEach(([v])=>line(X(-1.1),Y(v),X(.1),Y(v)));g.setLineDash([]);
+ [[.19,'1'],[6,'2'],[10.73,'3']].forEach(([v,t])=>axis(X(v),Y(-1.35),t));
+ [[.19,'Б'],[6.53,'А']].forEach(([v,t])=>axis(X(-1.35),Y(v),t));
+ const dy=Y(-.6);line(X(.19)-10,dy,X(10.73)+10,dy);[.19,6,10.73].forEach(v=>line(X(v)-6,dy+6,X(v)+6,dy-6));
+ g.font='17px sans-serif';g.fillText('5810',X(3.1),dy-12);g.fillText('4730',X(8.36),dy-12);
+ const dx=X(-.6);line(dx,Y(.19)-10,dx,Y(6.53)+10);[.19,6.53].forEach(v=>line(dx-6,Y(v)+6,dx+6,Y(v)-6));
+ g.save();g.translate(dx-12,Y(3.36));g.rotate(-Math.PI/2);g.fillText('6340',0,0);g.restore();
+ g.font='19px sans-serif';
+ [['Гостиная','17,3',3.1,1.9],['Прихожая','7,3',1.75,5.1],['Кухня','6,9',4.6,5.6],['Спальня','10,4',8.3,1.5],['Детская','15,3',8.3,4.6]].forEach(([n,a,x,y])=>{g.fillText(n,X(x),Y(y));g.fillText(a,X(x),Y(y)+24);line(X(x)-18,Y(y)+36,X(x)+18,Y(y)+36)});
+ const lx=X(1.1),ly=Y(2.9);g.beginPath();g.moveTo(lx,ly);g.lineTo(lx-9,ly-12);g.lineTo(lx+9,ly-12);g.closePath();g.stroke();line(lx,ly-12,lx+70,ly-12);g.textAlign='left';g.font='16px sans-serif';g.fillText('±0,000',lx+6,ly-24);
+ g.lineWidth=5;line(X(8.3),Y(-.4),X(8.3),Y(-.15));line(X(8.3),Y(6.87),X(8.3),Y(7.12));g.lineWidth=2;
+ line(X(8.3),Y(-.4),X(7.8),Y(-.4));line(X(8.3),Y(7.12),X(7.8),Y(7.12));g.font='bold 18px sans-serif';g.fillText('1',X(7.65),Y(-.4));g.fillText('1',X(7.65),Y(7.12));
+ g.textAlign='center';g.font='bold 22px sans-serif';g.fillText('План этажа   М 1:100',500,Y(7.5)+8);
+ $('wm').value=14;load(c);
+}
+
+/* ---------- загрузка ---------- */
+function load(im){
+ const s=640/Math.max(im.width,im.height);W=Math.round(im.width*s);H=Math.round(im.height*s);
+ src=document.createElement('canvas');src.width=W;src.height=H;const g=src.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);g.drawImage(im,0,0,W,H);
+ const fs=Math.min(1,1600/Math.max(im.width,im.height));full=document.createElement('canvas');full.width=Math.round(im.width*fs);full.height=Math.round(im.height*fs);
+ const fg=full.getContext('2d');fg.fillStyle='#fff';fg.fillRect(0,0,full.width,full.height);fg.drawImage(im,0,0,full.width,full.height);
+ $('aiOut').innerHTML='';$('qa').textContent='';aiCtx='';
+ analyze();
+}
+$('file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const u=URL.createObjectURL(f),im=new Image();
+ im.onload=()=>{load(im);URL.revokeObjectURL(u)};im.onerror=()=>{$('stat').textContent='Не удалось открыть файл — нужен JPG или PNG';};im.src=u;e.target.value=''});
+$('demo').onclick=demo;
+
+/* ---------- морфология ---------- */
+function box(a,w,h,r,hor,max){const o=new Uint8Array(w*h),n=2*r+1;
+ if(hor)for(let y=0;y<h;y++){const b=y*w;let s=0;for(let x=-r;x<w;x++){if(x+r<w)s+=a[b+x+r];if(x-r-1>=0)s-=a[b+x-r-1];if(x>=0)o[b+x]=max?(s>0?1:0):(s===n?1:0)}}
+ else for(let x=0;x<w;x++){let s=0;for(let y=-r;y<h;y++){if(y+r<h)s+=a[(y+r)*w+x];if(y-r-1>=0)s-=a[(y-r-1)*w+x];if(y>=0)o[y*w+x]=max?(s>0?1:0):(s===n?1:0)}}
+ return o}
+const erode=(a,w,h,r)=>box(box(a,w,h,r,1,0),w,h,r,0,0),dilate=(a,w,h,r)=>box(box(a,w,h,r,1,1),w,h,r,0,1);
+
+function analyze(){
+ if(!src)return;
+ const d=src.getContext('2d').getImageData(0,0,W,H).data,N=W*H,gray=new Uint8Array(N),hist=new Array(256).fill(0);
+ for(let i=0;i<N;i++){const v=(d[4*i]*.299+d[4*i+1]*.587+d[4*i+2]*.114)|0;gray[i]=v;hist[v]++}
+ let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];let sB=0,wB=0,best=0,t=128;
+ for(let i=0;i<256;i++){wB+=hist[i];if(!wB)continue;const wF=N-wB;if(!wF)break;sB+=i*hist[i];const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)**2;if(b>best){best=b;t=i}}
+ const dark=new Uint8Array(N);for(let i=0;i<N;i++)dark[i]=gray[i]<=t?1:0;
+ const r=+$('th').value,wall=dilate(erode(dark,W,H,r),W,H,r);
+ cell=3;gw=Math.ceil(W/cell);gh=Math.ceil(H/cell);grid=new Uint8Array(gw*gh);dgrid=new Uint8Array(gw*gh);
+ const cw=new Uint16Array(gw*gh),cd=new Uint16Array(gw*gh),ct=new Uint16Array(gw*gh);
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=((y/cell)|0)*gw+((x/cell)|0),i=y*W+x;ct[k]++;cw[k]+=wall[i];cd[k]+=dark[i]}
+ for(let k=0;k<gw*gh;k++){grid[k]=cw[k]*2>=ct[k]?1:0;dgrid[k]=cd[k]*4>=ct[k]?1:0}
+ const used=new Uint8Array(gw*gh);rects=[];
+ for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){const i=y*gw+x;if(!grid[i]||used[i])continue;
+  let w=1;while(x+w<gw&&grid[i+w]&&!used[i+w])w++;let h=1;
+  out:while(y+h<gh){for(let k=0;k<w;k++){const j=(y+h)*gw+x+k;if(!grid[j]||used[j])break out}h++}
+  for(let yy=0;yy<h;yy++)for(let k=0;k<w;k++)used[(y+yy)*gw+x+k]=1;rects.push({x,y,w,h})}
+ findRooms();draw2();build3();listRooms();
+}
+
+function findRooms(){
+ const N=gw*gh,cs=cell*(+$('wm').value||14)/W;
+ const L=Math.round(2/cs),span=new Uint8Array(N),bar=new Uint8Array(N);
+ const scan=(n,m,at)=>{for(let a=0;a<n;a++){let last=-1e9;const lf=new Int32Array(m);for(let b=0;b<m;b++){if(grid[at(a,b)])last=b;lf[b]=last}
+  let nx=1e9;for(let b=m-1;b>=0;b--){const i=at(a,b);if(grid[i])nx=b;if(nx-lf[b]<=L)span[i]=1}}};
+ scan(gh,gw,(y,x)=>y*gw+x);scan(gw,gh,(x,y)=>y*gw+x);
+ for(let i=0;i<N;i++)bar[i]=grid[i]||(dgrid[i]&&span[i])?1:0;
+ const cl=dilate(bar,gw,gh,Math.min(20,Math.max(1,Math.round(.56/cs)))),lab=new Int32Array(N).fill(-1),q=new Int32Array(N),regs=[];
+ const nb=(i,f)=>{const x=i%gw;if(x>0)f(i-1);if(x<gw-1)f(i+1);if(i>=gw)f(i-gw);if(i<N-gw)f(i+gw)};
+ for(let s=0;s<N;s++){if(cl[s]||lab[s]>=0)continue;const id=regs.length;let h=0,t=0,border=false;q[t++]=s;lab[s]=id;
+  while(h<t){const i=q[h++],x=i%gw,y=(i/gw)|0;if(!x||!y||x==gw-1||y==gh-1)border=true;nb(i,j=>{if(!cl[j]&&lab[j]<0){lab[j]=id;q[t++]=j}})}
+  regs.push({border,n:0,sx:0,sy:0})}
+ let h=0,t=0;for(let i=0;i<N;i++)if(lab[i]>=0)q[t++]=i;
+ while(h<t){const i=q[h++];nb(i,j=>{if(!bar[j]&&lab[j]<0){lab[j]=lab[i];q[t++]=j}})}
+ for(let i=0;i<N;i++){const l=lab[i];if(l<0||bar[i])continue;const R=regs[l];R.n++;R.sx+=i%gw;R.sy+=(i/gw)|0}
+ const keep=regs.map((R,id)=>({...R,id,area:R.n*cs*cs})).filter(R=>!R.border&&R.area>=1.2).sort((a,b)=>b.area-a.area);
+ const map=new Map();rooms=keep.map((R,k)=>{map.set(R.id,k);return{num:k+1,area:R.area,cx:(R.sx/R.n+.5)*cell,cy:(R.sy/R.n+.5)*cell,color:COLORS[k%COLORS.length]}});
+ roomOf=new Int16Array(N).fill(-1);for(let i=0;i<N;i++)if(lab[i]>=0&&!bar[i]&&map.has(lab[i]))roomOf[i]=map.get(lab[i]);
+}
+
+function paint(ctx,walls){
+ ctx.drawImage(src,0,0);if(!$('ov').checked&&walls)return;
+ const ov=ctx.createImageData(W,H),o=ov.data;
+ const rgb=rooms.map(r=>[1,3,5].map(k=>parseInt(r.color.slice(k,k+2),16)));
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=((y/cell)|0)*gw+((x/cell)|0),p=4*(y*W+x);
+  if(walls&&grid[k]){o[p]=200;o[p+1]=38;o[p+2]=28;o[p+3]=150}else if(roomOf[k]>=0){const c=rgb[roomOf[k]];o[p]=c[0];o[p+1]=c[1];o[p+2]=c[2];o[p+3]=70}}
+ const tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;tmp.getContext('2d').putImageData(ov,0,0);ctx.drawImage(tmp,0,0);
+ ctx.font='bold 15px "PT Sans",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ rooms.forEach(r=>{ctx.fillStyle=r.color;ctx.beginPath();ctx.arc(r.cx,r.cy,12,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(r.num,r.cx,r.cy+1)});
+}
+function draw2(){c2.width=W;c2.height=H;paint(x2,true);
+ const tot=rooms.reduce((s,r)=>s+r.area,0);$('stat').textContent=`стен: ${rects.length} фрагм. · помещений: ${rooms.length} · ${fmt(tot)} м²`}
+function listRooms(){const tot=rooms.reduce((s,r)=>s+r.area,0);
+ $('rooms').innerHTML=rooms.length?rooms.map(r=>`<div class="room"><i style="background:${r.color}"></i>Помещение ${r.num}<b>${fmt(r.area)} м²</b></div>`).join('')+`<div class="room">Итого<b>${fmt(tot)} м²</b></div>`:'<p class="sub">Замкнутые помещения не найдены. Проверьте, что стены на плане замкнуты, и поправьте отсечку.</p>'}
+
+/* ---------- 3D ---------- */
+let renderer,scene,cam,group,floor,tex,sel=null,theta=.65,phi=.95,rad=20,ok=true;
+const v3=$('v3');
+try{
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));v3.appendChild(renderer.domElement);
+ scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(45,1,.1,500);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x8090a0,.85));const sun=new THREE.DirectionalLight(0xffffff,.75);sun.position.set(8,15,6);scene.add(sun);
+ group=new THREE.Group();scene.add(group);
+}catch(e){ok=false;v3.innerHTML='<p class="info err">3D недоступно: браузер не поддерживает WebGL.</p>'}
+let pend=false;const req=()=>{if(!ok||pend)return;pend=true;requestAnimationFrame(()=>{pend=false;
+ cam.position.set(rad*Math.sin(phi)*Math.sin(theta),rad*Math.cos(phi),rad*Math.sin(phi)*Math.cos(theta));cam.lookAt(0,0,0);renderer.render(scene,cam)})};
+function fit(){if(!ok)return;const w=v3.clientWidth,h=v3.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();req()}
+const ro3=new ResizeObserver(fit);ro3.observe(v3);
+function resetView(){const m=(+$('wm').value||14);theta=.65;phi=.95;rad=Math.max(m,m*H/W)*1.25*Math.max(1,1.4/(cam.aspect||1));req()}
+function build3(){
+ if(!ok)return;fit();sel=null;
+ while(group.children.length){const c=group.children.pop();c.geometry.dispose();if(c.material.map)c.material.map.dispose();c.material.dispose()}
+ const Wm=+$('wm').value||14,mpp=Wm/W,Hm=H*mpp,cs=cell*mpp,hh=+$('hm').value||2.7;
+ const tc=document.createElement('canvas');tc.width=W;tc.height=H;paint(tc.getContext('2d'),false);
+ tex=new THREE.CanvasTexture(tc);tex.anisotropy=4;
+ floor=new THREE.Mesh(new THREE.PlaneGeometry(Wm,Hm),new THREE.MeshStandardMaterial({map:tex,roughness:1}));floor.rotation.x=-Math.PI/2;floor.userData.t='floor';group.add(floor);
+ rects.forEach(r=>{const m=new THREE.Mesh(new THREE.BoxGeometry(r.w*cs,hh,r.h*cs),new THREE.MeshStandardMaterial({color:0xe9e4da,roughness:.85}));
+  m.position.set((r.x+r.w/2)*cs-Wm/2,hh/2,(r.y+r.h/2)*cs-Hm/2);m.userData={t:'wall',r};group.add(m)});
+ resetView();fit();
+}
+function wallText(r){const cs=cell*(+$('wm').value||14)/W,t=Math.min(r.w,r.h)*cs*1000,l=Math.max(r.w,r.h)*cs;
+ let k;if(t>=360)k='Толстая стена — скорее всего <b>наружная несущая</b> (кирпич 380–640 мм или с утеплителем). На чертеже такие стены часто заштрихованы и привязаны к координационным осям.';
+ else if(t>=190)k='Похоже на <b>внутреннюю несущую стену</b>: кирпич 250 мм или монолитный бетон 200 мм. Пробивать проёмы в ней можно только по проекту.';
+ else if(t>=70)k='Это <b>перегородка</b> — ненесущая стена (кирпич 120 мм, пазогребень 80–100 мм, гипсокартон 75–125 мм). Делит помещения, нагрузку не держит.';
+ else k='Очень тонкая линия — возможно, <b>гипсокартонная перегородка</b>, витраж или ошибка распознавания.';
+ return `<b>Стена</b> · толщина ≈ ${Math.round(t/10)*10} мм · длина фрагмента ≈ ${fmt(l,2)} м<br>${k}`}
+const ray=new THREE.Raycaster?new THREE.Raycaster():null;
+function pick(e){if(!ok)return;const b=renderer.domElement.getBoundingClientRect();
+ ray.setFromCamera(new THREE.Vector2(((e.clientX-b.left)/b.width)*2-1,-((e.clientY-b.top)/b.height)*2+1),cam);
+ const hit=ray.intersectObjects(group.children)[0];if(sel){sel.material.color.set(0xe9e4da);sel=null}
+ if(!hit){$('info').textContent='Здесь пусто — нажмите на стену или пол.';req();return}
+ if(hit.object.userData.t=='wall'){sel=hit.object;sel.material.color.set(0xff7a6b);$('info').innerHTML=wallText(sel.userData.r)}
+ else{const u=hit.uv,k=Math.min(gh-1,((1-u.y)*H/cell)|0)*gw+Math.min(gw-1,(u.x*W/cell)|0),ri=roomOf[k];
+  if(ri>=0){const r=rooms[ri],sd=Math.sqrt(r.area);$('info').innerHTML=`<b>Помещение ${r.num}</b> · площадь ${fmt(r.area)} м² · объём ≈ ${fmt(r.area*(+$('hm').value||2.7))} м³<br>${r.area<4?'Небольшое помещение: обычно санузел, кладовая или гардеробная.':r.area<9?'По площади подходит для кухни, прихожей или кабинета.':r.area<16?'Типичная площадь спальни или детской.':'Самое просторное — вероятно гостиная или кухня-гостиная.'} Площадь по СП 54 считается по внутреннему контуру стен, без толщины перегородок.`}
+  else $('info').textContent='Это пол вне распознанных помещений: улица, лестничная клетка или незамкнутая зона.'}
+ req()}
+const ptr=new Map();let down=null,pd=0;const el=v3;
+const dist=()=>{const p=[...ptr.values()];return Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1};
+el.addEventListener('pointerdown',e=>{try{el.setPointerCapture(e.pointerId)}catch(_){}ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptr.size==1)down={x:e.clientX,y:e.clientY,m:false};if(ptr.size==2){pd=dist();if(down)down.m=true}});
+el.addEventListener('pointermove',e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+ if(ptr.size==1){theta-=dx*.008;phi=Math.min(1.5,Math.max(.12,phi-dy*.008))}else if(ptr.size==2){const d=dist();rad=Math.min(200,Math.max(2,rad*pd/d));pd=d}
+ if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>6)down.m=true;req()});
+const up=e=>{if(down&&!down.m&&ptr.size==1&&e.type=='pointerup')pick(e);ptr.delete(e.pointerId);if(!ptr.size)down=null};
+el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
+el.addEventListener('wheel',e=>{e.preventDefault();rad=Math.min(200,Math.max(2,rad*(e.deltaY>0?1.1:.9)));req()},{passive:false});
+$('reset').onclick=resetView;
+
+$('th').addEventListener('input',()=>{$('tho').textContent=$('th').value});$('th').addEventListener('change',analyze);
+$('wm').addEventListener('change',analyze);$('hm').addEventListener('change',build3);$('ov').addEventListener('change',()=>{draw2()});
+
+/* ---------- справочник ---------- */
+const LEG=[
+['Несущая стена','<rect x="10" y="26" width="220" height="24" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 50l24-24M44 50l24-24M68 50l24-24M92 50l24-24M116 50l24-24M140 50l24-24M164 50l24-24M188 50l24-24M212 50l18-18" stroke="currentColor"/>','Толстая линия, часто со штриховкой материала. Держит перекрытия и вышележащие этажи. Сносить или прорезать без проекта и согласования нельзя.'],
+['Перегородка','<rect x="10" y="33" width="220" height="10" fill="currentColor"/>','Тонкая стена без несущей функции: кирпич 120 мм, пазогребневые плиты, гипсокартон. Её можно переносить при перепланировке (с согласованием).'],
+['Окно','<path d="M10 26h70v24H10zM160 26h70v24h-70z" fill="currentColor"/><path d="M80 26h80M80 38h80M80 50h80M80 26v24M160 26v24" stroke="currentColor" stroke-width="2"/>','Разрыв в стене с тонкими параллельными линиями — это рама и стекло. Рядом часто стоит марка, например ОК-1: размер окна смотрят в ведомости заполнения проёмов.'],
+['Дверь','<path d="M10 56h70v14H10zM150 56h80v14h-80z" fill="currentColor"/><path d="M80 56V8" stroke="currentColor" stroke-width="2"/><path d="M80 8a70 48 0 0 1 70 48" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>','Проём с отрезком (полотно) и дугой — дуга показывает, куда и в какую сторону открывается дверь. Марка вида Д-1, ДГ 21-9 означает дверь глухую высотой 2,1 м и шириной 0,9 м.'],
+['Координационные оси','<path d="M120 76V30" stroke="currentColor" stroke-width="1.5" stroke-dasharray="14 4 3 4"/><circle cx="120" cy="17" r="13" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="120" y="22" font-size="15" text-anchor="middle" fill="currentColor" font-weight="700">2</text><path d="M30 60h60" stroke="currentColor" stroke-width="1.5" stroke-dasharray="14 4 3 4"/><circle cx="17" cy="60" r="13" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="17" y="65" font-size="15" text-anchor="middle" fill="currentColor" font-weight="700">Б</text>','Штрихпунктирные линии с кружками — «сетка», к которой привязаны стены и колонны. Цифрами маркируют сторону с большим числом осей, буквами — другую. Буквы Ё, З, Й, О, Х, Ц, Ч, Щ, Ъ, Ы, Ь не используют, чтобы не путать с цифрами.'],
+['Размерная линия','<path d="M20 50h200M20 30v32M220 30v32M14 56l12-12M214 56l12-12" stroke="currentColor" stroke-width="1.5"/><text x="120" y="42" font-size="15" text-anchor="middle" fill="currentColor">3600</text>','Засечки под 45° ограничивают размер. На строительных чертежах размеры пишут в миллиметрах без единиц: 3600 — это 3,6 м. Обычно идут цепочками: проёмы, оси, общий габарит.'],
+['Отметка уровня','<path d="M60 56l-10-14h20z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M60 42h90M20 56h80" stroke="currentColor" stroke-width="1.5"/><text x="74" y="36" font-size="15" fill="currentColor">+3,000</text>','Высота в метрах с тремя знаками после запятой от условного нуля (±0,000 — обычно чистый пол первого этажа). +3,000 — на 3 м выше, −1,200 — ниже нуля, например подвал.'],
+['Линия разреза','<path d="M30 14v20M30 50v20" stroke="currentColor" stroke-width="5" class="r"/><path d="M30 14H10M30 70H10M10 14l8-5M10 14l8 5M10 70l8-5M10 70l8 5" stroke="currentColor" stroke-width="1.5"/><text x="50" y="19" font-size="16" fill="currentColor" font-weight="700">1</text><text x="50" y="75" font-size="16" fill="currentColor" font-weight="700">1</text><text x="90" y="46" font-size="14" fill="currentColor">разрез 1-1</text>','Толстые штрихи со стрелками показывают, где здание мысленно «разрезали» и куда смотрят. Сам разрез 1-1 с высотами этажей нарисован на другом листе.'],
+['Лестница','<path d="M20 14h200v52H20z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M45 14v52M70 14v52M95 14v52M120 14v52M145 14v52M170 14v52M195 14v52" stroke="currentColor"/><path d="M28 40h180" stroke="currentColor" stroke-width="2" class="r"/><path d="M208 40l-10-6v12z" fill="currentColor" class="r"/>','Ступени — параллельные линии, стрелка указывает направление подъёма. Число линий — количество ступеней в марше.'],
+['Выносной элемент (узел)','<ellipse cx="70" cy="42" rx="40" ry="24" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M104 30l60-16h40" stroke="currentColor" stroke-width="1.5"/><text x="180" y="10" font-size="15" fill="currentColor" text-anchor="middle" font-weight="700">А</text>','Обведённый фрагмент с буквой: эта часть показана крупнее на отдельном чертеже — узле. Иногда под буквой указан номер листа, где искать узел.'],
+['Бетон и железобетон','<rect x="10" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><g fill="currentColor"><circle cx="25" cy="25" r="1.6"/><circle cx="60" cy="50" r="1.6"/><circle cx="90" cy="30" r="1.6"/><circle cx="40" cy="58" r="1.6"/></g><path d="M48 24l6 9h-12zM80 48l6 9h-12z" fill="none" stroke="currentColor"/><rect x="130" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M130 40l28-28M130 68l56-56M158 68l56-56M186 68l44-44M214 68l16-16" stroke="currentColor"/><g fill="currentColor"><circle cx="150" cy="56" r="1.6"/><circle cx="200" cy="26" r="1.6"/><circle cx="178" cy="44" r="1.6"/></g>','Штриховка показывает материал в сечении. Бетон — точки и мелкие треугольники (щебень); железобетон — те же точки плюс диагональные линии (арматура).'],
+['Кирпич и утеплитель','<rect x="10" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 40l28-28M10 68l56-56M38 68l56-56M66 68l44-44M94 68l16-16" stroke="currentColor"/><rect x="130" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M134 40q6-22 12 0t12 0 12 0 12 0 12 0 12 0 12 0 12 0" fill="none" stroke="currentColor"/>','Кирпичная и каменная кладка — частые диагональные линии под 45°. Теплоизоляция — волнистая линия по всей толщине слоя.'],
+['Сантехприборы','<rect x="12" y="14" width="96" height="52" rx="16" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="138" y="14" width="34" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="155" cy="50" rx="15" ry="18" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="190" y="22" width="40" height="34" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="210" cy="39" r="4" fill="currentColor"/>','Упрощённые контуры: ванна, унитаз, раковина. Показывают расстановку оборудования и подсказывают, где пройдут трубы и где нужна гидроизоляция.'],
+['Основная надпись (штамп)','<rect x="10" y="10" width="220" height="60" fill="none" stroke="currentColor" stroke-width="2"/><path d="M80 10v60M10 30h70M10 50h70M80 40h150M170 40v30M200 40v30" stroke="currentColor"/><text x="155" y="30" font-size="13" text-anchor="middle" fill="currentColor">План 1 этажа</text><text x="185" y="60" font-size="11" text-anchor="middle" fill="currentColor">Р</text><text x="215" y="60" font-size="11" text-anchor="middle" fill="currentColor">3</text>','Таблица в правом нижнем углу листа: шифр проекта, название здания и чертежа, стадия (П — проект, Р — рабочая документация), номер листа, подписи и дата.'],
+['Масштаб','<path d="M20 50h200" stroke="currentColor" stroke-width="2"/><path d="M20 50h50M120 50h50" stroke="currentColor" stroke-width="8"/><text x="120" y="30" font-size="16" text-anchor="middle" fill="currentColor" font-weight="700">М 1:100</text>','Во сколько раз уменьшено изображение. При М 1:100 один сантиметр на листе — один метр в натуре; планы обычно 1:100 или 1:50, узлы 1:10–1:20. Если масштаб известен, по нему можно задать ширину изображения выше.']
+];
+$('leg').innerHTML=LEG.map(([t,s,p])=>`<div class="card"><svg viewBox="0 0 240 80" aria-hidden="true">${s}</svg><h3>${t}</h3><p>${p}</p></div>`).join('');
+
+/* ---------- Claude ---------- */
+let sample=null,aiCtx='';
+const blob=()=>new Promise(r=>full.toBlob(r,'image/jpeg',.9));
+if(window.claude&&claude.use)claude.use('sample').then(async s=>{if(!s)return;try{const l=await s.limits();if(!l||!l.images)return}catch(_){return}sample=s;$('aiBox').hidden=false}).catch(()=>{});
+const aiErr=e=>{if(e&&e.code=='not_granted'){$('aiBox').hidden=true;return''}return e&&e.code=='rate_limited'?'Слишком много запросов — попробуйте через минуту.':'Не получилось получить ответ. Попробуйте ещё раз.'};
+$('ask').onclick=async()=>{if(!sample||!full)return;const b=$('ask'),out=$('aiOut');b.disabled=true;out.innerHTML='<p class="sub">Claude читает чертёж…</p>';
+ const prompt='Ты опытный инженер-проектировщик. На изображении — строительный чертёж. Определи тип чертежа (план этажа, разрез, фасад, узел, генплан, схема и т. п.) и масштаб, если он указан. Найди все условные обозначения, марки, надписи и характерные размеры и объясни каждое простым языком для человека без строительного образования, со ссылкой на ГОСТ СПДС там, где это уместно. Перечисли помещения с площадями, если они подписаны. Ответь строго одним JSON-объектом без пояснений вокруг, на русском языке: {"type":"","scale":"","summary":"2-4 предложения что изображено","elements":[{"name":"","where":"где на чертеже","meaning":"что означает"}],"rooms":[{"name":"","area":""}],"dimensions":[{"value":"","meaning":""}],"notes":["на что обратить внимание"]}';
+ try{const r=await sample(prompt,{images:[await blob()],modelTier:'complex'});const tx=r.text||'';let o=null;
+  try{o=JSON.parse(tx.slice(tx.indexOf('{'),tx.lastIndexOf('}')+1))}catch(_){}
+  if(!o){out.innerHTML=`<div class="card ans">${esc(tx)}</div>`;aiCtx=tx.slice(0,3000)}
+  else{aiCtx=JSON.stringify(o).slice(0,4000);const A=a=>Array.isArray(a)?a:[];
+   out.innerHTML=`<div class="kv"><div><b>Тип:</b> ${esc(o.type||'—')}</div><div><b>Масштаб:</b> ${esc(o.scale||'не указан')}</div></div><p>${esc(o.summary)}</p>
+   <div class="aig">${A(o.elements).map(e=>`<div class="card"><h3>${esc(e.name)}</h3>${e.where?`<small>${esc(e.where)}</small>`:''}<p>${esc(e.meaning)}</p></div>`).join('')}</div>
+   ${A(o.rooms).length?`<h3 style="margin-top:20px">Помещения по подписям</h3><div class="rooms">${A(o.rooms).map(r=>`<div class="room">${esc(r.name)}<b>${esc(r.area)}</b></div>`).join('')}</div>`:''}
+   ${A(o.dimensions).length?`<h3 style="margin-top:20px">Размеры</h3><div class="aig">${A(o.dimensions).map(d=>`<div class="card"><h3>${esc(d.value)}</h3><p>${esc(d.meaning)}</p></div>`).join('')}</div>`:''}
+   ${A(o.notes).length?`<h3 style="margin-top:20px">На что обратить внимание</h3><ul>${A(o.notes).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}`}
+ }catch(e){const m=aiErr(e);out.innerHTML=m?`<p class="err">${esc(m)}</p>`:''}
+ b.disabled=false};
+$('qf').addEventListener('submit',async e=>{e.preventDefault();const q=$('q').value.trim();if(!q||!sample||!full)return;const a=$('qa');a.textContent='Думаю…';
+ try{await sample(`Ты инженер-проектировщик и объясняешь строительный чертёж (он на изображении) человеку без профильного образования. ${aiCtx?'Ранее ты разобрал его так: '+aiCtx+'. ':''}Вопрос: ${q}\nОтветь по-русски, понятно и по делу, 3–8 предложений, без markdown.`,{images:[await blob()],cache:false,onText:({text})=>{a.textContent=text}})}
+ catch(err){const m=aiErr(err);a.textContent=m}});
+
+demo();
+}</script>
+</body></html>

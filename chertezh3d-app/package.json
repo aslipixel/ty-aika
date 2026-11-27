@@ -1,0 +1,16 @@
+{
+  "name": "chertezh3d-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "«Чертёж в 3D» для Android (Capacitor, всё работает без интернета)",
+  "type": "module",
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/cli": "8.6.2",
+    "@capacitor/core": "8.6.2",
+    "@fontsource/pt-sans": "5.2.8",
+    "@fontsource/pt-sans-narrow": "5.2.8",
+    "sharp": "0.35.5",
+    "three": "0.128.0"
+  }
+}

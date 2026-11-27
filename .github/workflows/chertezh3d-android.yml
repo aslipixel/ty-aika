@@ -1,0 +1,66 @@
+name: Build Чертёж 3D Android
+on:
+  workflow_dispatch:
+  push:
+    branches: [chertezh-3d-android]
+    paths:
+      - 'chertezh3d-app/**'
+      - '.github/workflows/chertezh3d-android.yml'
+permissions:
+  contents: write
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: chertezh3d-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: chertezh3d-app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - run: npm ci
+      - run: node build.mjs
+      - run: npx cap add android
+      - run: node android-prepare.mjs
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+      - name: Build installable APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --no-daemon
+      - name: Collect APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Chertezh3D.apk
+          sha256sum Chertezh3D.apk > SHA256SUMS-Chertezh3D.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Chertezh3D-Android-APK
+          path: |
+            chertezh3d-app/Chertezh3D.apk
+            chertezh3d-app/SHA256SUMS-Chertezh3D.txt
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish APK to a permanent download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=chertezh3d-android
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Чертёж 3D для Android" \
+              --notes "Свежая сборка «Чертёж 3D» для Android." --latest=false
+          fi
+          gh release upload "$TAG" Chertezh3D.apk SHA256SUMS-Chertezh3D.txt --clobber
+          gh release edit "$TAG" --notes "Свежая сборка «Чертёж 3D» для Android (сборка №${{ github.run_number }}). Скачайте Chertezh3D.apk и установите на телефон."

@@ -1,0 +1,7 @@
+{
+  "appId": "fi.chertezh3d.app",
+  "appName": "Чертёж 3D",
+  "webDir": "www",
+  "server": { "androidScheme": "https", "cleartext": false },
+  "android": { "allowMixedContent": false }
+}
