@@ -46,8 +46,8 @@ function runIntro() {
   setTimeout(() => {
     splash.classList.add("fade-out");
     document.body.classList.add("intro-done");
-    setTimeout(() => splash.remove(), 900);
-  }, 1500);
+    setTimeout(() => splash.remove(), 600);
+  }, 1000);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -396,7 +396,7 @@ function switchTab(tabId) {
   };
   if (!current || current === next || reduceMotion()) { show(); return; }
   current.classList.add("leaving");
-  switchTimer = setTimeout(show, 260);
+  switchTimer = setTimeout(show, 170);
 }
 
 function openModal(id) { $(id).classList.remove("hidden"); }
