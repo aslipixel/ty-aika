@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Чертёж в 3D</title>
+<meta name="description" content="Загрузите план этажа — программа найдёт стены, посчитает площади и материалы, поднимет стены в 3D и объяснит обозначения.">
+<meta property="og:title" content="Чертёж в 3D"><meta property="og:description" content="План этажа → стены, площади, смета и 3D-модель прямо в браузере.">
+<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0b0f17" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f172a'/%3E%3Cpath d='M8 23V12l8-5 8 5v11' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M8 17.5h16' stroke='%23ea580c' stroke-width='2.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Дизайн-система (ui-ux-pro-max): Minimalism & Swiss Style для рабочего инструмента.
+   Цвета: промышленный графит + сигнальный оранжевый стройки. Шрифты: Fira Sans (текст) + Fira Code (числа, размеры) — оба с кириллицей. */
+:root{color-scheme:light dark;
+ --bg:light-dark(#f6f7f9,#0b0f17);--sheet:light-dark(#fff,#121826);--soft:light-dark(#eef2f6,#1a2233);
+ --ink:light-dark(#0f172a,#f1f5f9);--text:light-dark(#334155,#cbd5e1);--mute:light-dark(#5b6678,#94a3b8);--line:light-dark(#e2e8f0,#243044);--line2:light-dark(#cbd5e1,#334155);
+ --acc:light-dark(#c2410c,#fb923c);--acc-hi:light-dark(#ea580c,#fdba74);--on-acc:light-dark(#fff,#111827);--acc-soft:light-dark(#fff7ed,#2a1d12);
+ --blue:light-dark(#1d4ed8,#7fb0ff);--hl:light-dark(#fff7ed,#2a1d12);--ok:light-dark(#15803d,#4ade80);
+ --stage:light-dark(#eef1f5,#0e131d);--shadow:0 1px 2px rgb(15 23 42/.06),0 8px 24px -12px rgb(15 23 42/.14);
+ --r:14px;--r-sm:10px;--sans:"Fira Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"Fira Code",ui-monospace,Consolas,monospace}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.55 var(--sans);overflow-x:clip;-webkit-font-smoothing:antialiased}
+h1,h2,h3{color:var(--ink);font-weight:700;line-height:1.15;text-wrap:balance;margin:0;letter-spacing:-.015em}
+h1{font-size:clamp(30px,4.6vw,52px);letter-spacing:-.025em;line-height:1.08}h2{font-size:clamp(22px,2.4vw,28px)}h3{font-size:18px;font-weight:600}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+a{color:inherit}
+.i{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{max-width:1320px;margin:0 auto;padding:0 max(4vw,16px)}
+.band{max-width:1320px;margin:0 auto;padding:clamp(28px,4vw,56px) max(4vw,16px) 0}
+/* верхняя панель */
+.appbar{position:sticky;top:0;z-index:15;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.appbar .wrap{display:flex;align-items:center;gap:16px;min-height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--ink);text-decoration:none;font-size:17px;white-space:nowrap}
+.brand svg{width:30px;height:30px}
+.subnav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;margin:0 4px}
+.subnav::-webkit-scrollbar{display:none}
+.subnav a{flex:none;padding:8px 12px;border-radius:8px;text-decoration:none;color:var(--mute);font-size:14px;font-weight:500;white-space:nowrap;transition:color .18s,background .18s}
+.subnav a:hover{color:var(--ink);background:var(--soft)}
+.icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--sheet);color:var(--ink);cursor:pointer;transition:background .18s,border-color .18s}
+.icon-btn:hover{border-color:var(--line2);background:var(--soft)}
+@media(max-width:900px){.subnav{display:none}.appbar .sp{flex:1}}
+/* кнопки */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--sheet);color:var(--ink);font:600 15px var(--sans);cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .18s,border-color .18s,box-shadow .18s,transform .12s}
+.btn:hover{background:var(--soft);border-color:var(--mute)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:var(--on-acc);box-shadow:0 1px 2px rgb(194 65 12/.25),0 6px 16px -8px rgb(194 65 12/.6)}
+.btn.primary:hover{background:color-mix(in srgb,var(--acc) 88%,#000)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{min-height:40px;padding:0 14px;font-size:14px}
+.btn.lg{min-height:52px;padding:0 24px;font-size:16px}
+.btn .i{width:18px;height:18px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,.seg button:focus-visible,.subnav a:focus-visible,.icon-btn:focus-visible,.dz:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.btn:disabled{opacity:.55;cursor:progress}
+/* первый экран */
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(24px,4vw,56px);align-items:center;padding-top:clamp(28px,5vw,64px)}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font:500 13px var(--mono);color:var(--acc);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--acc-hi)}
+.hero p.lead{font-size:clamp(16px,1.4vw,18px);color:var(--mute);max-width:56ch;margin:16px 0 24px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.trust{display:flex;flex-wrap:wrap;gap:8px 18px;list-style:none;padding:0;margin:22px 0 0;font-size:14px;color:var(--mute)}
+.trust li{display:inline-flex;align-items:center;gap:7px}.trust .i{width:16px;height:16px;color:var(--ok)}
+.dz{display:block;position:relative;border:1.5px dashed var(--line2);border-radius:20px;background:var(--sheet);padding:clamp(22px,3vw,34px);cursor:pointer;box-shadow:var(--shadow);transition:border-color .2s,background .2s;
+ background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:24px 24px;background-position:-1px -1px}
+.dz:hover{border-color:var(--acc-hi)}
+.dz-in{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:22px;text-align:center}
+.dz-ico{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 12px;border-radius:16px;background:var(--acc-soft);color:var(--acc)}
+.dz-ico .i{width:26px;height:26px}
+.dz b{display:block;color:var(--ink);font-size:17px}.dz small{color:var(--mute);font-size:14px}
+.steps{list-style:none;padding:0;margin:18px 0 0;display:grid;gap:10px;counter-reset:s}
+.steps li{counter-increment:s;display:flex;align-items:center;gap:12px;font-size:15px;color:var(--text);background:var(--sheet);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 14px}
+.steps li::before{content:counter(s,decimal-leading-zero);font:600 13px var(--mono);color:var(--acc);flex:none}
+@media(max-width:900px){.hero{grid-template-columns:minmax(0,1fr)}}
+/* итоги */
+.kpi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:clamp(28px,4vw,48px)}
+.tile{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
+.tile small{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:13px;font-weight:500}.tile small .i{width:15px;height:15px}
+.tile b{display:block;font:600 clamp(22px,2.4vw,28px)/1.2 var(--mono);color:var(--ink);margin-top:6px;letter-spacing:-.02em}
+.tile b span{font-size:14px;color:var(--mute);font-weight:500;margin-left:3px}
+@media(max-width:900px){.kpi{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi .tile:first-child{grid-column:1/-1}}
+/* рабочие панели */
+.work{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding-top:16px}
+@media(max-width:980px){.work{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.ph h2{display:flex;align-items:center;gap:10px;font-size:19px}
+.ph h2 .i{color:var(--acc)}
+.ph>span{font:500 13px var(--mono);color:var(--mute);text-align:end}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--soft) 50%,var(--sheet))}
+.tools .sp{flex:1}
+.seg{display:inline-flex;gap:2px;padding:3px;background:var(--soft);border:1px solid var(--line);border-radius:12px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg button{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--mute);font:600 14px var(--sans);cursor:pointer;white-space:nowrap;transition:background .18s,color .18s}
+.seg button .i{width:17px;height:17px}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--sheet);color:var(--ink);box-shadow:0 1px 2px rgb(15 23 42/.12),0 0 0 1px var(--line)}
+.tip{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;color:var(--mute);padding:9px 16px;margin:0;border-bottom:1px solid var(--line)}
+.tip::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--acc-hi);margin-top:7px}
+.calib{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:12px 16px;background:var(--acc-soft);border-bottom:1px solid var(--line);font-size:14px;color:var(--ink)}
+.calib input,.calib select{font:500 16px var(--mono);min-height:44px;width:120px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--sheet);color:var(--ink)}
+.calib[hidden]{display:none}
+.fig2{background:#fff;line-height:0;border-bottom:1px solid var(--line)}#c2{width:100%;height:auto;display:block;cursor:pointer;touch-action:manipulation}#c2.tool{cursor:crosshair}
+.fig3{position:relative;height:clamp(320px,44vw,500px);background:radial-gradient(120% 90% at 50% 0%,color-mix(in srgb,var(--sheet) 70%,var(--stage)),var(--stage));touch-action:none;outline:none;border-bottom:1px solid var(--line)}
+.fig3:focus-visible{box-shadow:inset 0 0 0 3px var(--blue)}
+.fig3 canvas{position:absolute;inset:0;width:100%!important;height:100%!important;cursor:grab}
+.fig3 canvas:active{cursor:grabbing}
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px 16px;padding:16px}
+.ctrls label{display:flex;flex-direction:column;gap:6px;font-size:13.5px;font-weight:500;color:var(--mute)}
+.ctrls output{font-family:var(--mono);color:var(--ink)}
+.ctrls input[type=number]{font:500 16px var(--mono);min-height:44px;padding:0 12px;border:1px solid var(--line2);border-radius:10px;background:var(--sheet);color:var(--ink);transition:border-color .18s}
+.ctrls input[type=number]:hover{border-color:var(--mute)}
+.ctrls input[type=range]{width:100%;min-height:30px;accent-color:var(--acc)}
+.chk{flex-direction:row!important;align-items:center;gap:10px!important;min-height:44px;color:var(--text)!important;cursor:pointer}.chk input{width:22px;height:22px;accent-color:var(--acc);cursor:pointer}
+.hint{grid-column:1/-1;font-size:13px;color:var(--mute);margin:0;line-height:1.5}
+.wt{display:flex;flex-wrap:wrap;gap:6px 16px;grid-column:1/-1;font-size:13px;color:var(--mute)}
+.wt span{display:inline-flex;align-items:center;gap:6px}.wt i{width:12px;height:12px;border-radius:3px}
+.info{padding:16px;font-size:15px;min-height:104px;background:color-mix(in srgb,var(--soft) 40%,var(--sheet))}
+.info b{color:var(--acc)}
+/* секции */
+.sec-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:12px}
+.sec-h h2{display:flex;align-items:center;gap:12px}
+.sec-h h2 .n{font:600 13px var(--mono);color:var(--acc);border:1px solid color-mix(in srgb,var(--acc) 35%,transparent);background:var(--acc-soft);border-radius:8px;padding:3px 8px}
+.sub{color:var(--mute);max-width:72ch;margin:8px 0 0}
+.rooms{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.room{display:flex;align-items:center;gap:10px;background:var(--sheet);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+.room b{font-family:var(--mono);white-space:nowrap}
+.tbl{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+td{font-family:var(--mono);font-size:14.5px;color:var(--ink)}
+th{font-weight:600;color:var(--mute);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;background:color-mix(in srgb,var(--soft) 60%,var(--sheet));vertical-align:bottom}
+td:nth-child(2),th:nth-child(2){text-align:left}
+tbody tr{cursor:pointer;transition:background .15s}tbody tr:hover td{background:color-mix(in srgb,var(--soft) 60%,transparent)}
+td i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:0;margin-right:8px}
+td input{font:500 15px var(--sans);border:1px solid transparent;background:transparent;color:var(--ink);padding:6px 10px;border-radius:8px;width:min(240px,44vw);transition:border-color .15s,background .15s}
+td input:hover,td input:focus{border-color:var(--line2);background:var(--sheet)}
+tr.on td{background:var(--hl)!important}
+tfoot td{font-weight:600;border-bottom:0;background:color-mix(in srgb,var(--soft) 60%,var(--sheet))}
+.est{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr));gap:12px;margin-top:16px}
+.est .card{display:flex;flex-direction:column;gap:2px}
+.est .card .ico{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--acc-soft);color:var(--acc);margin-bottom:8px}
+.est .card .ico .i{width:18px;height:18px}
+.est .card b{display:block;font:600 26px/1.2 var(--mono);color:var(--ink);letter-spacing:-.02em;margin:2px 0}
+.est .card small{color:var(--mute);font-size:13px}
+.walls{margin-top:16px;display:grid;gap:8px}
+.wrow{display:grid;grid-template-columns:14px minmax(0,1.3fr) minmax(60px,2fr) 84px 84px;gap:14px;align-items:center;background:var(--sheet);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 16px}
+.wrow .sw{width:14px;height:14px;border-radius:4px}.wrow>span:nth-child(2){color:var(--ink);font-weight:500}.wrow small{display:block;color:var(--mute);font-size:13px;font-weight:400}
+.wrow .wb{height:8px;background:var(--soft);border-radius:4px;overflow:hidden}.wrow .wb i{display:block;height:100%;border-radius:4px}
+.wrow b{text-align:right;font:600 14.5px var(--mono);color:var(--ink);white-space:nowrap}
+@media(max-width:560px){.wrow{grid-template-columns:14px minmax(0,1fr) auto auto}.wrow .wb{grid-column:1/-1;order:5}}
+.ai-card{margin-top:16px;background:linear-gradient(180deg,var(--acc-soft),var(--sheet) 140px);border:1px solid color-mix(in srgb,var(--acc) 22%,var(--line));border-radius:20px;padding:24px;box-shadow:var(--shadow)}
+@media(max-width:560px){.ai-card{padding:18px}}
+.aig{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px;margin-top:16px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.card p{margin:6px 0 0;font-size:15px}.card small{color:var(--mute)}
+.aig .card{background:color-mix(in srgb,var(--soft) 35%,var(--sheet))}
+.kv{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:16px}.kv div{font-size:15px;color:var(--ink)}.kv b{color:var(--mute);font-weight:400}
+#qf{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+#qf input{flex:1 1 260px;font:400 16px var(--sans);min-height:48px;padding:0 14px;border:1px solid var(--line2);border-radius:12px;background:var(--bg);color:var(--ink)}
+.ans{white-space:pre-wrap;margin-top:14px;color:var(--ink)}
+.leg{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin-top:18px}
+.leg .card{transition:border-color .18s,box-shadow .18s}.leg .card:hover{border-color:var(--line2);box-shadow:var(--shadow)}
+.leg .card svg{width:100%;height:76px;color:var(--ink);display:block;margin-bottom:12px;background:color-mix(in srgb,var(--soft) 50%,var(--sheet));border-radius:10px;padding:6px}
+.leg .card svg .r{stroke:var(--acc-hi)}
+.err{color:var(--acc)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,8px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-size:15px;max-width:calc(100% - 32px);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 10px 30px -10px rgb(0 0 0/.4)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+body.drag::after{content:"Отпустите файл — загружу чертёж";position:fixed;inset:12px;border:2px dashed var(--acc-hi);border-radius:20px;background:color-mix(in srgb,var(--bg) 90%,transparent);display:grid;place-items:center;font:700 26px var(--sans);color:var(--ink);z-index:50;pointer-events:none}
+footer{margin-top:clamp(40px,6vw,72px);border-top:1px solid var(--line);color:var(--mute);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding-top:22px;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></symbol>
+<symbol id="i-plan" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h7v9M14 3v6h7"/></symbol>
+<symbol id="i-cube" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><path d="M9 11V5a2 2 0 0 1 4 0v6m0-1V4a2 2 0 0 1 4 0v8m-8-1V8a2 2 0 0 0-4 0v6a8 8 0 0 0 8 8h1a7 7 0 0 0 7-7v-4a2 2 0 0 0-4 0"/></symbol>
+<symbol id="i-ruler" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M17.5 15.5l2-2"/></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10M7 10v4M17 10v4"/></symbol>
+<symbol id="i-top" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></symbol>
+<symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4" r="2"/><path d="m9 20 3-6 3 2v5M10 8l-3 3 2 2M10 8l4 1 3 3M10 8l2 6"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></symbol>
+<symbol id="i-eraser" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L11 21"/><path d="M22 21H7M5 11l9 9"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M9.9 2.6a.5.5 0 0 1 .9 0l1.5 4.1a2 2 0 0 0 1.2 1.2l4.1 1.5a.5.5 0 0 1 0 .9l-4.1 1.5a2 2 0 0 0-1.2 1.2l-1.5 4.1a.5.5 0 0 1-.9 0l-1.5-4.1a2 2 0 0 0-1.2-1.2L3.1 10.3a.5.5 0 0 1 0-.9l4.1-1.5a2 2 0 0 0 1.2-1.2z"/><path d="M19 15v4M21 17h-4"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+<symbol id="i-box" viewBox="0 0 24 24"><path d="M12 22V12M3.3 7 12 12l8.7-5"/><path d="M11 2.3 4 6.3A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0z"/><path d="m7.5 4.3 9 5.1"/></symbol>
+<symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+<symbol id="i-area" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9l6-6M3 15 15 3M3 21 21 3M9 21l12-12M15 21l6-6"/></symbol>
+<symbol id="i-door" viewBox="0 0 24 24"><path d="M13 4h3a2 2 0 0 1 2 2v14M2 20h3M13 20h9M10 12v.01"/><path d="M13 4.6v16.2a1 1 0 0 1-1.2 1L5 20V5.6a2 2 0 0 1 1.6-2l5.2-1a1 1 0 0 1 1.2 1z"/></symbol>
+<symbol id="i-wall" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M3 15h18M9 4v5M15 9v6M9 15v5"/></symbol>
+<symbol id="i-volume" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+<symbol id="i-floor" viewBox="0 0 24 24"><path d="M3 20h18L17 10H7z"/><path d="M5 15h14M10 10l-2 10M14 10l2 10"/></symbol>
+<symbol id="i-line" viewBox="0 0 24 24"><path d="M3 17h18M3 13v8M21 13v8"/></symbol>
+<symbol id="i-paint" viewBox="0 0 24 24"><rect x="3" y="3" width="16" height="6" rx="2"/><path d="M19 6h2v5h-9v3"/><rect x="10" y="14" width="4" height="7" rx="1"/></symbol>
+<symbol id="i-roll" viewBox="0 0 24 24"><ellipse cx="7" cy="12" rx="4" ry="8"/><path d="M7 4h10c2.2 0 4 3.6 4 8s-1.8 8-4 8H7"/><ellipse cx="7" cy="12" rx="1.5" ry="3"/></symbol>
+<symbol id="i-ceil" viewBox="0 0 24 24"><path d="M3 4h18M7 4v3M17 4v3M12 4v6"/><circle cx="12" cy="13" r="3"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></symbol>
+</svg>
+<header class="appbar"><div class="wrap">
+<a class="brand" href="#top" aria-label="Чертёж в 3D — в начало"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0f172a"/><path d="M8 23V12l8-5 8 5v11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/><path d="M8 17.5h16" stroke="#ea580c" stroke-width="2.4"/></svg>Чертёж в 3D</a>
+<nav class="subnav" aria-label="Разделы"><a href="#work">План и 3D</a><a href="#roomsSec">Помещения</a><a href="#estSec">Смета</a><a href="#wallsSec">Стены</a><a href="#aiBox" id="navAi" hidden>Расшифровка ИИ</a><a href="#legSec">Обозначения</a></nav>
+<span class="sp"></span>
+<button class="icon-btn" id="theme" type="button" aria-label="Переключить тему"><svg class="i"><use href="#i-moon"/></svg></button>
+<label class="btn primary sm" for="file"><svg class="i"><use href="#i-upload"/></svg><span>Загрузить</span></label>
+</div></header>
+<main id="top">
+<section class="wrap hero">
+<div>
+<h1>Строительный чертёж → 3D‑модель за минуту</h1>
+<p class="lead">Загрузите план этажа — фото, скан, картинку или PDF. Программа найдёт стены, посчитает площади и материалы на отделку, поднимет стены в объём и объяснит, что означают обозначения.</p>
+<div class="bar"><label class="btn primary lg" for="file" tabindex="0" id="fileBtn"><svg class="i"><use href="#i-upload"/></svg>Загрузить чертёж</label><input type="file" id="file" accept="image/*,application/pdf,.pdf" hidden><button class="btn lg" id="demo"><svg class="i"><use href="#i-plan"/></svg>Пример плана</button></div>
+<ul class="trust"><li><svg class="i"><use href="#i-check"/></svg>Бесплатно, без регистрации</li><li><svg class="i"><use href="#i-check"/></svg>JPG, PNG, PDF</li><li><svg class="i"><use href="#i-check"/></svg>Чертёж не уходит в интернет</li><li><svg class="i"><use href="#i-check"/></svg>Смета и модель OBJ</li></ul>
+</div>
+<div>
+<label class="dz" for="file" tabindex="-1"><div class="dz-in"><div class="dz-ico"><svg class="i"><use href="#i-upload"/></svg></div><b>Перетащите план сюда</b><small>или нажмите, чтобы выбрать файл · вставка из буфера Ctrl+V</small></div></label>
+<ol class="steps"><li>Загрузите план этажа</li><li>Задайте масштаб по любому размеру на чертеже</li><li>Смотрите 3D, площади, смету и расшифровку</li></ol>
+</div>
+</section>
+<section class="wrap"><div class="kpi" id="kpi" aria-live="polite"></div></section>
+<section class="wrap work" id="work">
+<section class="panel"><div class="ph"><h2><svg class="i"><use href="#i-plan"/></svg>Распознавание</h2><span id="stat">—</span></div>
+<div class="tools"><div class="seg" id="modes" role="group" aria-label="Инструмент"><button data-m="view" aria-pressed="true"><svg class="i"><use href="#i-hand"/></svg>Обзор</button><button data-m="ruler" aria-pressed="false"><svg class="i"><use href="#i-ruler"/></svg>Линейка</button><button data-m="scale" aria-pressed="false"><svg class="i"><use href="#i-scale"/></svg>Масштаб</button></div><span class="sp"></span><button class="btn sm" id="aiw" hidden title="Для чертежей, где стены нарисованы тонкими линиями без заливки">Стены с ИИ</button><button class="btn sm ghost" id="clr" aria-label="Стереть замеры" title="Стереть замеры"><svg class="i"><use href="#i-eraser"/></svg></button><button class="btn sm ghost" id="png2" aria-label="Скачать план PNG" title="Скачать распознанный план"><svg class="i"><use href="#i-download"/></svg></button></div>
+<p class="tip" id="tip"></p>
+<form class="calib" id="calib" hidden><span>Длина отмеченного отрезка, мм</span><input id="mm" inputmode="decimal" autocomplete="off" placeholder="5810" aria-label="Длина отрезка в миллиметрах"><button class="btn sm primary">Применить</button><button type="button" class="btn sm" id="calx">Отмена</button></form>
+<div class="fig2"><canvas id="c2" width="640" height="460" aria-label="Распознанный план"></canvas></div>
+<div class="ctrls">
+<label>Реальная ширина изображения, м<input type="number" id="wm" value="14" step="0.5" min="1"></label>
+<label>Высота стен, м<input type="number" id="hm" value="2.7" step="0.1" min="1"></label>
+<label>Отсечка тонких линий: <output id="tho">2</output><input type="range" id="th" min="1" max="8" value="2"></label>
+<label class="chk"><input type="checkbox" id="ov" checked> Подсветить найденное</label>
+<div class="calib" id="pdfsc" hidden style="grid-column:1/-1;border-radius:10px;border:1px solid var(--line)"><span id="pdfw"></span><select id="psel" aria-label="Масштаб чертежа"><option value="50">1:50</option><option value="75">1:75</option><option value="100" selected>1:100</option><option value="200">1:200</option><option value="500">1:500</option></select><button type="button" class="btn sm" id="papply">Взять масштаб листа</button></div>
+<p class="hint">Красным — распознанные стены, цветом — помещения. Если в стены попал текст или размеры — сдвиньте отсечку вправо; если пропали перегородки — влево. Точнее всего масштаб задаётся инструментом «Масштаб»: отметьте любую размерную линию и введите число с чертежа.</p>
+</div></section>
+<section class="panel"><div class="ph"><h2><svg class="i"><use href="#i-cube"/></svg>3D‑модель</h2><div class="seg" id="views" role="group" aria-label="Вид"><button data-v="orbit" aria-pressed="true"><svg class="i"><use href="#i-cube"/></svg>3D</button><button data-v="top" aria-pressed="false"><svg class="i"><use href="#i-top"/></svg>Сверху</button><button data-v="walk" aria-pressed="false"><svg class="i"><use href="#i-walk"/></svg>Прогулка</button></div></div>
+<div class="fig3" id="v3" tabindex="0" aria-label="3D-модель: тяните, чтобы вращать"></div>
+<div class="ctrls">
+<label>Срез стен по высоте: <output id="cuto">100 %</output><input type="range" id="cut" min="5" max="100" value="100"></label>
+<label class="chk"><input type="checkbox" id="ct" checked> Цвет по типу стен</label>
+<label class="chk"><input type="checkbox" id="lb" checked> Подписи помещений</label>
+<div class="bar" style="grid-column:1/-1"><button class="btn sm" id="png3"><svg class="i"><use href="#i-camera"/></svg>Снимок PNG</button><button class="btn sm" id="obj"><svg class="i"><use href="#i-box"/></svg>Модель OBJ</button><span class="hint" style="grid-column:auto">OBJ открывается в Blender, SketchUp, 3ds Max</span></div>
+<div class="wt" id="wt"></div>
+</div>
+<div id="info" class="info">Крутите модель пальцем или мышью, масштаб — щипком или колесом, сдвиг — правой кнопкой. Нажмите на стену или пол помещения — здесь появится объяснение. «Прогулка» — взгляд изнутри на высоте глаз.</div></section>
+</section>
+<section class="band" id="roomsSec"><div class="sec-h"><div><h2><span class="n">01</span>Помещения</h2><p class="sub">Площадь — по внутреннему контуру стен, как в экспликации помещений. Названия можно исправить прямо в таблице, они появятся на плане и в 3D. Периметр — по стенам, без дверных проёмов.</p></div><button class="btn sm" id="csv"><svg class="i"><use href="#i-table"/></svg>Скачать CSV</button></div>
+<div id="rooms"></div></section>
+<section class="band" id="estSec"><div class="sec-h"><div><h2><span class="n">02</span>Материалы на отделку</h2><p class="sub">Примерный расчёт по всем найденным помещениям и высоте стен. Окна и двери из площади стен не вычтены — уточните по ведомости проёмов.</p></div></div>
+<div class="est" id="est"></div></section>
+<section class="band" id="wallsSec"><div class="sec-h"><div><h2><span class="n">03</span>Стены по типам</h2><p class="sub">Тип определяется по толщине: чем толще стена, тем вероятнее она несущая. Это подсказка, а не заключение — несущие стены определяет только проект.</p></div></div><div class="walls" id="walls"></div></section>
+<section class="band" id="aiBox" hidden>
+<div class="sec-h"><div><h2><span class="n">04</span>Расшифровка чертежа с ИИ</h2><p class="sub">Работает на <span id="aiName">ИИ</span>. Прочитает изображение целиком: тип чертежа, масштаб, надписи, марки и размеры — и объяснит каждое простыми словами. Подписанные названия помещений подставятся в таблицу.</p></div></div>
+<div class="ai-card">
+<div class="bar"><button class="btn primary" id="ask"><svg class="i"><use href="#i-spark"/></svg>Объяснить чертёж</button></div>
+<div id="aiOut"></div>
+<form id="qf"><input id="q" placeholder="Например: что значит ОК-1 или почему стена толще?" autocomplete="off" aria-label="Вопрос по чертежу"><button class="btn">Спросить</button></form>
+<div id="qa" class="ans" aria-live="polite"></div>
+</div>
+</section>
+<section class="band" id="legSec"><div class="sec-h"><div><h2><span class="n" id="legN">04</span>Условные обозначения</h2>
+<p class="sub">Основные графические обозначения по ГОСТ системы проектной документации для строительства (СПДС) — ГОСТ 21.201, 21.101 и 2.306.</p></div></div>
+<div class="leg" id="leg"></div></section>
+</main>
+<footer><div class="wrap"><span>Распознавание идёт прямо в браузере — чертёж никуда не загружается (кроме расшифровки ИИ по вашей кнопке).</span><span>Результат приблизительный: для работ сверяйтесь с проектом.</span></div></footer>
+<div class="toast" id="toast" role="status"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+<script>{
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(v,d=1)=>(+v).toFixed(d).replace('.',',');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COLORS=['#4e8fe0','#f2a33a','#4bb59a','#c879d8','#e8665c','#8a9d3a','#3fb4d1','#d99a6c','#7f7fe0','#e07fb0'];
+const WT=[{name:'Наружные несущие',hint:'от 360 мм',min:360,color:'#c9765a'},{name:'Внутренние несущие',hint:'190–360 мм',min:190,color:'#d9b36c'},{name:'Перегородки',hint:'70–190 мм',min:70,color:'#8fb0d8'},{name:'Тонкие или неясные',hint:'до 70 мм',min:-1,color:'#bdbdbd'}];
+const PLAIN='#e9e4da';
+let src=null,W=0,H=0,cell=3,gw=0,gh=0,grid,dgrid,rects=[],openings=[],rooms=[],aiWalls=null,roomOf=null,full=null,paperMm=0,selRoom=-1,aiCtx='';
+const mpp=()=>(+$('wm').value||14)/W,csz=()=>cell*mpp(),hgt=()=>Math.max(1,+$('hm').value||2.7);
+const c2=$('c2'),x2=c2.getContext('2d'),base2=document.createElement('canvas');
+const dl=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+let tt=0;const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)};
+const roomAt=(x,y)=>{if(!roomOf)return -1;const cx=Math.min(gw-1,Math.max(0,x/cell|0)),cy=Math.min(gh-1,Math.max(0,y/cell|0));return roomOf[cy*gw+cx]};
+
+/* ---------- демонстрационный план ---------- */
+function demo(){
+ const c=document.createElement('canvas');c.width=1000;c.height=730;const g=c.getContext('2d');
+ const S=1000/14,ox=110,oy=130,X=v=>ox+v*S,Y=v=>oy+v*S,L=v=>v*S;
+ g.fillStyle='#fff';g.fillRect(0,0,1000,730);g.fillStyle='#222';g.strokeStyle='#222';g.lineWidth=2;
+ const R=(a,b,c2,d)=>g.fillRect(X(a),Y(b),L(c2-a),L(d-b));
+ R(0,0,10.92,.38);R(0,6.34,10.92,6.72);R(0,0,.38,6.72);R(10.54,0,10.92,6.72);
+ R(5.875,.38,6.125,6.34);R(.38,3.525,5.875,3.675);R(3.125,3.675,3.275,6.34);R(6.125,2.725,10.54,2.875);
+ const line=(a,b,c3,d)=>{g.beginPath();g.moveTo(a,b);g.lineTo(c3,d);g.stroke()};
+ const clear=(a,b,c3,d)=>{g.fillStyle='#fff';g.fillRect(a,b,c3-a,d-b);g.fillStyle='#222'};
+ [['h',1.5,3,0,.38],['h',4,5.2,0,.38],['h',7.4,9.2,0,.38],['h',7.4,9,6.34,6.72],['h',4,5.4,6.34,6.72],['v',1.4,2.6,0,.38],['v',4,5.4,10.54,10.92]].forEach(([o,a,b,p,q])=>{
+  if(o=='h'){clear(X(a),Y(p),X(b),Y(q));[p,(p+q)/2,q].forEach(t=>line(X(a),Y(t),X(b),Y(t)));line(X(a),Y(p),X(a),Y(q));line(X(b),Y(p),X(b),Y(q))}
+  else{clear(X(p),Y(a),X(q),Y(b));[p,(p+q)/2,q].forEach(t=>line(X(t),Y(a),X(t),Y(b)));line(X(p),Y(a),X(q),Y(a));line(X(p),Y(b),X(q),Y(b))}});
+ [['h',1,2,6.34,6.72,-1],['h',1.6,2.5,3.525,3.675,1],['h',4.2,5.1,3.525,3.675,1],['v',4.4,5.2,3.125,3.275,1],['v',1.3,2.2,5.875,6.125,1],['v',4.3,5.2,5.875,6.125,1]].forEach(([o,a,b,p,q,s])=>{
+  const r=L(b-a);g.beginPath();
+  if(o=='h'){clear(X(a),Y(p)-1,X(b),Y(q)+1);const f=Y(s>0?q:p);line(X(a),f,X(a),f+s*r);g.beginPath();s>0?g.arc(X(a),f,r,0,Math.PI/2):g.arc(X(a),f,r,-Math.PI/2,0);g.stroke()}
+  else{clear(X(p)-1,Y(a),X(q)+1,Y(b));const f=X(s>0?q:p);line(f,Y(a),f+s*r,Y(a));g.beginPath();s>0?g.arc(f,Y(a),r,0,Math.PI/2):g.arc(f,Y(a),r,Math.PI/2,Math.PI);g.stroke()}});
+ g.font='bold 20px sans-serif';g.textAlign='center';g.textBaseline='middle';
+ const axis=(x,y,t)=>{g.beginPath();g.arc(x,y,17,0,7);g.stroke();g.fillText(t,x,y+1)};
+ g.setLineDash([16,5,3,5]);
+ [[.19,'1'],[6,'2'],[10.73,'3']].forEach(([v])=>line(X(v),Y(-1.1),X(v),Y(.1)));
+ [[.19],[6.53]].forEach(([v])=>line(X(-1.1),Y(v),X(.1),Y(v)));g.setLineDash([]);
+ [[.19,'1'],[6,'2'],[10.73,'3']].forEach(([v,t])=>axis(X(v),Y(-1.35),t));
+ [[.19,'Б'],[6.53,'А']].forEach(([v,t])=>axis(X(-1.35),Y(v),t));
+ const dy=Y(-.6);line(X(.19)-10,dy,X(10.73)+10,dy);[.19,6,10.73].forEach(v=>line(X(v)-6,dy+6,X(v)+6,dy-6));
+ g.font='17px sans-serif';g.fillText('5810',X(3.1),dy-12);g.fillText('4730',X(8.36),dy-12);
+ const dx=X(-.6);line(dx,Y(.19)-10,dx,Y(6.53)+10);[.19,6.53].forEach(v=>line(dx-6,Y(v)+6,dx+6,Y(v)-6));
+ g.save();g.translate(dx-12,Y(3.36));g.rotate(-Math.PI/2);g.fillText('6340',0,0);g.restore();
+ g.font='19px sans-serif';
+ const LBL=[['Гостиная','17,3',3.1,1.9],['Прихожая','7,3',1.75,5.1],['Кухня','6,9',4.6,5.6],['Спальня','10,4',8.3,1.5],['Детская','15,3',8.3,4.6]];
+ LBL.forEach(([n,a,x,y])=>{g.fillText(n,X(x),Y(y));g.fillText(a,X(x),Y(y)+24);line(X(x)-18,Y(y)+36,X(x)+18,Y(y)+36)});
+ const lx=X(1.1),ly=Y(2.9);g.beginPath();g.moveTo(lx,ly);g.lineTo(lx-9,ly-12);g.lineTo(lx+9,ly-12);g.closePath();g.stroke();line(lx,ly-12,lx+70,ly-12);g.textAlign='left';g.font='16px sans-serif';g.fillText('±0,000',lx+6,ly-24);
+ g.lineWidth=5;line(X(8.3),Y(-.4),X(8.3),Y(-.15));line(X(8.3),Y(6.87),X(8.3),Y(7.12));g.lineWidth=2;
+ line(X(8.3),Y(-.4),X(7.8),Y(-.4));line(X(8.3),Y(7.12),X(7.8),Y(7.12));g.font='bold 18px sans-serif';g.fillText('1',X(7.65),Y(-.4));g.fillText('1',X(7.65),Y(7.12));
+ g.textAlign='center';g.font='bold 22px sans-serif';g.fillText('План этажа   М 1:100',500,Y(7.5)+8);
+ $('wm').value=14;paperMm=0;load(c);
+ const s=W/1000;let n=0;LBL.forEach(([nm,,x,y])=>{const ri=roomAt(X(x)*s,Y(y-.5)*s);if(ri>=0&&!rooms[ri].custom){rooms[ri].name=nm;rooms[ri].custom=true;n++}});
+ if(n)refreshNames();
+}
+
+/* ---------- загрузка ---------- */
+function load(im){
+ const s=640/Math.max(im.width,im.height);W=Math.round(im.width*s);H=Math.round(im.height*s);
+ src=document.createElement('canvas');src.width=W;src.height=H;const g=src.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);g.drawImage(im,0,0,W,H);
+ const fs=Math.min(1,1600/Math.max(im.width,im.height));full=document.createElement('canvas');full.width=Math.round(im.width*fs);full.height=Math.round(im.height*fs);
+ const fg=full.getContext('2d');fg.fillStyle='#fff';fg.fillRect(0,0,full.width,full.height);fg.drawImage(im,0,0,full.width,full.height);
+ $('aiOut').innerHTML='';$('qa').textContent='';aiCtx='';rooms=[];meas=[];aiWalls=null;$('aiw').textContent='Стены с ИИ';
+ $('pdfsc').hidden=!paperMm;if(paperMm)$('pdfw').textContent=`Лист PDF шириной ${Math.round(paperMm)} мм. Масштаб чертежа`;
+ setMode('view',true);analyze();
+}
+const loadScript=(u,sri)=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=u;if(sri){s.integrity=sri;s.crossOrigin='anonymous'}s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+async function loadPdf(f){
+ if(!window.pdfjsLib)await loadScript(PDFJS+'pdf.min.js','sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e');
+ pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';
+ const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer(),isEvalSupported:false}).promise,page=await doc.getPage(1),v0=page.getViewport({scale:1});
+ const vp=page.getViewport({scale:Math.min(5,2200/Math.max(v0.width,v0.height))}),c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
+ const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);await page.render({canvasContext:g,viewport:vp}).promise;
+ paperMm=v0.width/72*25.4;load(c);if(doc.numPages>1)toast(`В PDF ${doc.numPages} листов — открыт первый`);
+}
+async function handleFile(f){if(!f)return;$('stat').textContent='Открываю файл…';
+ try{if(f.type=='application/pdf'||/\.pdf$/i.test(f.name||''))await loadPdf(f);
+  else{if(!/^image\//.test(f.type))throw 0;const u=URL.createObjectURL(f);const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u});paperMm=0;load(im);URL.revokeObjectURL(u)}
+  toast('Чертёж загружен. Задайте масштаб по любому размеру — так площади будут точнее')}
+ catch(e){$('stat').textContent='Не удалось открыть файл — нужен JPG, PNG или PDF'}}
+$('file').addEventListener('change',e=>{handleFile(e.target.files[0]);e.target.value=''});
+$('fileBtn').addEventListener('keydown',e=>{if(e.key=='Enter'||e.key==' '){e.preventDefault();$('file').click()}});
+$('demo').onclick=demo;
+document.addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();document.body.classList.add('drag')}});
+document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.body.classList.remove('drag')});
+document.addEventListener('drop',e=>{if(!e.dataTransfer||!e.dataTransfer.files.length)return;e.preventDefault();document.body.classList.remove('drag');handleFile(e.dataTransfer.files[0])});
+document.addEventListener('paste',e=>{const it=[...(e.clipboardData?.items||[])].find(i=>i.kind=='file');if(it){e.preventDefault();handleFile(it.getAsFile())}});
+$('papply').onclick=()=>{if(!paperMm)return;$('wm').value=(paperMm*+$('psel').value/1000).toFixed(2);analyze();toast('Ширина изображения: '+fmt(+$('wm').value,2)+' м')};
+
+/* ---------- морфология ---------- */
+function box(a,w,h,r,hor,max){const o=new Uint8Array(w*h),n=2*r+1;
+ if(hor)for(let y=0;y<h;y++){const b=y*w;let s=0;for(let x=-r;x<w;x++){if(x+r<w)s+=a[b+x+r];if(x-r-1>=0)s-=a[b+x-r-1];if(x>=0)o[b+x]=max?(s>0?1:0):(s===n?1:0)}}
+ else for(let x=0;x<w;x++){let s=0;for(let y=-r;y<h;y++){if(y+r<h)s+=a[(y+r)*w+x];if(y-r-1>=0)s-=a[(y-r-1)*w+x];if(y>=0)o[y*w+x]=max?(s>0?1:0):(s===n?1:0)}}
+ return o}
+const erode=(a,w,h,r)=>box(box(a,w,h,r,1,0),w,h,r,0,0),dilate=(a,w,h,r)=>box(box(a,w,h,r,1,1),w,h,r,0,1);
+
+function analyze(){
+ if(!src)return;
+ const d=src.getContext('2d').getImageData(0,0,W,H).data,N=W*H,gray=new Uint8Array(N),hist=new Array(256).fill(0);
+ for(let i=0;i<N;i++){const v=(d[4*i]*.299+d[4*i+1]*.587+d[4*i+2]*.114)|0;gray[i]=v;hist[v]++}
+ let sum=0;for(let i=0;i<256;i++)sum+=i*hist[i];let sB=0,wB=0,best=0,t=128;
+ for(let i=0;i<256;i++){wB+=hist[i];if(!wB)continue;const wF=N-wB;if(!wF)break;sB+=i*hist[i];const mB=sB/wB,mF=(sum-sB)/wF,b=wB*wF*(mB-mF)**2;if(b>best){best=b;t=i}}
+ const dark=new Uint8Array(N);for(let i=0;i<N;i++)dark[i]=gray[i]<=t?1:0;
+ const r=+$('th').value;let wall;
+ if(aiWalls){wall=dilate(erode(dark,W,H,r),W,H,r);const mn=6; /* к автоматически найденным стенам добавляем стены от ИИ */
+  aiWalls.forEach(([y0,x0,y1,x1])=>{let X0=Math.min(x0,x1)/1000*W,X1=Math.max(x0,x1)/1000*W,Y0=Math.min(y0,y1)/1000*H,Y1=Math.max(y0,y1)/1000*H;
+   if(X1-X0<mn){const c=(X0+X1)/2;X0=c-mn/2;X1=c+mn/2}if(Y1-Y0<mn){const c=(Y0+Y1)/2;Y0=c-mn/2;Y1=c+mn/2}
+   /* отсев ошибок ИИ: стена вытянута (или тонкая) и проходит по тёмным линиям чертежа, а не по подписи */
+   const bw=X1-X0,bh=Y1-Y0,shortM=Math.min(bw,bh)*(+$('wm').value||14)/W;if(Math.max(bw,bh)/Math.min(bw,bh)<2.5&&shortM>.6)return;
+   let dk=0,tot=0;for(let y=Math.max(0,Y0|0);y<Math.min(H,Math.ceil(Y1));y+=2)for(let x=Math.max(0,X0|0);x<Math.min(W,Math.ceil(X1));x+=2){dk+=dark[y*W+x];tot++}if(!tot||dk/tot<.12)return;
+   for(let y=Math.max(0,Y0|0);y<Math.min(H,Math.ceil(Y1));y++)for(let x=Math.max(0,X0|0);x<Math.min(W,Math.ceil(X1));x++)wall[y*W+x]=1})}
+ else wall=dilate(erode(dark,W,H,r),W,H,r);
+ gw=Math.ceil(W/cell);gh=Math.ceil(H/cell);grid=new Uint8Array(gw*gh);dgrid=new Uint8Array(gw*gh);
+ const cw=new Uint16Array(gw*gh),cd=new Uint16Array(gw*gh),ct=new Uint16Array(gw*gh);
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=((y/cell)|0)*gw+((x/cell)|0),i=y*W+x;ct[k]++;cw[k]+=wall[i];cd[k]+=dark[i]}
+ for(let k=0;k<gw*gh;k++){grid[k]=cw[k]*2>=ct[k]?1:0;dgrid[k]=cd[k]*4>=ct[k]?1:0}
+ const used=new Uint8Array(gw*gh);rects=[];
+ for(let y=0;y<gh;y++)for(let x=0;x<gw;x++){const i=y*gw+x;if(!grid[i]||used[i])continue;
+  let w=1;while(x+w<gw&&grid[i+w]&&!used[i+w])w++;let h=1;
+  out:while(y+h<gh){for(let k=0;k<w;k++){const j=(y+h)*gw+x+k;if(!grid[j]||used[j])break out}h++}
+  for(let yy=0;yy<h;yy++)for(let k=0;k<w;k++)used[(y+yy)*gw+x+k]=1;rects.push({x,y,w,h})}
+ /* толщина стены — по перпендикулярному сечению всей стены, а не по куску: узкие полоски по краю получают тип своей стены */
+ const G=(x,y)=>x>=0&&y>=0&&x<gw&&y<gh&&grid[y*gw+x];
+ const runV=(x,y0,y1)=>{let a=y0,b=y1;while(G(x,a-1))a--;while(G(x,b+1))b++;return b-a+1},runH=(y,x0,x1)=>{let a=x0,b=x1;while(G(a-1,y))a--;while(G(b+1,y))b++;return b-a+1};
+ const cs=csz();rects.forEach(r=>{const F=[.2,.35,.5,.65,.8];
+  const tv=Math.min(...F.map(f=>runV(r.x+Math.min(r.w-1,f*r.w|0),r.y,r.y+r.h-1))),th=Math.min(...F.map(f=>runH(r.y+Math.min(r.h-1,f*r.h|0),r.x,r.x+r.w-1)));
+  const sq=r.w<r.h*1.5&&r.h<r.w*1.5,tc=sq?Math.min(tv,th):r.w>=r.h?tv:th;
+  r.t=tc*cs*1000;r.l=r.w*r.h*cs/tc;r.k=WT.findIndex(w=>r.t>=w.min)});
+ /* проёмы: разрыв между двумя кусками одной стены. Внутри тонкие линии — окно, пусто и не шире 1,4 м — дверь */
+ openings=[];const dmin=Math.max(2,Math.round(.45/cs)),dmax=Math.round(2.6/cs),dmaxDoor=Math.round(1.4/cs);
+ const tryPair=(P,Q,hor)=>{const g0=hor?P.x+P.w:P.y+P.h,g1=hor?Q.x:Q.y,gap=g1-g0;if(gap<dmin||gap>dmax)return;
+  const a0=Math.max(hor?P.y:P.x,hor?Q.y:Q.x),a1=Math.min(hor?P.y+P.h:P.x+P.w,hor?Q.y+Q.h:Q.x+Q.w);if(a1-a0<.7*Math.min(hor?P.h:P.w,hor?Q.h:Q.w)||a1-a0<2)return;
+  for(let s=g0;s<g1;s++)for(let t=a0;t<a1;t++)if(grid[hor?t*gw+s:s*gw+t])return;
+  let dk=0,tot=0;const s0=(g0+1)*cell,s1=Math.min((g1-1)*cell,hor?W:H),t0=a0*cell,t1=Math.min(a1*cell,hor?H:W);
+  for(let s=s0;s<s1;s++)for(let t=t0;t<t1;t++){dk+=dark[hor?t*W+s:s*W+t];tot++}
+  const win=tot>0&&dk/tot>=.05;if(!win&&gap>dmaxDoor)return;
+  const o=hor?{x:g0,y:a0,w:gap,h:a1-a0}:{x:a0,y:g0,w:a1-a0,h:gap};
+  if(openings.some(p=>p.x<o.x+o.w&&o.x<p.x+p.w&&p.y<o.y+o.h&&o.y<p.y+p.h))return;
+  openings.push({...o,hor,win,k:Math.min(P.k,Q.k),len:gap*cs})};
+ for(let i=0;i<rects.length;i++)for(let j=0;j<rects.length;j++){if(i==j)continue;const A=rects[i],B=rects[j];
+  if(A.w>=A.h&&B.w>=B.h&&A.x<B.x)tryPair(A,B,true);if(A.h>=A.w&&B.h>=B.w&&A.y<B.y)tryPair(A,B,false)}
+ const prev=rooms.filter(r=>r.custom).map(r=>({x:r.cx,y:r.cy,name:r.name}));
+ findRooms();
+ prev.forEach(p=>{const ri=roomAt(p.x,p.y);if(ri>=0&&!rooms[ri].custom){rooms[ri].name=p.name;rooms[ri].custom=true}});
+ selRoom=-1;draw2();build3();listRooms();listWalls();
+}
+
+function findRooms(){
+ const N=gw*gh,cs=csz();
+ const L=Math.round(2/cs),span=new Uint8Array(N),bar=new Uint8Array(N);
+ const scan=(n,m,at)=>{for(let a=0;a<n;a++){let last=-1e9;const lf=new Int32Array(m);for(let b=0;b<m;b++){if(grid[at(a,b)])last=b;lf[b]=last}
+  let nx=1e9;for(let b=m-1;b>=0;b--){const i=at(a,b);if(grid[i])nx=b;if(nx-lf[b]<=L)span[i]=1}}};
+ scan(gh,gw,(y,x)=>y*gw+x);scan(gw,gh,(x,y)=>y*gw+x);
+ for(let i=0;i<N;i++)bar[i]=grid[i]||(dgrid[i]&&span[i])?1:0;
+ const cl=dilate(bar,gw,gh,Math.min(20,Math.max(1,Math.round(.56/cs)))),lab=new Int32Array(N).fill(-1),q=new Int32Array(N),regs=[];
+ const nb=(i,f)=>{const x=i%gw;if(x>0)f(i-1);if(x<gw-1)f(i+1);if(i>=gw)f(i-gw);if(i<N-gw)f(i+gw)};
+ for(let s=0;s<N;s++){if(cl[s]||lab[s]>=0)continue;const id=regs.length;let h=0,t=0,border=false;q[t++]=s;lab[s]=id;
+  while(h<t){const i=q[h++],x=i%gw,y=(i/gw)|0;if(!x||!y||x==gw-1||y==gh-1)border=true;nb(i,j=>{if(!cl[j]&&lab[j]<0){lab[j]=id;q[t++]=j}})}
+  regs.push({border,n:0,sx:0,sy:0})}
+ let h=0,t=0;for(let i=0;i<N;i++)if(lab[i]>=0)q[t++]=i;
+ while(h<t){const i=q[h++];nb(i,j=>{if(!bar[j]&&lab[j]<0){lab[j]=lab[i];q[t++]=j}})}
+ for(let i=0;i<N;i++){const l=lab[i];if(l<0||bar[i])continue;const R=regs[l];R.n++;R.sx+=i%gw;R.sy+=(i/gw)|0}
+ const keep=regs.map((R,id)=>({...R,id,area:R.n*cs*cs})).filter(R=>!R.border&&R.area>=1.2).sort((a,b)=>b.area-a.area);
+ const map=new Map();rooms=keep.map((R,k)=>{map.set(R.id,k);return{num:k+1,area:R.area,per:0,cx:(R.sx/R.n+.5)*cell,cy:(R.sy/R.n+.5)*cell,color:COLORS[k%COLORS.length],name:'Помещение '+(k+1),custom:false}});
+ roomOf=new Int16Array(N).fill(-1);for(let i=0;i<N;i++)if(lab[i]>=0&&!bar[i]&&map.has(lab[i]))roomOf[i]=map.get(lab[i]);
+ /* периметр: рёбра ячеек помещения, граничащие со стеной или окном (дверные проёмы не считаются) */
+ const per=new Float64Array(rooms.length);
+ for(let i=0;i<N;i++){const r=roomOf[i];if(r<0)continue;nb(i,j=>{if(bar[j])per[r]++})}
+ rooms.forEach((r,k)=>r.per=per[k]*cs);
+}
+
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function paint(ctx,walls,labels){
+ ctx.drawImage(src,0,0);if(!$('ov').checked&&walls)return;
+ const ov=ctx.createImageData(W,H),o=ov.data;
+ const rgb=rooms.map(r=>[1,3,5].map(k=>parseInt(r.color.slice(k,k+2),16)));
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=((y/cell)|0)*gw+((x/cell)|0),p=4*(y*W+x),ri=roomOf[k];
+  if(walls&&grid[k]){o[p]=200;o[p+1]=38;o[p+2]=28;o[p+3]=150}else if(ri>=0){const c=rgb[ri];o[p]=c[0];o[p+1]=c[1];o[p+2]=c[2];o[p+3]=selRoom<0?70:ri==selRoom?150:35}}
+ const tmp=document.createElement('canvas');tmp.width=W;tmp.height=H;tmp.getContext('2d').putImageData(ov,0,0);ctx.drawImage(tmp,0,0);
+ if(!labels)return;
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ rooms.forEach((r,i)=>{ctx.fillStyle=r.color;ctx.beginPath();ctx.arc(r.cx,r.cy,i==selRoom?14:12,0,7);ctx.fill();ctx.font='bold 15px "PT Sans",sans-serif';ctx.fillStyle='#fff';ctx.fillText(r.num,r.cx,r.cy+1);
+  if(r.custom){ctx.font='bold 13px "PT Sans",sans-serif';ctx.lineWidth=4;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.strokeText(r.name,r.cx,r.cy+24);ctx.fillStyle='#1d2126';ctx.fillText(r.name,r.cx,r.cy+24)}});
+}
+function draw2(){if(!src)return;base2.width=W;base2.height=H;paint(base2.getContext('2d'),true,true);drawTools();
+ const tot=rooms.reduce((s,r)=>s+r.area,0);$('stat').textContent=`стен: ${rects.length} фрагм. · помещений: ${rooms.length} · ${fmt(tot)} м²`}
+
+/* ---------- инструменты на плане: линейка и масштаб ---------- */
+let mode='view',pts=[],hover=null,meas=[];
+const TIPS={view:'Нажмите на помещение — покажу его площадь и подсвечу в 3D.',ruler:'Линейка: нажмите две точки на плане — покажу расстояние в метрах. Линия прилипает к горизонтали и вертикали.',scale:'Масштаб по размеру: нажмите на концы любой размерной линии (например, 5810), затем введите её длину в миллиметрах.'};
+function setMode(m,quiet){mode=m;pts=[];hover=null;document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m==m));$('tip').textContent=TIPS[m];c2.classList.toggle('tool',m!='view');$('calib').hidden=true;if(!quiet)drawTools()}
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+const c2pt=e=>{const b=c2.getBoundingClientRect();return{x:(e.clientX-b.left)*W/b.width,y:(e.clientY-b.top)*H/b.height}};
+const snap=(a,p)=>{const dx=p.x-a.x,dy=p.y-a.y;if(Math.abs(dy)<Math.abs(dx)*.1)return{x:p.x,y:a.y};if(Math.abs(dx)<Math.abs(dy)*.1)return{x:a.x,y:p.y};return p};
+const plen=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y);
+function drawTools(){if(!src)return;if(c2.width!=W||c2.height!=H){c2.width=W;c2.height=H}x2.drawImage(base2,0,0);
+ const g=x2,lw=Math.max(1.5,W/380),fs=Math.round(W/44);
+ const seg=(a,b,col,label)=>{g.strokeStyle=col;g.fillStyle=col;g.lineWidth=lw;g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();
+  const L=plen(a,b)||1,nx=-(b.y-a.y)/L*7,ny=(b.x-a.x)/L*7;[a,b].forEach(p=>{g.beginPath();g.moveTo(p.x-nx,p.y-ny);g.lineTo(p.x+nx,p.y+ny);g.stroke()});
+  if(!label)return;g.font=`bold ${fs}px "PT Sans",sans-serif`;g.textAlign='center';g.textBaseline='middle';const tw=g.measureText(label).width+12,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  g.fillStyle='rgba(255,255,255,.94)';rr(g,mx-tw/2,my-fs*.75,tw,fs*1.5,5);g.fill();g.fillStyle=col;g.fillText(label,mx,my+1)};
+ meas.forEach(([a,b])=>seg(a,b,'#1d58b0',fmt(plen(a,b)*mpp(),2)+' м'));
+ const col=mode=='scale'?'#c8261c':'#1d58b0';
+ if(pts.length==1&&hover&&plen(pts[0],hover)>2)seg(pts[0],hover,col,mode=='scale'?'':fmt(plen(pts[0],hover)*mpp(),2)+' м');
+ if(pts.length==2)seg(pts[0],pts[1],col,'сейчас '+fmt(plen(pts[0],pts[1])*mpp(),2)+' м');
+ pts.forEach(p=>{g.fillStyle=col;g.beginPath();g.arc(p.x,p.y,lw*2.2,0,7);g.fill()});
+}
+c2.addEventListener('pointermove',e=>{if(mode=='view'||pts.length!=1)return;hover=snap(pts[0],c2pt(e));drawTools()});
+c2.addEventListener('click',e=>{if(!src)return;const p=c2pt(e);
+ if(mode=='view'){selectRoom(roomAt(p.x,p.y));return}
+ if(pts.length!=1){pts=[p];hover=null;$('calib').hidden=true}
+ else{const b=snap(pts[0],p);if(plen(pts[0],b)<3)return;
+  if(mode=='ruler'){meas.push([pts[0],b]);if(meas.length>12)meas.shift();pts=[]}
+  else{pts=[pts[0],b];$('calib').hidden=false;$('mm').value='';$('mm').focus({preventScroll:true})}}
+ drawTools()});
+$('calib').addEventListener('submit',e=>{e.preventDefault();const mm=+String($('mm').value).replace(/\s/g,'').replace(',','.');
+ if(!(mm>0)||pts.length!=2){$('mm').focus();return}
+ $('wm').value=(mm/1000/plen(pts[0],pts[1])*W).toFixed(2);setMode('view',true);analyze();toast('Масштаб задан: ширина изображения '+fmt(+$('wm').value,2)+' м')});
+$('calx').onclick=()=>setMode('scale');
+$('clr').onclick=()=>{meas=[];pts=[];$('calib').hidden=true;drawTools()};
+$('png2').onclick=()=>{if(src)c2.toBlob(b=>dl(b,'plan-raspoznan.png'))};
+
+/* ---------- помещения, смета, стены ---------- */
+const guess=a=>a<4?'Небольшое помещение: обычно санузел, кладовая или гардеробная.':a<9?'По площади подходит для кухни, прихожей или кабинета.':a<16?'Типичная площадь спальни или детской.':'Самое просторное — вероятно гостиная или кухня-гостиная.';
+const roomText=r=>{const h=hgt();return `<b>${r.num} · ${esc(r.name)}</b> · площадь ${fmt(r.area)} м² · периметр ${fmt(r.per)} м · стены ≈ ${fmt(r.per*h)} м² · объём ≈ ${fmt(r.area*h)} м³<br>${r.custom?'':guess(r.area)+' '}Площадь по СП 54 считается по внутреннему контуру стен, без толщины перегородок.`};
+function selectRoom(ri){selRoom=ri;draw2();repaintFloor();
+ document.querySelectorAll('#rooms tbody tr').forEach(tr=>tr.classList.toggle('on',+tr.dataset.i===ri));
+ $('info').innerHTML=ri>=0?roomText(rooms[ri]):'Здесь нет распознанного помещения: стена, улица или незамкнутая зона.'}
+function listRooms(){
+ const h=hgt(),A=rooms.reduce((s,r)=>s+r.area,0),P=rooms.reduce((s,r)=>s+r.per,0),WA=P*h;
+ $('rooms').innerHTML=rooms.length?`<div class="tbl"><table><thead><tr><th>№</th><th>Название</th><th>Площадь, м²</th><th>Периметр, м</th><th>Стены, м²</th><th>Объём, м³</th></tr></thead><tbody>${
+  rooms.map((r,i)=>`<tr data-i="${i}"${i==selRoom?' class="on"':''}><td><i style="background:${r.color}"></i>${r.num}</td><td><input data-i="${i}" value="${esc(r.name)}" aria-label="Название помещения ${r.num}" maxlength="40"></td><td>${fmt(r.area)}</td><td>${fmt(r.per)}</td><td>${fmt(r.per*h)}</td><td>${fmt(r.area*h)}</td></tr>`).join('')
+  }</tbody><tfoot><tr><td></td><td>Итого</td><td>${fmt(A)}</td><td>${fmt(P)}</td><td>${fmt(WA)}</td><td>${fmt(A*h)}</td></tr></tfoot></table></div>`
+  :'<p class="sub">Замкнутые помещения не найдены. Проверьте, что стены на плане замкнуты, и поправьте отсечку.</p>';
+ const perRoll=Math.max(1,Math.floor(10.05/(h+.1))),rolls=Math.ceil(Math.ceil(P/1.06)/perRoll);
+ const E=[['floor','Пол: ламинат, плитка',fmt(A*1.1),'м²','площадь пола + 10 % на подрезку'],['line','Плинтус',fmt(P*1.05),'м','периметр без дверей + 5 %'],['wall','Стены под отделку',fmt(WA),'м²','периметр × высота '+fmt(h,2)+' м'],['paint','Краска для стен',fmt(WA*2*.12),'л','2 слоя по ~0,12 л/м²'],['roll','Обои',rooms.length?String(rolls):'0','рул.',`рулон 1,06 × 10 м, ${perRoll} полос из рулона`],['ceil','Потолок',fmt(A),'м²','натяжной, покраска или ГКЛ']];
+ $('est').innerHTML=rooms.length?E.map(([ic,t,v,u,n])=>`<div class="card"><span class="ico"><svg class="i"><use href="#i-${ic}"/></svg></span><small style="color:var(--ink);font-weight:500;font-size:14px">${t}</small><b>${v} <span style="font-size:16px;color:var(--mute)">${u}</span></b><small>${n}</small></div>`).join(''):'<p class="sub">Появится, когда найдутся помещения.</p>';
+ updKpi();
+}
+$('rooms').addEventListener('change',e=>{const i=e.target.dataset.i;if(i==null)return;const r=rooms[+i],v=e.target.value.trim().slice(0,40);r.name=v||'Помещение '+r.num;r.custom=!!v;refreshNames()});
+$('rooms').addEventListener('click',e=>{if(e.target.tagName=='INPUT')return;const tr=e.target.closest('tr[data-i]');if(tr)selectRoom(+tr.dataset.i)});
+function refreshNames(){const keep=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#rooms');listRooms();draw2();buildLabels();if(selRoom>=0)$('info').innerHTML=roomText(rooms[selRoom]);void keep}
+function updKpi(){const h=hgt(),A=rooms.reduce((s,r)=>s+r.area,0),L=rects.reduce((s,r)=>s+r.l,0),w=openings.filter(o=>o.win).length,d=openings.length-w;
+ const T=[['area','Площадь помещений',fmt(A),'м²'],['plan','Помещений',String(rooms.length),''],['wall','Длина стен',fmt(L),'м'],['door','Окна / двери',`${w} / ${d}`,''],['volume','Объём помещений',fmt(A*h),'м³']];
+ $('kpi').innerHTML=src?T.map(([ic,t,v,u])=>`<div class="tile"><small><svg class="i"><use href="#i-${ic}"/></svg>${t}</small><b>${v}${u?`<span>${u}</span>`:''}</b></div>`).join(''):''}
+function listWalls(){const cs=csz(),h=hgt(),ag=WT.map(()=>({n:0,l:0,v:0}));rects.forEach(r=>{const a=ag[r.k];a.n++;a.l+=r.l;a.v+=r.w*r.h*cs*cs*h});const mx=Math.max(...ag.map(a=>a.l),.001);
+ $('walls').innerHTML=rects.length?ag.map((a,k)=>a.n?`<div class="wrow"><span class="sw" style="background:${WT[k].color}"></span><span>${WT[k].name}<small>${WT[k].hint} · ${a.n} фрагм.</small></span><span class="wb"><i style="width:${(a.l/mx*100).toFixed(1)}%;background:${WT[k].color}"></i></span><b>${fmt(a.l)} м</b><b>${fmt(a.v)} м³</b></div>`:'').join('')+(()=>{const w=openings.filter(o=>o.win),d=openings.filter(o=>!o.win);return openings.length?`<div class="wrow"><span class="sw" style="background:#8ec5ff"></span><span>Проёмы<small>найдены по разрывам в стенах</small></span><span></span><b>окон: ${w.length}</b><b>дверей: ${d.length}</b></div>`:''})():'<p class="sub">Стены не найдены.</p>';
+ $('wt').innerHTML=$('ct').checked?WT.map((w,k)=>ag[k].n?`<span><i style="background:${w.color}"></i>${w.name}</span>`:'').join(''):''}
+$('csv').onclick=()=>{if(!rooms.length)return;const h=hgt(),q=c=>`"${String(c).replace(/"/g,'""')}"`;
+ const rows=[['№','Название','Площадь, м²','Периметр, м','Площадь стен, м²','Объём, м³'],...rooms.map(r=>[r.num,r.name,fmt(r.area,2),fmt(r.per,2),fmt(r.per*h,2),fmt(r.area*h,2)])];
+ const A=rooms.reduce((s,r)=>s+r.area,0),P=rooms.reduce((s,r)=>s+r.per,0);rows.push(['','Итого',fmt(A,2),fmt(P,2),fmt(P*h,2),fmt(A*h,2)]);
+ dl(new Blob(['﻿'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv'}),'pomeshcheniya.csv')};
+
+/* ---------- 3D ---------- */
+let renderer,scene,cam,group,lbls,floor,tc,tex,sun,BOX,sel=null,ok=typeof THREE!='undefined',walk=null,wallK=1,M={Wm:14,Hm:10,m:.02};
+const V={theta:.65,phi:.95,rad:20,tx:0,tz:0},v3=$('v3');
+if(ok)try{
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;v3.appendChild(renderer.domElement);
+ scene=new THREE.Scene();cam=new THREE.PerspectiveCamera(45,1,.05,500);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x8090a0,.8));sun=new THREE.DirectionalLight(0xffffff,.7);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0004;scene.add(sun,sun.target);
+ group=new THREE.Group();lbls=new THREE.Group();scene.add(group,lbls);BOX=new THREE.BoxGeometry(1,1,1);
+}catch(e){ok=false}
+if(!ok)v3.innerHTML='<p class="info err">3D недоступно: браузер не поддерживает WebGL или библиотека не загрузилась.</p>';
+const eye=()=>Math.min(1.6,hgt()*.6);
+function render(){
+ if(walk){cam.position.set(walk.x,eye(),walk.z);const cp=Math.cos(walk.pitch);cam.lookAt(walk.x-Math.sin(walk.yaw)*cp,eye()+Math.sin(walk.pitch),walk.z-Math.cos(walk.yaw)*cp)}
+ else{cam.position.set(V.tx+V.rad*Math.sin(V.phi)*Math.sin(V.theta),V.rad*Math.cos(V.phi),V.tz+V.rad*Math.sin(V.phi)*Math.cos(V.theta));cam.lookAt(V.tx,0,V.tz)}
+ renderer.render(scene,cam)}
+let raf=0,last=0,tweens=[];const keys=new Set();
+function req(){if(!ok||raf)return;raf=requestAnimationFrame(frame)}
+function frame(t){raf=0;const dt=last?Math.min(.05,(t-last)/1000):0;last=t;
+ tweens=tweens.filter(w=>{const k=Math.max(0,Math.min(1,(t-w.t0)/w.d));w.f(1-Math.pow(1-k,3));return k<1});
+ if(walk&&keys.size)walkKeys(dt);
+ render();if(tweens.length||(walk&&keys.size))req();else last=0}
+function tween(d,f){if(reduced){f(1);req();return}tweens.push({t0:performance.now(),d,f});req()}
+function fit(){if(!ok)return;const w=v3.clientWidth,h=v3.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();req()}
+if(ok)new ResizeObserver(fit).observe(v3);
+const fitRad=top=>{const tn=Math.tan(Math.PI/8),a=cam.aspect||1;return top?Math.max(M.Wm/2/tn/a,M.Hm/2/tn)*1.12:Math.max(M.Wm,M.Hm)*1.25*Math.max(1,1.4/a)};
+const wallColor=r=>$('ct').checked?WT[r.k].color:PLAIN;
+function build3(){
+ if(!ok||!src)return;fit();sel=null;
+ group.children.slice().forEach(c=>{group.remove(c);if(c.geometry!==BOX)c.geometry.dispose();if(c.material.map)c.material.map.dispose();c.material.dispose()});
+ const m=mpp(),Wm=W*m,Hm=H*m,cs=cell*m;M={Wm,Hm,m};
+ tc=document.createElement('canvas');tc.width=W;tc.height=H;paint(tc.getContext('2d'),false,false);
+ tex=new THREE.CanvasTexture(tc);tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+ floor=new THREE.Mesh(new THREE.PlaneGeometry(Wm,Hm),new THREE.MeshStandardMaterial({map:tex,roughness:1}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;floor.userData.t='floor';group.add(floor);
+ rects.forEach(r=>{const w=new THREE.Mesh(BOX,new THREE.MeshStandardMaterial({color:wallColor(r),roughness:.85}));w.scale.set(r.w*cs,1,r.h*cs);w.position.set((r.x+r.w/2)*cs-Wm/2,.5,(r.y+r.h/2)*cs-Hm/2);w.castShadow=w.receiveShadow=true;w.userData={t:'wall',r};group.add(w)});
+ openings.forEach(o=>{(o.win?['sill','glass','lintel']:['lintel']).forEach(p=>{const gl=p=='glass';
+  const w=new THREE.Mesh(BOX,gl?new THREE.MeshStandardMaterial({color:0x8ec5ff,transparent:true,opacity:.38,roughness:.05,metalness:.2}):new THREE.MeshStandardMaterial({color:wallColor(o),roughness:.85}));
+  w.scale.set(gl&&!o.hor?Math.max(.03,o.w*cs*.15):o.w*cs,1,gl&&o.hor?Math.max(.03,o.h*cs*.15):o.h*cs);w.position.set((o.x+o.w/2)*cs-Wm/2,.5,(o.y+o.h/2)*cs-Hm/2);
+  w.castShadow=!gl;w.receiveShadow=true;w.userData={t:'open',part:p,o};group.add(w)})});
+ const S=Math.max(Wm,Hm),sc=sun.shadow.camera;sun.position.set(S*.45,S*.9,S*.35);sun.target.position.set(0,0,0);sc.left=sc.bottom=-S*.8;sc.right=sc.top=S*.8;sc.near=.1;sc.far=S*3;sc.updateProjectionMatrix();
+ buildLabels();setView('orbit',true);wallK=0;tween(900,k=>{wallK=k;applyWallH()});
+}
+const levels=()=>{const H0=hgt(),sill=Math.min(.85,H0*.32),lin=Math.min(2.1,H0*.78);return{wall:[0,H0],sill:[0,sill],glass:[sill,lin],lintel:[lin,H0]}};
+function applyWallH(){if(!ok)return;const c=+$('cut').value/100,top=hgt()*c*wallK,L=levels();
+ group.children.forEach(o=>{const u=o.userData;if(u.t!='wall'&&u.t!='open')return;const[a,b]=L[u.t=='wall'?'wall':u.part],e=Math.min(b,top);o.visible=e>a+.002;const hh=Math.max(.002,e-a);o.scale.y=hh;o.position.y=a+hh/2});
+ lbls.children.forEach(s=>s.position.y=hgt()*c+.45);req()}
+function repaintFloor(){if(!ok||!tc)return;paint(tc.getContext('2d'),false,false);tex.needsUpdate=true;req()}
+function buildLabels(){if(!ok)return;
+ lbls.children.slice().forEach(s=>{lbls.remove(s);s.material.map.dispose();s.material.dispose()});
+ const m=mpp(),S=Math.max(1.8,Math.max(M.Wm,M.Hm)/7.5);
+ rooms.forEach(r=>{const c=document.createElement('canvas');c.width=512;c.height=168;const g=c.getContext('2d');
+  g.fillStyle='rgba(255,255,255,.94)';rr(g,4,4,504,160,28);g.fill();g.fillStyle=r.color;g.beginPath();g.arc(84,84,54,0,7);g.fill();
+  g.fillStyle='#fff';g.font='bold 56px "PT Sans",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(r.num,84,88);
+  g.textAlign='left';g.fillStyle='#1d2126';let f=48;do{g.font=`bold ${f}px "PT Sans",sans-serif`;f-=2}while(g.measureText(r.name).width>330&&f>22);g.fillText(r.name,158,62);
+  g.fillStyle='#5d636b';g.font='40px "PT Sans",sans-serif';g.fillText(fmt(r.area)+' м²',158,120);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));
+  sp.scale.set(S,S*168/512,1);sp.position.set(r.cx*m-M.Wm/2,hgt()+.45,r.cy*m-M.Hm/2);sp.renderOrder=10;lbls.add(sp)});
+ lbls.visible=$('lb').checked&&!walk;applyWallH()}
+function setView(v,instant){if(!ok||!src)return;
+ document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v==v));
+ if(v=='walk'){const r=rooms[0];walk={x:r?r.cx*M.m-M.Wm/2:0,z:r?r.cy*M.m-M.Hm/2:0,yaw:0,pitch:-.08};cam.fov=70;cam.updateProjectionMatrix();lbls.visible=false;for(let i=0;i<6;i++)tryMove(walk.x,walk.z+.25);
+  $('info').innerHTML='<b>Прогулка</b> · тяните, чтобы осмотреться; нажмите на пол — перейду туда (в том числе в соседнюю комнату). С клавиатуры: W A S D или стрелки, сквозь стены не пройти.';v3.focus({preventScroll:true});req();return}
+ if(walk){walk=null;keys.clear();cam.fov=45;cam.updateProjectionMatrix();lbls.visible=$('lb').checked}
+ const to=v=='top'?{theta:0,phi:.02,rad:fitRad(true),tx:0,tz:0}:{theta:.65,phi:.95,rad:fitRad(false),tx:0,tz:0};
+ if(instant){Object.assign(V,to);req();return}
+ const fr={...V};let dth=to.theta-fr.theta;dth=((dth+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+ tween(650,k=>{V.theta=fr.theta+dth*k;['phi','rad','tx','tz'].forEach(p=>V[p]=fr[p]+(to[p]-fr[p])*k)})}
+document.querySelectorAll('#views button').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+const blocked=(x,z)=>{const rad=.18;for(const[ox,oz]of[[0,0],[rad,0],[-rad,0],[0,rad],[0,-rad]]){const px=(x+ox+M.Wm/2)/M.m,py=(z+oz+M.Hm/2)/M.m;if(px<0||py<0||px>=W||py>=H)return true;if(grid[(py/cell|0)*gw+(px/cell|0)])return true}return false};
+function tryMove(x,z){if(!blocked(x,z)){walk.x=x;walk.z=z}else if(!blocked(x,walk.z))walk.x=x;else if(!blocked(walk.x,z))walk.z=z}
+function walkKeys(dt){const sp=2.4*dt;let f=0,s=0;
+ if(keys.has('KeyW')||keys.has('ArrowUp'))f++;if(keys.has('KeyS')||keys.has('ArrowDown'))f--;if(keys.has('KeyA'))s--;if(keys.has('KeyD'))s++;
+ if(keys.has('ArrowLeft'))walk.yaw+=1.8*dt;if(keys.has('ArrowRight'))walk.yaw-=1.8*dt;
+ const y=walk.yaw;if(f||s)tryMove(walk.x+(-Math.sin(y)*f+Math.cos(y)*s)*sp,walk.z+(-Math.cos(y)*f-Math.sin(y)*s)*sp)}
+const WK=['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+v3.addEventListener('keydown',e=>{if(!walk||!WK.includes(e.code))return;e.preventDefault();keys.add(e.code);req()});
+v3.addEventListener('keyup',e=>keys.delete(e.code));v3.addEventListener('blur',()=>keys.clear());
+function wallText(r){const t=r.t,k=WT[r.k];
+ const d=r.k==0?'Толстая стена — скорее всего <b>наружная несущая</b> (кирпич 380–640 мм или с утеплителем). На чертеже такие стены часто заштрихованы и привязаны к координационным осям.'
+ :r.k==1?'Похоже на <b>внутреннюю несущую стену</b>: кирпич 250 мм или монолитный бетон 200 мм. Пробивать проёмы в ней можно только по проекту.'
+ :r.k==2?'Это <b>перегородка</b> — ненесущая стена (кирпич 120 мм, пазогребень 80–100 мм, гипсокартон 75–125 мм). Делит помещения, нагрузку не держит.'
+ :'Очень тонкая линия — возможно, <b>гипсокартонная перегородка</b>, витраж или ошибка распознавания.';
+ return `<b>Стена</b> · ${k.name.toLowerCase()} · толщина ≈ ${Math.round(t/10)*10} мм · длина фрагмента ≈ ${fmt(r.l,2)} м<br>${d}`}
+const ray=ok?new THREE.Raycaster():null;
+function pick(e){if(!ok||!src)return;const b=renderer.domElement.getBoundingClientRect();
+ ray.setFromCamera(new THREE.Vector2(((e.clientX-b.left)/b.width)*2-1,-((e.clientY-b.top)/b.height)*2+1),cam);
+ const hit=ray.intersectObjects(group.children)[0];if(sel){sel.material.color.set(wallColor(sel.userData.r));sel=null}
+ if(!hit){$('info').textContent='Здесь пусто — нажмите на стену или пол.';req();return}
+ if(hit.object.userData.t=='wall'){sel=hit.object;sel.material.color.set(0xff5a4b);$('info').innerHTML=wallText(sel.userData.r);req();return}
+ if(hit.object.userData.t=='open'){const o=hit.object.userData.o,L=levels();$('info').innerHTML=o.win?`<b>Окно</b> · ширина проёма ≈ ${fmt(o.len,2)} м · подоконник на ${fmt(L.sill[0]+L.sill[1],2)} м, верх на ${fmt(L.lintel[0],2)} м<br>На плане окно — разрыв в стене с тонкими линиями рамы и стекла. Точные размеры смотрят по марке (ОК-1 и т. п.) в ведомости заполнения проёмов. Высоты здесь типовые.`:`<b>Дверной проём</b> · ширина ≈ ${fmt(o.len,2)} м · высота ≈ ${fmt(L.lintel[0],2)} м<br>Над проёмом — перемычка. Типовые двери: 0,7 м — санузел, 0,8 м — комнаты, 0,9 м — вход (марки ДГ 21-7, 21-8, 21-9).`;req();return}
+ const u=hit.uv,ri=roomAt(u.x*W,(1-u.y)*H);
+ if(walk){const fx=walk.x,fz=walk.z,tx=hit.point.x,tz=hit.point.z;tween(700,k=>{walk.x=fx+(tx-fx)*k;walk.z=fz+(tz-fz)*k})}
+ if(ri>=0)selectRoom(ri);else{$('info').textContent='Это пол вне распознанных помещений: улица, лестничная клетка или незамкнутая зона.';req()}}
+const ptr=new Map();let down=null,pd=0;
+const pdist=()=>{const p=[...ptr.values()];return Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1};
+v3.addEventListener('contextmenu',e=>e.preventDefault());
+v3.addEventListener('pointerdown',e=>{v3.focus({preventScroll:true});try{v3.setPointerCapture(e.pointerId)}catch(_){}ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(ptr.size==1)down={x:e.clientX,y:e.clientY,m:false,pan:e.button==2||e.shiftKey};if(ptr.size==2){pd=pdist();if(down)down.m=true}});
+v3.addEventListener('pointermove',e=>{const p=ptr.get(e.pointerId);if(!p||!ok)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+ if(ptr.size==1){if(walk){walk.yaw+=dx*.005;walk.pitch=Math.min(1.2,Math.max(-1.2,walk.pitch+dy*.005))}
+  else if(down&&down.pan){const k=V.rad*.0016,c=Math.cos(V.theta),s=Math.sin(V.theta);V.tx+=-c*dx*k-s*dy*k;V.tz+=s*dx*k-c*dy*k;const lim=Math.max(M.Wm,M.Hm);V.tx=Math.max(-lim,Math.min(lim,V.tx));V.tz=Math.max(-lim,Math.min(lim,V.tz))}
+  else{V.theta-=dx*.008;V.phi=Math.min(1.5,Math.max(.02,V.phi-dy*.008))}}
+ else if(ptr.size==2){const d=pdist();if(walk){const st=(d-pd)*.02;tryMove(walk.x-Math.sin(walk.yaw)*st,walk.z-Math.cos(walk.yaw)*st)}else V.rad=Math.min(200,Math.max(2,V.rad*pd/d));pd=d}
+ if(down&&Math.hypot(e.clientX-down.x,e.clientY-down.y)>6)down.m=true;req()});
+const up=e=>{if(down&&!down.m&&ptr.size==1&&e.type=='pointerup'&&e.button!=2)pick(e);ptr.delete(e.pointerId);if(!ptr.size)down=null};
+v3.addEventListener('pointerup',up);v3.addEventListener('pointercancel',up);
+v3.addEventListener('wheel',e=>{e.preventDefault();if(walk){const st=e.deltaY>0?-.4:.4;tryMove(walk.x-Math.sin(walk.yaw)*st,walk.z-Math.cos(walk.yaw)*st)}else V.rad=Math.min(200,Math.max(2,V.rad*(e.deltaY>0?1.1:.9)));req()},{passive:false});
+$('png3').onclick=()=>{if(!ok||!src)return;render();const c=document.createElement('canvas'),s=renderer.domElement;c.width=s.width;c.height=s.height;const g=c.getContext('2d');g.fillStyle=matchMedia('(prefers-color-scheme: dark)').matches?'#0e1013':'#eef0f2';g.fillRect(0,0,c.width,c.height);g.drawImage(s,0,0);c.toBlob(b=>dl(b,'model-3d.png'))};
+$('obj').onclick=()=>{if(!src)return;const m=mpp(),Wm=W*m,Hm=H*m,cs=cell*m,h=hgt();let n=0;const o=['# Чертёж в 3D — модель стен','# единицы: метры, ось Y вверх'];
+ const I=(a,b,c)=>n+1+a*4+b*2+c;
+ const box=(name,cx,cz,sx,sz,y0=0,y1=h)=>{o.push('o '+name);for(const x of[cx-sx/2,cx+sx/2])for(const y of[y0,y1])for(const z of[cz-sz/2,cz+sz/2])o.push(`v ${x.toFixed(4)} ${y.toFixed(4)} ${z.toFixed(4)}`);
+  [[I(0,0,0),I(0,0,1),I(0,1,1),I(0,1,0)],[I(1,0,0),I(1,1,0),I(1,1,1),I(1,0,1)],[I(0,0,0),I(1,0,0),I(1,0,1),I(0,0,1)],[I(0,1,0),I(0,1,1),I(1,1,1),I(1,1,0)],[I(0,0,0),I(0,1,0),I(1,1,0),I(1,0,0)],[I(0,0,1),I(1,0,1),I(1,1,1),I(0,1,1)]].forEach(f=>o.push('f '+f.join(' ')));n+=8};
+ o.push('o floor',`v ${(-Wm/2).toFixed(4)} 0 ${(-Hm/2).toFixed(4)}`,`v ${(-Wm/2).toFixed(4)} 0 ${(Hm/2).toFixed(4)}`,`v ${(Wm/2).toFixed(4)} 0 ${(Hm/2).toFixed(4)}`,`v ${(Wm/2).toFixed(4)} 0 ${(-Hm/2).toFixed(4)}`,'f 1 2 3 4');n=4;
+ rects.forEach((r,i)=>box(`wall_${i+1}_${['outer','bearing','partition','thin'][r.k]}`,(r.x+r.w/2)*cs-Wm/2,(r.y+r.h/2)*cs-Hm/2,r.w*cs,r.h*cs));
+ const Lv=levels();openings.forEach((p,i)=>(p.win?['sill','lintel']:['lintel']).forEach(part=>box(`${p.win?'window':'door'}_${i+1}_${part}`,(p.x+p.w/2)*cs-Wm/2,(p.y+p.h/2)*cs-Hm/2,p.w*cs,p.h*cs,Lv[part][0],Lv[part][1])));
+ dl(new Blob([o.join('\n')+'\n'],{type:'text/plain'}),'model.obj')};
+
+$('th').addEventListener('input',()=>{$('tho').textContent=$('th').value});$('th').addEventListener('change',analyze);
+$('wm').addEventListener('change',analyze);
+$('hm').addEventListener('change',()=>{buildLabels();applyWallH();listWalls();listRooms();if(selRoom>=0)$('info').innerHTML=roomText(rooms[selRoom])});
+$('cut').addEventListener('input',()=>{$('cuto').textContent=$('cut').value+' %';applyWallH()});
+$('ov').addEventListener('change',draw2);
+$('lb').addEventListener('change',()=>{if(ok){lbls.visible=$('lb').checked&&!walk;req()}});
+$('ct').addEventListener('change',()=>{if(ok)group.children.forEach(o=>{const u=o.userData;if(u.t=='wall'&&o!==sel)o.material.color.set(wallColor(u.r));if(u.t=='open'&&u.part!='glass')o.material.color.set(wallColor(u.o))});listWalls();req()});
+
+/* ---------- справочник ---------- */
+const LEG=[
+['Несущая стена','<rect x="10" y="26" width="220" height="24" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 50l24-24M44 50l24-24M68 50l24-24M92 50l24-24M116 50l24-24M140 50l24-24M164 50l24-24M188 50l24-24M212 50l18-18" stroke="currentColor"/>','Толстая линия, часто со штриховкой материала. Держит перекрытия и вышележащие этажи. Сносить или прорезать без проекта и согласования нельзя.'],
+['Перегородка','<rect x="10" y="33" width="220" height="10" fill="currentColor"/>','Тонкая стена без несущей функции: кирпич 120 мм, пазогребневые плиты, гипсокартон. Её можно переносить при перепланировке (с согласованием).'],
+['Окно','<path d="M10 26h70v24H10zM160 26h70v24h-70z" fill="currentColor"/><path d="M80 26h80M80 38h80M80 50h80M80 26v24M160 26v24" stroke="currentColor" stroke-width="2"/>','Разрыв в стене с тонкими параллельными линиями — это рама и стекло. Рядом часто стоит марка, например ОК-1: размер окна смотрят в ведомости заполнения проёмов.'],
+['Дверь','<path d="M10 56h70v14H10zM150 56h80v14h-80z" fill="currentColor"/><path d="M80 56V8" stroke="currentColor" stroke-width="2"/><path d="M80 8a70 48 0 0 1 70 48" fill="none" stroke="currentColor" stroke-dasharray="4 3"/>','Проём с отрезком (полотно) и дугой — дуга показывает, куда и в какую сторону открывается дверь. Марка вида Д-1, ДГ 21-9 означает дверь глухую высотой 2,1 м и шириной 0,9 м.'],
+['Координационные оси','<path d="M120 76V30" stroke="currentColor" stroke-width="1.5" stroke-dasharray="14 4 3 4"/><circle cx="120" cy="17" r="13" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="120" y="22" font-size="15" text-anchor="middle" fill="currentColor" font-weight="700">2</text><path d="M30 60h60" stroke="currentColor" stroke-width="1.5" stroke-dasharray="14 4 3 4"/><circle cx="17" cy="60" r="13" fill="none" stroke="currentColor" stroke-width="1.5"/><text x="17" y="65" font-size="15" text-anchor="middle" fill="currentColor" font-weight="700">Б</text>','Штрихпунктирные линии с кружками — «сетка», к которой привязаны стены и колонны. Цифрами маркируют сторону с большим числом осей, буквами — другую. Буквы Ё, З, Й, О, Х, Ц, Ч, Щ, Ъ, Ы, Ь не используют, чтобы не путать с цифрами.'],
+['Размерная линия','<path d="M20 50h200M20 30v32M220 30v32M14 56l12-12M214 56l12-12" stroke="currentColor" stroke-width="1.5"/><text x="120" y="42" font-size="15" text-anchor="middle" fill="currentColor">3600</text>','Засечки под 45° ограничивают размер. На строительных чертежах размеры пишут в миллиметрах без единиц: 3600 — это 3,6 м. По любой такой линии можно задать масштаб инструментом «Масштаб по размеру».'],
+['Отметка уровня','<path d="M60 56l-10-14h20z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M60 42h90M20 56h80" stroke="currentColor" stroke-width="1.5"/><text x="74" y="36" font-size="15" fill="currentColor">+3,000</text>','Высота в метрах с тремя знаками после запятой от условного нуля (±0,000 — обычно чистый пол первого этажа). +3,000 — на 3 м выше, −1,200 — ниже нуля, например подвал.'],
+['Линия разреза','<path d="M30 14v20M30 50v20" stroke="currentColor" stroke-width="5" class="r"/><path d="M30 14H10M30 70H10M10 14l8-5M10 14l8 5M10 70l8-5M10 70l8 5" stroke="currentColor" stroke-width="1.5"/><text x="50" y="19" font-size="16" fill="currentColor" font-weight="700">1</text><text x="50" y="75" font-size="16" fill="currentColor" font-weight="700">1</text><text x="90" y="46" font-size="14" fill="currentColor">разрез 1-1</text>','Толстые штрихи со стрелками показывают, где здание мысленно «разрезали» и куда смотрят. Сам разрез 1-1 с высотами этажей нарисован на другом листе.'],
+['Лестница','<path d="M20 14h200v52H20z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M45 14v52M70 14v52M95 14v52M120 14v52M145 14v52M170 14v52M195 14v52" stroke="currentColor"/><path d="M28 40h180" stroke="currentColor" stroke-width="2" class="r"/><path d="M208 40l-10-6v12z" fill="currentColor" class="r"/>','Ступени — параллельные линии, стрелка указывает направление подъёма. Число линий — количество ступеней в марше.'],
+['Выносной элемент (узел)','<ellipse cx="70" cy="42" rx="40" ry="24" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M104 30l60-16h40" stroke="currentColor" stroke-width="1.5"/><text x="180" y="10" font-size="15" fill="currentColor" text-anchor="middle" font-weight="700">А</text>','Обведённый фрагмент с буквой: эта часть показана крупнее на отдельном чертеже — узле. Иногда под буквой указан номер листа, где искать узел.'],
+['Бетон и железобетон','<rect x="10" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><g fill="currentColor"><circle cx="25" cy="25" r="1.6"/><circle cx="60" cy="50" r="1.6"/><circle cx="90" cy="30" r="1.6"/><circle cx="40" cy="58" r="1.6"/></g><path d="M48 24l6 9h-12zM80 48l6 9h-12z" fill="none" stroke="currentColor"/><rect x="130" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M130 40l28-28M130 68l56-56M158 68l56-56M186 68l44-44M214 68l16-16" stroke="currentColor"/><g fill="currentColor"><circle cx="150" cy="56" r="1.6"/><circle cx="200" cy="26" r="1.6"/><circle cx="178" cy="44" r="1.6"/></g>','Штриховка показывает материал в сечении. Бетон — точки и мелкие треугольники (щебень); железобетон — те же точки плюс диагональные линии (арматура).'],
+['Кирпич и утеплитель','<rect x="10" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 40l28-28M10 68l56-56M38 68l56-56M66 68l44-44M94 68l16-16" stroke="currentColor"/><rect x="130" y="12" width="100" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M134 40q6-22 12 0t12 0 12 0 12 0 12 0 12 0 12 0 12 0" fill="none" stroke="currentColor"/>','Кирпичная и каменная кладка — частые диагональные линии под 45°. Теплоизоляция — волнистая линия по всей толщине слоя.'],
+['Сантехприборы','<rect x="12" y="14" width="96" height="52" rx="16" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="138" y="14" width="34" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="155" cy="50" rx="15" ry="18" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="190" y="22" width="40" height="34" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="210" cy="39" r="4" fill="currentColor"/>','Упрощённые контуры: ванна, унитаз, раковина. Показывают расстановку оборудования и подсказывают, где пройдут трубы и где нужна гидроизоляция.'],
+['Основная надпись (штамп)','<rect x="10" y="10" width="220" height="60" fill="none" stroke="currentColor" stroke-width="2"/><path d="M80 10v60M10 30h70M10 50h70M80 40h150M170 40v30M200 40v30" stroke="currentColor"/><text x="155" y="30" font-size="13" text-anchor="middle" fill="currentColor">План 1 этажа</text><text x="185" y="60" font-size="11" text-anchor="middle" fill="currentColor">Р</text><text x="215" y="60" font-size="11" text-anchor="middle" fill="currentColor">3</text>','Таблица в правом нижнем углу листа: шифр проекта, название здания и чертежа, стадия (П — проект, Р — рабочая документация), номер листа, подписи и дата.'],
+['Масштаб','<path d="M20 50h200" stroke="currentColor" stroke-width="2"/><path d="M20 50h50M120 50h50" stroke="currentColor" stroke-width="8"/><text x="120" y="30" font-size="16" text-anchor="middle" fill="currentColor" font-weight="700">М 1:100</text>','Во сколько раз уменьшено изображение. При М 1:100 один сантиметр на листе — один метр в натуре; планы обычно 1:100 или 1:50, узлы 1:10–1:20. Для PDF масштаб листа можно применить напрямую.']
+];
+$('leg').innerHTML=LEG.map(([t,s,p])=>`<div class="card"><svg viewBox="0 0 240 80" aria-hidden="true">${s}</svg><h3>${t}</h3><p>${p}</p></div>`).join('');
+
+/* ---------- ИИ: Gemini через /api/ai на сайте, либо Claude, когда страница открыта как артефакт Claude ---------- */
+const P_EXPLAIN='Ты опытный инженер-проектировщик. На изображении — строительный чертёж. Определи тип чертежа (план этажа, разрез, фасад, узел, генплан, схема и т. п.) и масштаб, если он указан. Найди все условные обозначения, марки, надписи и характерные размеры и объясни каждое простым языком для человека без строительного образования, со ссылкой на ГОСТ СПДС там, где это уместно. Перечисли помещения с площадями, если они подписаны. Ответь строго одним JSON-объектом без пояснений вокруг, на русском языке: {"type":"","scale":"","summary":"2-4 предложения что изображено","elements":[{"name":"","where":"где на чертеже","meaning":"что означает"}],"rooms":[{"name":"","area":"число в м²"}],"dimensions":[{"value":"","meaning":""}],"notes":["на что обратить внимание"]}';
+const P_WALLS='На изображении строительный план этажа. Найди все стены: наружные, внутренние несущие и перегородки. Не включай мебель, сантехнику, текст, размерные и выносные линии, координационные оси, дуги и полотна дверей. В местах окон и дверей стена прерывается — не перекрывай проёмы. Каждый прямой участок стены верни отдельным прямоугольником по его настоящей толщине. Координаты нормируй к 0–1000 по ширине и высоте изображения. Ответ — только JSON: {"walls":[{"box_2d":[ymin,xmin,ymax,xmax],"type":"outer|inner|partition"}]}';
+const P_ASK=(q,ctx)=>`Ты инженер-проектировщик и объясняешь строительный чертёж (он на изображении) человеку без профильного образования. ${ctx?'Ранее ты разобрал его так: '+ctx+'. ':''}Вопрос: ${q}\nОтветь по-русски, понятно и по делу, 3–8 предложений, без markdown.`;
+let sample=null,aiKind='';
+const blob=()=>new Promise(r=>full.toBlob(r,'image/jpeg',.9));
+const b64=async()=>{const u=full.toDataURL('image/jpeg',.88);return u.slice(u.indexOf(',')+1)};
+function aiOn(kind){aiKind=kind;$('aiBox').hidden=false;$('aiw').hidden=false;$('navAi').hidden=false;$('legN').textContent='05';$('aiName').textContent=kind=='gemini'?'Gemini':'Claude'}
+if(window.claude&&claude.use)claude.use('sample').then(async s=>{if(!s)return;try{const l=await s.limits();if(!l||!l.images)return}catch(_){return}sample=s;aiOn('claude')}).catch(()=>{});
+if(location.protocol.startsWith('http'))fetch('/api/ai').then(r=>r.ok?r.json():null).then(j=>{if(j&&j.ok&&!aiKind)aiOn('gemini')}).catch(()=>{});
+async function aiCall(mode,opt={}){
+ if(aiKind=='claude'){const prompt=mode=='explain'?P_EXPLAIN:mode=='walls'?P_WALLS:P_ASK(opt.question,opt.context);
+  const r=await sample(prompt,{images:[await blob()],...(mode=='ask'?{cache:false,onText:opt.onText}:{modelTier:'complex'})});return r.text||''}
+ const r=await fetch('/api/ai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode,image:await b64(),question:opt.question,context:opt.context})});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw{code:j.error||'error'};return j.text||''}
+const aiErr=e=>{if(e&&e.code=='not_granted'){$('aiBox').hidden=true;$('aiw').hidden=true;return''}return e&&e.code=='rate_limited'?'Слишком много запросов — бесплатный лимит ИИ на минуту исчерпан. Попробуйте через минуту.':e&&e.code=='not_configured'?'ИИ на сайте ещё не подключён.':e&&e.code=='busy'?'Бесплатные серверы Gemini сейчас перегружены. Это временно — попробуйте через минуту-другую.':'Не получилось получить ответ. Попробуйте ещё раз.'};
+const parseJSON=tx=>{try{return JSON.parse(tx.slice(tx.indexOf('{'),tx.lastIndexOf('}')+1))}catch(_){return null}};
+$('aiw').onclick=async()=>{if(!full)return;const b=$('aiw');
+ if(aiWalls){aiWalls=null;b.textContent='Стены с ИИ';analyze();toast('Стены снова ищутся автоматически');return}
+ b.disabled=true;b.textContent='ИИ ищет стены…';
+ try{const o=parseJSON(await aiCall('walls'));const L=(o&&Array.isArray(o.walls)?o.walls:[]).map(w=>w&&w.box_2d).filter(x=>Array.isArray(x)&&x.length==4&&x.every(v=>isFinite(+v))).map(x=>x.map(Number));
+  if(!L.length){toast('ИИ не нашёл стен на этом изображении');b.textContent='Стены с ИИ'}
+  else{aiWalls=L;b.textContent='Вернуть автопоиск стен';analyze();toast(`ИИ нашёл ${L.length} участков стен`)}}
+ catch(e){toast(aiErr(e)||'ИИ недоступен');b.textContent='Стены с ИИ'}
+ b.disabled=false};
+function applyNames(list){const pairs=[];list.forEach((it,j)=>{const a=parseFloat(String(it.area??'').replace(',','.'));if(!it.name||!(a>0))return;rooms.forEach((r,i)=>{if(!r.custom)pairs.push({i,j,d:Math.abs(r.area-a)/a})})});
+ pairs.sort((p,q)=>p.d-q.d);const ui=new Set(),uj=new Set();let n=0;
+ pairs.forEach(p=>{if(p.d>.3||ui.has(p.i)||uj.has(p.j))return;ui.add(p.i);uj.add(p.j);rooms[p.i].name=String(list[p.j].name).slice(0,40);rooms[p.i].custom=true;n++});
+ if(n)refreshNames();return n}
+$('ask').onclick=async()=>{if(!aiKind||!full)return;const b=$('ask'),out=$('aiOut');b.disabled=true;out.innerHTML='<p class="sub">ИИ читает чертёж… обычно до минуты.</p>';
+ try{const tx=await aiCall('explain'),o=parseJSON(tx);
+  if(!o){out.innerHTML=`<div class="card ans">${esc(tx)}</div>`;aiCtx=tx.slice(0,3000)}
+  else{aiCtx=JSON.stringify(o).slice(0,4000);const A=a=>Array.isArray(a)?a:[];const n=applyNames(A(o.rooms));
+   out.innerHTML=`<div class="kv"><div><b>Тип:</b> ${esc(o.type||'—')}</div><div><b>Масштаб:</b> ${esc(o.scale||'не указан')}</div></div><p>${esc(o.summary)}</p>${n?`<p class="sub">Названия ${n} помещ. подставлены в таблицу по площадям.</p>`:''}
+   <div class="aig">${A(o.elements).map(e=>`<div class="card"><h3>${esc(e.name)}</h3>${e.where?`<small>${esc(e.where)}</small>`:''}<p>${esc(e.meaning)}</p></div>`).join('')}</div>
+   ${A(o.rooms).length?`<h3 style="margin-top:20px">Помещения по подписям</h3><div class="rooms">${A(o.rooms).map(r=>`<div class="room">${esc(r.name)}<b>${esc(r.area)}</b></div>`).join('')}</div>`:''}
+   ${A(o.dimensions).length?`<h3 style="margin-top:20px">Размеры</h3><div class="aig">${A(o.dimensions).map(d=>`<div class="card"><h3>${esc(d.value)}</h3><p>${esc(d.meaning)}</p></div>`).join('')}</div>`:''}
+   ${A(o.notes).length?`<h3 style="margin-top:20px">На что обратить внимание</h3><ul>${A(o.notes).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}`}
+ }catch(e){const m=aiErr(e);out.innerHTML=m?`<p class="err">${esc(m)}</p>`:''}
+ b.disabled=false};
+$('qf').addEventListener('submit',async e=>{e.preventDefault();const q=$('q').value.trim().slice(0,600);if(!q||!aiKind||!full)return;const a=$('qa');a.textContent='Думаю…';
+ try{const t=await aiCall('ask',{question:q,context:aiCtx,onText:({text})=>{a.textContent=text}});a.textContent=t||a.textContent}
+ catch(err){a.textContent=aiErr(err)}});
+
+/* ---------- тема: светлая / тёмная (запоминается в этом браузере) ---------- */
+const sysDark=()=>matchMedia('(prefers-color-scheme: dark)').matches;
+function setTheme(t){if(t)document.documentElement.dataset.theme=t;else delete document.documentElement.dataset.theme;
+ const dark=t?t=='dark':sysDark();$('theme').innerHTML=`<svg class="i"><use href="#i-${dark?'sun':'moon'}"/></svg>`;$('theme').setAttribute('aria-label',dark?'Светлая тема':'Тёмная тема')}
+try{setTheme(localStorage.getItem('theme'))}catch(_){setTheme(null)}
+$('theme').onclick=()=>{const cur=document.documentElement.dataset.theme||(sysDark()?'dark':'light'),nx=cur=='dark'?'light':'dark';setTheme(nx);try{localStorage.setItem('theme',nx)}catch(_){}};
+
+setMode('view',true);demo();
+}</script>
+</body></html>

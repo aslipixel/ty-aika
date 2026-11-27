@@ -1,0 +1,16 @@
+{
+  "name": "chertezh-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Чертёж в 3D for Android (Capacitor wrapper of https://chertezh-3d.pages.dev/)",
+  "type": "module",
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/cli": "8.6.2",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/share": "8.0.3",
+    "esbuild": "0.28.2",
+    "sharp": "0.35.5"
+  }
+}
