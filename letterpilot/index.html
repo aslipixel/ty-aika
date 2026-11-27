@@ -7,8 +7,9 @@
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
-  <link rel="stylesheet" href="style.css?v=20261127-orig2" />
-  <link rel="stylesheet" href="theme.css?v=20261127-orig2" />
+  <script>try{var l=JSON.parse(localStorage.getItem("letterpilot_look")||"{}");var d=document.documentElement;if(l.theme==="light"||l.theme==="dark")d.dataset.theme=l.theme;d.dataset.accent=l.accent||"blue";}catch(e){document.documentElement.dataset.accent="blue";}</script>
+  <link rel="stylesheet" href="style.css?v=20261127-ios1" />
+  <link rel="stylesheet" href="theme.css?v=20261127-ios1" />
 </head>
 <body class="intro">
   <div id="splash" aria-hidden="true">
@@ -352,6 +353,27 @@
       <select id="cfgVoice" class="input-select mb-12"><option value="Sulafat">Тёплый</option><option value="Achernar">Мягкий</option><option value="Kore">Чёткий</option><option value="Charon">Низкий</option></select>
       <p class="muted-sm mb-12">Ключи Gemini и NVIDIA хранятся в Cloudflare. Код доступа сохраняется только в этом браузере на вашем устройстве.</p>
 
+      <div class="look-block mb-12">
+        <span class="label-sm mb-6">Оформление</span>
+        <div class="segmented mb-10" role="radiogroup" aria-label="Тема">
+          <button type="button" class="seg" data-theme-opt="auto" role="radio">Авто</button>
+          <button type="button" class="seg" data-theme-opt="light" role="radio">Светлая</button>
+          <button type="button" class="seg" data-theme-opt="dark" role="radio">Тёмная</button>
+        </div>
+        <span class="label-sm mb-6">Цвет акцента: <b id="accentName">Синий</b></span>
+        <div class="swatches" role="radiogroup" aria-label="Цвет акцента">
+          <button type="button" class="swatch" data-accent="blue" aria-label="Синий" title="Синий"><span></span></button>
+          <button type="button" class="swatch" data-accent="gray" aria-label="Серый" title="Серый"><span></span></button>
+          <button type="button" class="swatch" data-accent="indigo" aria-label="Индиго" title="Индиго"><span></span></button>
+          <button type="button" class="swatch" data-accent="purple" aria-label="Фиолетовый" title="Фиолетовый"><span></span></button>
+          <button type="button" class="swatch" data-accent="pink" aria-label="Розовый" title="Розовый"><span></span></button>
+          <button type="button" class="swatch" data-accent="red" aria-label="Красный" title="Красный"><span></span></button>
+          <button type="button" class="swatch" data-accent="orange" aria-label="Оранжевый" title="Оранжевый"><span></span></button>
+          <button type="button" class="swatch" data-accent="green" aria-label="Зелёный" title="Зелёный"><span></span></button>
+          <button type="button" class="swatch" data-accent="teal" aria-label="Бирюзовый" title="Бирюзовый"><span></span></button>
+          <button type="button" class="swatch" data-accent="brown" aria-label="Коричневый" title="Коричневый"><span></span></button>
+        </div>
+      </div>
       <button class="btn-primary btn-full" id="btnSaveSettings">Сохранить настройки</button>
       <button class="btn-secondary btn-full mt-10 hidden" id="btnOpenAdmin" type="button">Коды для друзей</button>
     </div>
@@ -403,7 +425,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261127-orig2"></script>
+  <script src="app.js?v=20261127-ios1"></script>
 </body>
 </html>
 

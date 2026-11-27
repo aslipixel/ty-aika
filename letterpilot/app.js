@@ -6,6 +6,7 @@
 const STORAGE_HIST = "docai_v2_history";
 const STORAGE_CONFIG = "letterpilot_v2_config";
 const STORAGE_SAVED = "letterpilot_saved_docs";
+const STORAGE_LOOK = "letterpilot_look";
 const STORAGE_LANG = "letterpilot_target_lang";
 const RTL_LANGS = ["العربية", "فارسی", "دری", "کوردی (سۆرانی)", "اردو"];
 
@@ -53,6 +54,7 @@ function runIntro() {
 document.addEventListener("DOMContentLoaded", () => {
   runIntro();
   loadConfig();
+  applyLook(getLook());
   checkAdmin();
   loadHistory();
   loadSaved();
@@ -113,6 +115,34 @@ function loadHistory() {
   } catch (e) {
     state.history = [];
   }
+}
+
+// --- Appearance: theme (auto/light/dark) and accent color, applied instantly ---
+function getLook() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_LOOK) || "{}"); } catch (e) { return {}; }
+}
+function applyLook(look) {
+  const root = document.documentElement;
+  if (look.theme === "light" || look.theme === "dark") root.dataset.theme = look.theme;
+  else delete root.dataset.theme;
+  root.dataset.accent = look.accent || "blue";
+  document.querySelectorAll("[data-theme-opt]").forEach(b => {
+    const on = b.dataset.themeOpt === (look.theme || "auto");
+    b.classList.toggle("active", on); b.setAttribute("aria-checked", on);
+  });
+  document.querySelectorAll(".swatch").forEach(b => {
+    const on = b.dataset.accent === (look.accent || "blue");
+    b.classList.toggle("active", on); b.setAttribute("aria-checked", on);
+    if (on) $("accentName").textContent = b.title;
+  });
+  const meta = document.querySelectorAll('meta[name="theme-color"]');
+  const bg = getComputedStyle(root).getPropertyValue("--bg").trim();
+  if (look.theme && bg) meta.forEach(m => { m.setAttribute("content", bg); });
+}
+function setLook(patch) {
+  const look = { ...getLook(), ...patch };
+  try { localStorage.setItem(STORAGE_LOOK, JSON.stringify(look)); } catch (e) {}
+  applyLook(look);
 }
 
 // --- Language ---
@@ -266,6 +296,8 @@ function bindEvents() {
   });
   $("btnSettings").addEventListener("click", () => openModal("settingsModal"));
   $("btnSaved").addEventListener("click", openSaved);
+  document.querySelectorAll("[data-theme-opt]").forEach(b => b.addEventListener("click", () => setLook({ theme: b.dataset.themeOpt })));
+  document.querySelectorAll(".swatch").forEach(b => b.addEventListener("click", () => setLook({ accent: b.dataset.accent })));
   $("btnSaveDoc").addEventListener("click", saveCurrentDoc);
   $("savedSearch").addEventListener("input", renderSaved);
   $("targetLang").addEventListener("change", () => {
