@@ -1,8 +1,16 @@
 name: Build LetterPilot Android
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'letterpilot/index.html'
+      - 'letterpilot/app.js'
+      - 'letterpilot/style.css'
+      - 'letterpilot-app/**'
+      - '.github/workflows/letterpilot-android.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   android:
     runs-on: ubuntu-latest
@@ -48,3 +56,14 @@ jobs:
             letterpilot-app/SHA256SUMS-Android.txt
           if-no-files-found: error
           retention-days: 90
+      - name: Publish APK to a permanent download link
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=letterpilot-android
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "LetterPilot для Android" \
+              --notes "Свежая сборка LetterPilot для Android." --latest=false
+          fi
+          gh release upload "$TAG" LetterPilot.apk SHA256SUMS-Android.txt --clobber
+          gh release edit "$TAG" --notes "Свежая сборка LetterPilot для Android (сборка №${{ github.run_number }}). Скачайте LetterPilot.apk и установите на телефон."
