@@ -8,7 +8,7 @@
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
   <script>try{var l=JSON.parse(localStorage.getItem("letterpilot_look")||"{}");var d=document.documentElement;if(l.theme==="light"||l.theme==="dark")d.dataset.theme=l.theme;d.dataset.accent=l.accent||"blue";}catch(e){document.documentElement.dataset.accent="blue";}</script>
-  <link rel="stylesheet" href="style.css?v=20261127-ios1" />
+  <link rel="stylesheet" href="style.css?v=20261127-pages1" />
   <link rel="stylesheet" href="theme.css?v=20261127-ios1" />
 </head>
 <body class="intro">
@@ -180,12 +180,28 @@
             <div class="row-between">
               <h2 class="card-title mb-0"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></svg></span>Полный перевод</h2>
               <div class="btn-group">
-                <button class="chip-btn" id="btnToggleTrans">Показать</button>
-                <button class="chip-btn" id="btnCopyTrans">Копировать</button>
+                <button class="chip-btn" id="btnCopyTrans">Копировать всё</button>
               </div>
             </div>
-            <div id="resTranslationWrap" class="translation-box hidden">
+            <p id="transStatus" class="trans-status" aria-live="polite"></p>
+            <div class="seg-toggle" role="tablist" aria-label="Вид перевода">
+              <button class="seg-btn active" id="btnViewPages" type="button">По страницам</button>
+              <button class="seg-btn" id="btnViewAll" type="button">Весь текст</button>
+            </div>
+            <div id="pageStrip" class="page-strip"></div>
+            <div id="pageNav" class="page-nav">
+              <button class="chip-btn" id="btnPrevPage" type="button" aria-label="Предыдущая страница">‹</button>
+              <span id="pageLabel" class="page-label"></span>
+              <button class="chip-btn" id="btnNextPage" type="button" aria-label="Следующая страница">›</button>
+            </div>
+            <div id="resTranslationWrap" class="translation-box">
               <p id="resTranslation" class="body-text pre-wrap"></p>
+              <button class="btn-secondary hidden" id="btnRetryPage" type="button">Повторить перевод этой страницы</button>
+              <div class="btn-group page-tools">
+                <button class="chip-btn" id="btnShowOriginal" type="button">Показать оригинал</button>
+                <button class="chip-btn" id="btnCopyPage" type="button">Копировать страницу</button>
+              </div>
+              <p id="pageOriginal" class="body-text pre-wrap page-original hidden"></p>
             </div>
             <button class="btn-secondary speak-button" id="btnSpeakTranslation" type="button" aria-pressed="false">Прослушать перевод</button>
             <button class="btn-ghost-sm clear-speech hidden" id="btnClearSpeech" type="button">Удалить озвучку</button>
@@ -425,7 +441,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261127-ios1"></script>
+  <script src="app.js?v=20261127-pages1"></script>
 </body>
 </html>
 

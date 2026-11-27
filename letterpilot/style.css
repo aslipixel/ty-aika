@@ -625,3 +625,25 @@ html, body {
 .saved-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .saved-rename { width: 100%; margin-bottom: 4px; }
 [dir="rtl"] .nuance-item, [dir="rtl"] .check-item { text-align: right; }
+
+/* Постраничный перевод */
+.trans-status { margin: 10px 0 0; font-size: .9rem; color: var(--muted); }
+.trans-status:empty { display: none; }
+.seg-toggle { display: inline-flex; margin-top: 12px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; gap: 2px; }
+.seg-btn { border: 0; background: transparent; color: inherit; font: inherit; font-size: .9rem; padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.seg-btn.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.page-strip { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.page-chip { min-width: 40px; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: inherit; font: inherit; font-size: .9rem; cursor: pointer; }
+.page-chip.pending { opacity: .45; }
+.page-chip.working { border-style: dashed; border-color: var(--accent); }
+.page-chip.error { border-color: var(--danger, #c0392b); color: var(--danger, #c0392b); }
+.page-chip.current { background: var(--accent); border-color: var(--accent); color: #fff; opacity: 1; }
+.page-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.page-nav .chip-btn { min-width: 44px; font-size: 1.1rem; }
+.page-label { font-weight: 600; }
+.page-tools { margin-top: 12px; flex-wrap: wrap; }
+.page-original { margin-top: 12px; padding: 12px; border: 1px dashed var(--border); border-radius: 10px; opacity: .85; }
+.page-sep { display: block; margin: 18px 0 8px; font-weight: 600; color: var(--accent); }
+.page-sep:first-child { margin-top: 0; }
+#btnRetryPage { margin-top: 12px; }
+.single-page .page-strip, .single-page .page-nav, .single-page .seg-toggle { display: none; }

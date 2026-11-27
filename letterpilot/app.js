@@ -360,12 +360,7 @@ Laskutusosasto / Billing Department`;
   $("btnAnalyze").addEventListener("click", runAnalysis);
 
   // Translation toggle & copy
-  $("btnToggleTrans").addEventListener("click", () => {
-    const wrap = $("resTranslationWrap");
-    const isHidden = wrap.classList.toggle("hidden");
-    $("btnToggleTrans").textContent = isHidden ? "Показать" : "Скрыть";
-  });
-
+  bindPager();
   $("btnCopyTrans").addEventListener("click", () => {
     if (!state.currentAnalysis) return;
     copyText(state.currentAnalysis.full_translation || "");
@@ -582,8 +577,18 @@ async function handleFileSelect(e) {
       }
       continue;
     }
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (isPdf) {
+      if (file.size > 80 * 1024 * 1024) {
+        showToast(`PDF ${file.name} больше 80 МБ — разделите его на части.`);
+        continue;
+      }
+      // PDF разбирается на страницы в браузере при анализе.
+      state.attachedFiles.push({ name: file.name, mimeType: "application/pdf", file });
+      continue;
+    }
     if (file.size > 6 * 1024 * 1024) {
-      showToast(`Файл ${file.name} больше 6 МБ. Для PDF разделите его на части.`);
+      showToast(`Файл ${file.name} больше 6 МБ.`);
       continue;
     }
     if (file.type === "text/plain" || file.name.endsWith(".txt")) {
@@ -712,11 +717,12 @@ async function runAnalysis() {
   setLoading("btnAnalyze", "analyzeSpinner", true);
   $("statusSubtitle").textContent = "Анализирую документ...";
   const startedAt = Date.now();
+  let progressStage = "";
   const progress = $("analysisProgress");
   progress.classList.remove("hidden");
   const updateProgress = () => {
     const seconds = Math.floor((Date.now() - startedAt) / 1000);
-    const stage = seconds < 10 ? "Отправляю документ" : seconds < 35 ? "ИИ читает и разбирает документ" : "Обработка продолжается, подождите";
+    const stage = progressStage ? progressStage : seconds < 10 ? "Отправляю документ" : seconds < 35 ? "ИИ читает и разбирает документ" : "Обработка продолжается, подождите";
     progress.textContent = `${stage} · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   };
   updateProgress();
@@ -755,28 +761,17 @@ async function runAnalysis() {
       "title": "чёткий шаг действия",
       "detail": "что именно нужно сделать"
     }
-  ],
-  "full_translation": "полный и точный перевод всего документа на язык ${state.targetLang}"
-}`;
+  ]
+}
+Документ может состоять из нескольких страниц — учитывай их все. Полный перевод в JSON НЕ включай: его делают отдельно по страницам.`;
 
     parts.push({ text: prompt });
 
-    if (text) {
-      parts.push({ text: `--- ТЕКСТ ДОКУМЕНТА ---\n${text}` });
-    }
-
-    for (const f of state.attachedFiles) {
-      if (f.textContent) {
-        parts.push({ text: `--- ФАЙЛ ${f.name} ---\n${f.textContent}` });
-      } else if (f.base64) {
-        parts.push({
-          inlineData: {
-            mimeType: f.mimeType,
-            data: f.base64
-          }
-        });
-      }
-    }
+    progressStage = "Делю документ на страницы";
+    const pages = await buildPages(text, state.attachedFiles);
+    progressStage = "";
+    if (!pages.length) throw new Error("Не удалось прочитать документ.");
+    parts.push(...analysisParts(pages));
 
     const rawJson = await callGemini({
       contents: [{ role: "user", parts }],
@@ -784,6 +779,8 @@ async function runAnalysis() {
     });
 
     const parsed = parseJsonSafe(rawJson);
+    parsed.pages = pages.map(p => ({ label: p.label, original: p.text || "", translation: "", status: "pending" }));
+    parsed.full_translation = "";
     state.currentAnalysis = parsed;
     state.currentSavedId = null;
 
@@ -806,7 +803,8 @@ async function runAnalysis() {
 
     $("statusSubtitle").textContent = `${parsed.doc_type || "Документ"} (${parsed.detected_language || ""})`;
     switchTab("viewAnalysis");
-    showToast("Разбор готов!");
+    showToast(pages.length > 1 ? `Разбор готов! Перевожу ${pages.length} стр.` : "Разбор готов! Перевожу.");
+    translatePages(parsed, pages);
   } catch (err) {
     showRequestError(err);
     $("statusSubtitle").textContent = "Ошибка анализа";
@@ -866,10 +864,11 @@ function renderAnalysis(data) {
     nuancesEl.appendChild(div);
   });
 
-  $("resTranslation").textContent = data.full_translation || "—";
   $("btnClearSpeech").classList.add("hidden");
-  $("resTranslationWrap").classList.add("hidden");
-  $("btnToggleTrans").textContent = "Показать";
+  pager.index = 0;
+  pager.view = "pages";
+  pager.showOriginal = false;
+  renderPager();
 }
 
 // --- 2. Action Checklist ---
@@ -1037,6 +1036,301 @@ function renderHistory() {
 }
 
 // --- Utilities ---
+// --- Постраничный перевод ---
+// Документ делится на страницы: PDF — по настоящим страницам (текстовый слой или картинка для скана),
+// фото — одна страница, длинный текст — части примерно по 3500 символов.
+// Разбор делается одним запросом, перевод — отдельным запросом на каждую страницу.
+const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const MAX_PAGES = 60;
+const TRANSLATE_PARALLEL = 2;
+const pager = { index: 0, view: "pages", showOriginal: false };
+const pageSources = new WeakMap(); // analysis -> страницы с картинками (только в памяти)
+
+let pdfjsPromise = null;
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (!pdfjsPromise) {
+    pdfjsPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = PDFJS_URL;
+      s.onload = () => {
+        if (!window.pdfjsLib) return reject(new Error("pdf.js"));
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+        resolve(window.pdfjsLib);
+      };
+      s.onerror = () => { pdfjsPromise = null; reject(new Error("pdf.js")); };
+      document.head.appendChild(s);
+    });
+  }
+  return pdfjsPromise;
+}
+
+function splitTextPages(text, size = 3500) {
+  const out = [];
+  let rest = text.trim();
+  while (rest.length > size) {
+    const win = rest.slice(0, size);
+    let cut = win.lastIndexOf("\n\n");
+    if (cut < size * 0.5) cut = win.lastIndexOf("\n");
+    if (cut < size * 0.5) cut = Math.max(win.lastIndexOf(". "), win.lastIndexOf("! "), win.lastIndexOf("? ")) + 1;
+    if (cut < size * 0.5) cut = size;
+    out.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
+async function pdfToPages(f) {
+  let pdfjs;
+  try { pdfjs = await loadPdfJs(); }
+  catch {
+    // Библиотеку не удалось загрузить: отправляем PDF целиком, как раньше.
+    if (f.file.size > 6 * 1024 * 1024) throw new Error("Не удалось открыть PDF на устройстве. Проверьте интернет или разделите файл на части до 6 МБ.");
+    return [{ label: f.name, inline: { mimeType: "application/pdf", data: await fileToBase64(f.file) } }];
+  }
+  const doc = await pdfjs.getDocument({ data: await f.file.arrayBuffer() }).promise;
+  const pages = [];
+  const count = Math.min(doc.numPages, MAX_PAGES);
+  if (doc.numPages > MAX_PAGES) showToast(`В PDF ${doc.numPages} стр. — обработаю первые ${MAX_PAGES}.`);
+  for (let n = 1; n <= count; n++) {
+    const page = await doc.getPage(n);
+    const content = await page.getTextContent();
+    const text = content.items.map(it => (it.str || "") + (it.hasEOL ? "\n" : "")).join("").replace(/[ \t]+\n/g, "\n").trim();
+    const label = `${f.name} · стр. ${n}`;
+    if (text.replace(/\s/g, "").length >= 80) {
+      pages.push({ label, text });
+    } else {
+      // Скан или фото страницы — превращаем в картинку.
+      const base = page.getViewport({ scale: 1 });
+      const scale = Math.min(2.5, 1800 / Math.max(base.width, base.height));
+      const vp = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const data = canvas.toDataURL("image/jpeg", 0.82).split(",")[1] || "";
+      canvas.width = canvas.height = 0;
+      pages.push({ label, inline: { mimeType: "image/jpeg", data } });
+    }
+    page.cleanup();
+  }
+  doc.destroy();
+  return pages;
+}
+
+async function buildPages(text, files) {
+  const pages = [];
+  if (text) splitTextPages(text).forEach((t, i, all) => pages.push({ label: all.length > 1 ? `Текст · часть ${i + 1}` : "Текст", text: t }));
+  for (const f of files) {
+    if (f.textContent) {
+      splitTextPages(f.textContent).forEach((t, i, all) => pages.push({ label: all.length > 1 ? `${f.name} · часть ${i + 1}` : f.name, text: t }));
+    } else if (f.file && f.mimeType === "application/pdf") {
+      pages.push(...await pdfToPages(f));
+    } else if (f.base64) {
+      pages.push({ label: f.name, inline: { mimeType: f.mimeType, data: f.base64 } });
+    }
+  }
+  return pages.slice(0, MAX_PAGES);
+}
+
+// Для разбора: весь текст страниц и картинки, в пределах размера запроса.
+function analysisParts(pages) {
+  const parts = [];
+  let chars = 0, bytes = 0, skipped = 0;
+  pages.forEach((p, i) => {
+    const head = `--- СТРАНИЦА ${i + 1} из ${pages.length} (${p.label}) ---`;
+    if (p.text) {
+      if (chars > 150000) { skipped++; return; }
+      chars += p.text.length;
+      parts.push({ text: `${head}\n${p.text}` });
+    } else if (p.inline) {
+      if (bytes + p.inline.data.length > 7 * 1024 * 1024) { skipped++; return; }
+      bytes += p.inline.data.length;
+      parts.push({ text: head }, { inlineData: p.inline });
+    }
+  });
+  if (skipped) parts.push({ text: `(Ещё ${skipped} стр. не поместились в разбор — они будут переведены отдельно.)` });
+  return parts;
+}
+
+async function translateOne(page, i, total) {
+  const prompt = `Переведи на язык "${state.targetLang}" страницу ${i + 1} из ${total} документа.
+Переводи ПОЛНОСТЬЮ и точно, ничего не пропускай и не сокращай, не пересказывай. Сохраняй абзацы, списки, имена, номера, даты, суммы и реквизиты как в оригинале.
+Таблицы передавай строками вида «Столбец: значение». Если на странице нет текста, напиши «(пустая страница)».
+Верни ТОЛЬКО текст перевода, без пояснений и без markdown.`;
+  const parts = [{ text: prompt }];
+  if (page.text) parts.push({ text: `--- ТЕКСТ СТРАНИЦЫ ---\n${page.text}` });
+  else if (page.inline) parts.push({ inlineData: page.inline });
+  const out = await callGemini({ contents: [{ role: "user", parts }] });
+  return out.replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+}
+
+function refreshFullTranslation(a) {
+  const many = a.pages.length > 1;
+  a.full_translation = a.pages
+    .filter(p => p.translation)
+    .map(p => many ? `— ${p.label} —\n${p.translation}` : p.translation)
+    .join("\n\n");
+}
+
+function persistDocs() {
+  try { localStorage.setItem(STORAGE_HIST, JSON.stringify(state.history)); } catch { /* память заполнена */ }
+  persistSaved();
+}
+
+async function translatePages(a, sources, only = null) {
+  pageSources.set(a, sources);
+  const queue = only === null ? a.pages.map((_, i) => i) : [only];
+  queue.forEach(i => { a.pages[i].status = "pending"; });
+  if (state.currentAnalysis === a) renderPager();
+  const worker = async () => {
+    while (queue.length) {
+      const i = queue.shift();
+      a.pages[i].status = "working";
+      if (state.currentAnalysis === a) renderPager();
+      try {
+        a.pages[i].translation = await translateOne(sources[i], i, a.pages.length);
+        a.pages[i].status = "done";
+      } catch (err) {
+        a.pages[i].status = "error";
+        a.pages[i].error = err?.message || String(err);
+      }
+      refreshFullTranslation(a);
+      if (state.currentAnalysis === a) renderPager();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(TRANSLATE_PARALLEL, queue.length) }, worker));
+  $("requestError").classList.add("hidden");
+  persistDocs();
+  const failed = a.pages.filter(p => p.status === "error").length;
+  if (state.currentAnalysis === a) showToast(failed ? `Перевод готов, но ${failed} стр. с ошибкой — нажмите «Повторить».` : "Перевод готов полностью!");
+}
+
+function retryCurrentPage() {
+  const a = state.currentAnalysis;
+  if (!a?.pages) return;
+  const i = pager.index;
+  let sources = pageSources.get(a);
+  if (!sources) {
+    // Документ открыт из истории: картинки страниц не хранятся, можно повторить только текстовые.
+    if (!a.pages[i].original) { showToast("Для этой страницы загрузите документ заново."); return; }
+    sources = a.pages.map(p => ({ label: p.label, text: p.original }));
+  }
+  translatePages(a, sources, i);
+}
+
+function pagerList() {
+  const a = state.currentAnalysis;
+  if (!a) return [];
+  if (Array.isArray(a.pages) && a.pages.length) return a.pages;
+  return [{ label: "Документ", translation: a.full_translation || "", original: "", status: "done" }];
+}
+
+function pageStatus(p) {
+  const st = p.status || (p.translation ? "done" : "error");
+  // Документ из истории, перевод которого прервался.
+  if ((st === "working" || st === "pending") && !pageSources.has(state.currentAnalysis)) return p.translation ? "done" : "error";
+  return st;
+}
+
+function renderPager() {
+  const list = pagerList();
+  if (!list.length) return;
+  const card = $("resTranslationWrap").closest(".card");
+  card.classList.toggle("single-page", list.length === 1);
+  pager.index = Math.min(Math.max(pager.index, 0), list.length - 1);
+  const done = list.filter(p => pageStatus(p) === "done").length;
+  const failed = list.filter(p => pageStatus(p) === "error").length;
+  const busy = list.length - done - failed;
+  $("transStatus").textContent = busy
+    ? `Перевожу… готово ${done} из ${list.length}`
+    : list.length > 1 ? `Страниц: ${list.length}` + (failed ? ` · с ошибкой: ${failed}` : " · всё переведено") : "";
+
+  const strip = $("pageStrip");
+  strip.innerHTML = "";
+  list.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    const st = pageStatus(p);
+    b.className = `page-chip ${st}` + (i === pager.index && pager.view === "pages" ? " current" : "");
+    b.textContent = (st === "error" ? "⚠ " : "") + (i + 1);
+    b.title = p.label;
+    b.setAttribute("aria-label", `Страница ${i + 1}: ${p.label}`);
+    b.addEventListener("click", () => { pager.index = i; pager.view = "pages"; renderPager(); });
+    strip.appendChild(b);
+  });
+
+  $("btnViewPages").classList.toggle("active", pager.view === "pages");
+  $("btnViewAll").classList.toggle("active", pager.view === "all");
+  const isAll = pager.view === "all";
+  $("pageNav").classList.toggle("hidden", isAll);
+  document.querySelector(".page-tools").classList.toggle("hidden", isAll);
+  const box = $("resTranslation");
+
+  if (isAll) {
+    box.innerHTML = "";
+    list.forEach((p, i) => {
+      if (list.length > 1) {
+        const sep = document.createElement("span");
+        sep.className = "page-sep";
+        sep.textContent = `Страница ${i + 1} · ${p.label}`;
+        box.appendChild(sep);
+      }
+      box.appendChild(document.createTextNode(p.translation || placeholder(p)));
+    });
+    $("btnRetryPage").classList.add("hidden");
+    $("pageOriginal").classList.add("hidden");
+    return;
+  }
+
+  const p = list[pager.index];
+  $("pageLabel").textContent = `Страница ${pager.index + 1} из ${list.length}`;
+  $("btnPrevPage").disabled = pager.index === 0;
+  $("btnNextPage").disabled = pager.index === list.length - 1;
+  box.textContent = p.translation || placeholder(p);
+  $("btnRetryPage").classList.toggle("hidden", !(pageStatus(p) === "error" || (pageStatus(p) === "done" && list.length > 1 && Array.isArray(state.currentAnalysis.pages))));
+  $("btnRetryPage").textContent = pageStatus(p) === "error" ? "Повторить перевод этой страницы" : "Перевести страницу заново";
+  const hasOrig = !!p.original;
+  $("btnShowOriginal").classList.toggle("hidden", !hasOrig);
+  $("btnShowOriginal").textContent = pager.showOriginal ? "Скрыть оригинал" : "Показать оригинал";
+  $("pageOriginal").textContent = p.original || "";
+  $("pageOriginal").classList.toggle("hidden", !(hasOrig && pager.showOriginal));
+}
+
+function placeholder(p) {
+  const st = pageStatus(p);
+  if (st === "working") return "Перевожу эту страницу…";
+  if (st === "pending") return "Ждёт очереди на перевод…";
+  if (st === "error") return "Страница не переведена. " + (p.error || "");
+  return "—";
+}
+
+function bindPager() {
+  $("btnViewPages").addEventListener("click", () => { pager.view = "pages"; renderPager(); });
+  $("btnViewAll").addEventListener("click", () => { pager.view = "all"; renderPager(); });
+  $("btnPrevPage").addEventListener("click", () => { pager.index--; renderPager(); });
+  $("btnNextPage").addEventListener("click", () => { pager.index++; renderPager(); });
+  $("btnShowOriginal").addEventListener("click", () => { pager.showOriginal = !pager.showOriginal; renderPager(); });
+  $("btnCopyPage").addEventListener("click", () => copyText(pagerList()[pager.index]?.translation || ""));
+  $("btnRetryPage").addEventListener("click", retryCurrentPage);
+  // Свайп влево/вправо по тексту перевода.
+  let x0 = null;
+  const box = $("resTranslationWrap");
+  box.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  box.addEventListener("touchend", e => {
+    if (x0 === null || pager.view !== "pages") return;
+    const dx = e.changedTouches[0].clientX - x0;
+    x0 = null;
+    if (Math.abs(dx) < 60) return;
+    const n = pagerList().length;
+    const next = pager.index + (dx < 0 ? 1 : -1);
+    if (next >= 0 && next < n) { pager.index = next; renderPager(); }
+  }, { passive: true });
+}
+
 function parseJsonSafe(str) {
   const cleaned = str.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
   return JSON.parse(cleaned);
