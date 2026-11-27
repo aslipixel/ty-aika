@@ -26,6 +26,11 @@
             <path d="M12 5v14M5 12h14"/>
           </svg>
         </button>
+        <button class="icon-btn" id="btnSaved" title="Сохранённые документы" aria-label="Сохранённые документы">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+            <path d="M6 3h12v18l-6-4-6 4z"/>
+          </svg>
+        </button>
         <button class="icon-btn" id="btnHistory" title="История" aria-label="История">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
@@ -53,12 +58,45 @@
           </div>
           <select id="targetLang" class="input-select">
             <option value="Русский" selected>Русский</option>
-            <option value="Suomi">Suomi (Финский)</option>
-            <option value="English">English (Английский)</option>
-            <option value="Deutsch">Deutsch (Немецкий)</option>
-            <option value="Українська">Українська</option>
-            <option value="Español">Español</option>
-            <option value="Français">Français</option>
+            <option value="Suomi">Suomi — финский</option>
+            <option value="English">English — английский</option>
+            <option value="Svenska">Svenska — шведский</option>
+            <option value="Eesti">Eesti — эстонский</option>
+            <option value="Українська">Українська — украинский</option>
+            <option value="Беларуская">Беларуская — белорусский</option>
+            <option value="Қазақша">Қазақша — казахский</option>
+            <option value="Oʻzbekcha">Oʻzbekcha — узбекский</option>
+            <option value="Кыргызча">Кыргызча — киргизский</option>
+            <option value="Тоҷикӣ">Тоҷикӣ — таджикский</option>
+            <option value="Azərbaycanca">Azərbaycanca — азербайджанский</option>
+            <option value="Հայերեն">Հայերեն — армянский</option>
+            <option value="ქართული">ქართული — грузинский</option>
+            <option value="Türkçe">Türkçe — турецкий</option>
+            <option value="العربية">العربية — арабский</option>
+            <option value="فارسی">فارسی — персидский</option>
+            <option value="دری">دری — дари</option>
+            <option value="کوردی (سۆرانی)">کوردی — курдский (сорани)</option>
+            <option value="Kurdî (Kurmancî)">Kurdî — курдский (курманджи)</option>
+            <option value="Soomaali">Soomaali — сомалийский</option>
+            <option value="Tigrinya">ትግርኛ — тигринья</option>
+            <option value="Amharic">አማርኛ — амхарский</option>
+            <option value="Kiswahili">Kiswahili — суахили</option>
+            <option value="اردو">اردو — урду</option>
+            <option value="हिन्दी">हिन्दी — хинди</option>
+            <option value="বাংলা">বাংলা — бенгальский</option>
+            <option value="नेपाली">नेपाली — непальский</option>
+            <option value="中文">中文 — китайский</option>
+            <option value="Tiếng Việt">Tiếng Việt — вьетнамский</option>
+            <option value="ไทย">ไทย — тайский</option>
+            <option value="Tagalog">Tagalog — филиппинский</option>
+            <option value="Polski">Polski — польский</option>
+            <option value="Română">Română — румынский</option>
+            <option value="Български">Български — болгарский</option>
+            <option value="Deutsch">Deutsch — немецкий</option>
+            <option value="Français">Français — французский</option>
+            <option value="Español">Español — испанский</option>
+            <option value="Português">Português — португальский</option>
+            <option value="Italiano">Italiano — итальянский</option>
           </select>
         </div>
 
@@ -108,6 +146,13 @@
             <span class="badge badge-urgency" id="resUrgency">—</span>
           </div>
 
+          <button class="btn-secondary btn-full mb-12" id="btnSaveDoc" type="button">Сохранить документ</button>
+
+          <div class="card explain-card" id="explainCard">
+            <h2 class="card-title"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"/></svg></span>Что это за документ</h2>
+            <div id="resExplain" class="explain-list"></div>
+          </div>
+
           <div class="card">
             <h2 class="card-title"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></span>Главная суть</h2>
             <p id="resSummary" class="body-text"></p>
@@ -116,6 +161,11 @@
           <div class="card">
             <h2 class="card-title"><span class="ti warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>Сроки, риски и нюансы</h2>
             <div id="resNuances" class="nuance-list"></div>
+          </div>
+
+          <div class="card hidden" id="termsCard">
+            <h2 class="card-title"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg></span>Термины простыми словами</h2>
+            <dl id="resTerms" class="terms-list"></dl>
           </div>
 
           <div class="card">
@@ -219,6 +269,7 @@
           </div>
 
           <div class="chat-quick-bar">
+            <button class="chip-btn quick-q">Зачем нужен этот документ?</button>
             <button class="chip-btn quick-q">Какие риски, если проигнорировать?</button>
             <button class="chip-btn quick-q">Объясни сложные термины</button>
             <button class="chip-btn quick-q">Что спросить в ответ?</button>
@@ -317,6 +368,19 @@
   </div>
 
   <!-- History Modal -->
+  <div id="savedModal" class="modal hidden">
+    <div class="modal-backdrop" data-close="savedModal"></div>
+    <div class="modal-sheet">
+      <div class="row-between mb-12">
+        <h2>Сохранённые документы</h2>
+        <button class="icon-btn" data-close="savedModal" aria-label="Закрыть">✕</button>
+      </div>
+      <input type="search" id="savedSearch" class="input-text mb-10" placeholder="Поиск по названию, типу или тексту" autocomplete="off" />
+      <div id="savedList" class="history-list"></div>
+      <p class="muted-sm mt-12">Документы хранятся только на этом устройстве. Сохраняется разбор и перевод — без фото и файлов.</p>
+    </div>
+  </div>
+
   <div id="historyModal" class="modal hidden">
     <div class="modal-backdrop" data-close="historyModal"></div>
     <div class="modal-sheet">
