@@ -1,0 +1,130 @@
+/* LetterPilot — тема «Бумага и маркер», всегда светлая.
+   Идея: приложение объясняет бумажные документы, поэтому интерфейс сам похож на аккуратный лист:
+   тёплая бумага, тёмные «чернила», глубокий северный бирюзовый вместо стандартного синего
+   и жёлтый маркер, которым выделено главное («Что это за документ»).
+   Шрифт Onest — современный гротеск с кириллицей; для арабского, хинди и др. — системные шрифты.
+   Плоско: тонкие линии и чёткая «бумажная» тень у главной кнопки, без размытого стекла. */
+
+:root {
+  color-scheme: light;
+  --bg: #f3f0e8;
+  --surface: #fffdf8;
+  --surface-2: #f8f5ee;
+  --surface-3: #ece7dc;
+  --border: #e3ddd0;
+  --border-strong: #cfc6b4;
+  --text: #17212b;
+  --text-2: #2f3a45;
+  --muted: #5f6872;
+  --accent: #0d6b63;
+  --accent-hover: #0a5952;
+  --accent-soft: #dcefeb;
+  --on-accent: #ffffff;
+  --marker: #ffe36e;
+  --marker-soft: #fff4c2;
+  --ink-shadow: #17212b;
+  --success: #2c7a3f;  --success-soft: #e3f2e5;
+  --warning: #8a5500;  --warning-soft: #fff1cc;  --warning-line: #e9a400;
+  --danger: #b8322a;   --danger-soft: #fbe6e3;
+  --info: #0d6b63;     --info-soft: #dcefeb;
+  --violet: #5a4aa8;   --violet-soft: #ece8f8;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font: "Onest", "Noto Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+  --focus: 0 0 0 3px rgba(13, 107, 99, 0.35);
+  --shadow-bar: 0 1px 0 var(--border);
+}
+
+html, body { font-size: 17px; letter-spacing: -0.005em; }
+
+/* Шапка и нижнее меню — плотные, без размытого «стекла» */
+.app-header, .bottom-nav {
+  background: var(--surface);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.app-header { box-shadow: none; border-bottom: 1px solid var(--border); }
+.brand-text h1 { font-weight: 800; letter-spacing: -0.02em; }
+.brand-text h1 span {
+  background: var(--marker); color: var(--ink-shadow);
+  border-radius: 6px; font-weight: 700;
+}
+.icon-btn { border-radius: 12px; }
+.icon-btn:hover { background: var(--surface-3); }
+
+.bottom-nav { border-top: 1px solid var(--border); }
+.nav-item { font-size: 11.5px; font-weight: 600; }
+.nav-item.active { color: var(--text); }
+.nav-item.active svg {
+  background: var(--marker); color: var(--ink-shadow);
+  width: 46px; border-radius: 999px;
+}
+
+/* Карточки — как листы бумаги */
+.card { border-radius: var(--radius); border-color: var(--border); }
+.card-title { font-weight: 700; letter-spacing: -0.015em; }
+.card-title .ti { background: var(--accent-soft); color: var(--accent); border-radius: 10px; }
+
+/* Главная карточка объяснения — выделена маркером */
+.explain-card {
+  background: var(--marker-soft);
+  border: 1.5px solid var(--text);
+  box-shadow: 4px 4px 0 var(--ink-shadow);
+}
+.explain-card .card-title .ti { background: var(--marker); color: var(--ink-shadow); }
+.explain-row h3 {
+  display: inline; color: var(--text); font-weight: 700; font-size: 14px;
+  background: linear-gradient(transparent 55%, var(--marker) 55%);
+  padding: 0 2px;
+}
+.explain-row p { margin-top: 4px; }
+.terms-list dt { color: var(--accent); }
+
+/* Кнопки */
+.btn-primary {
+  border-radius: 14px; min-height: 52px; font-size: 17px; font-weight: 700;
+  border: 1.5px solid var(--ink-shadow);
+  box-shadow: 3px 3px 0 var(--ink-shadow);
+  transition: transform .12s ease-out, box-shadow .12s ease-out, background .15s;
+}
+.btn-primary:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink-shadow); }
+.btn-secondary {
+  background: var(--surface); border: 1.5px solid var(--border-strong);
+  border-radius: 12px; min-height: 44px;
+}
+.btn-secondary:hover { border-color: var(--text); background: var(--surface); }
+#btnSaveDoc.is-saved { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chip-btn { border-radius: 999px; min-height: 36px; font-weight: 600; }
+.chip-btn.accent { background: var(--marker); color: var(--ink-shadow); }
+.chip-select { border-radius: 999px; }
+.chip-select.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+
+/* Поля ввода */
+.input-select, .input-text, .input-textarea {
+  background-color: var(--surface); border: 1.5px solid var(--border-strong); border-radius: 12px;
+}
+.input-select:focus, .input-text:focus, .input-textarea:focus { border-color: var(--accent); box-shadow: var(--focus); }
+.upload-btn { border-radius: 12px; border-style: dashed; border-width: 1.5px; }
+
+/* Метки и статусы */
+.badge { border-radius: 999px; font-weight: 600; }
+.badge-type { background: var(--text); color: var(--surface); }
+.nuance-item { border-radius: 12px; }
+
+/* Чат */
+.chat-bubble { border-radius: 16px; }
+.chat-bubble.user { background: var(--accent); color: var(--on-accent); }
+.chat-bubble.ai { background: var(--surface); border: 1px solid var(--border); }
+.chat-send-btn { background: var(--accent); color: var(--on-accent); }
+
+/* Окна */
+.modal-backdrop { background: rgba(23, 33, 43, 0.45); }
+.modal-sheet { background: var(--bg); border-top: 1.5px solid var(--text); }
+.history-item { border-radius: 12px; background: var(--surface); }
+.history-item:hover { border-color: var(--text); }
+
+.empty-state::before { border-radius: 18px; }
+.toast { border-radius: 999px; background: var(--text); color: var(--surface); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .btn-primary:active { transition: none; transform: none; }
+}
