@@ -268,10 +268,44 @@ details.card[open]>summary::after{transform:rotate(90deg)}
 .uw input{min-height:34px;padding:6px 8px}.uw .ush{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:14px}
 .uw .x{min-height:30px;width:30px;padding:0;background:transparent;color:var(--mute)}
 .uterm [data-tedit]{cursor:pointer}
+
+/* ---------- C: «бланк в центре» + тема «Työmaa» (бланк рисуется как раньше, без изменений) ---------- */
+html.tm{color-scheme:dark;--bg:#16191d;--card:#22272e;--ink:#eef1f4;--mute:#a3acb7;--line:rgba(255,255,255,.12);
+ --blue:#ffd23f;--blue2:rgba(255,210,63,.16);--fill:rgba(255,255,255,.08);--red:#ff6b5e;--ok:#4cd07d;--bar:rgba(22,25,29,.92)}
+html.tm button.pri{color:#151515}html.tm .wiz button.on{color:#151515}
+html.tm input:focus,html.tm textarea:focus,html.tm select:focus{box-shadow:0 0 0 2px var(--blue)}
+html.tm .seg button.on{background:#3a414b}
+html.tm .ai textarea{background:var(--fill)}
+.hact{display:flex;gap:6px;align-items:center;margin-left:auto}
+.hact button{min-height:34px;padding:4px 12px;font-size:15px}
+#saveBtn,#pdfBtn,#newBtn{flex:0 0 auto}
+header .no{margin-left:0}header .no::before{content:'nro ';font-weight:400;opacity:.75}
+#skinBtn{width:36px;padding:0;font-size:17px;background:var(--fill)}
+.ptools{display:flex;align-items:center;gap:6px;margin-bottom:8px}.ptools .save-state{margin-right:auto}
+.ptools button{min-height:32px;padding:4px 10px}
+.paper{position:relative}
+.fhl{position:absolute;border:3px solid #ffd23f;background:rgba(255,210,63,.10);border-radius:3px;pointer-events:none;transition:all .25s ease}
+.fhl[hidden]{display:none}
+#prevWrap{cursor:pointer}
+.ai.mini textarea,.ai.mini .status,.ai.mini .row{display:none}.ai.mini{padding:10px 12px}.ai.mini h2{margin:0}
+.ai h2{cursor:pointer;display:flex;align-items:center}.ai h2::after{content:'▾';margin-left:auto;color:var(--mute);font-size:14px}.ai.mini h2::after{content:'▸'}
+#toPrev{display:none}
+@media(max-width:959px){
+ .grid{display:flex;flex-direction:column;gap:10px}
+ #v-form .sticky{order:-1;position:sticky;top:calc(50px + env(safe-area-inset-top,0px));z-index:3;margin:0 -12px;padding:0 12px 6px;background:var(--bg)}
+ #v-form .sticky .card{margin:0;padding:8px}
+ #v-form .sticky .hint{display:none}
+ #prevWrap{height:32vh;display:flex;justify-content:center;background:transparent;box-shadow:none}
+ #prevWrap canvas{width:auto;height:100%;max-width:100%;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+ #fmtBar{display:none}.showfmt #fmtBar{display:flex}
+ .hact button{padding:4px 9px;font-size:14px}#newBtn{display:none}
+ header{gap:8px}header h1{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header .no::before{content:''}
+}
+@media(min-width:960px){#fmtToggle{display:none}nav{left:50%;right:auto;width:560px;transform:translateX(-50%);border-radius:16px 16px 0 0}}
 </style>
 </head>
 <body>
-<header><h1>Mittaustodistus</h1><span class="no" id="hdrNo">—</span></header>
+<header><h1>Mittaustodistus</h1><span class="no" id="hdrNo">—</span><div class="hact" id="hact"><button id="skinBtn" aria-label="Тема" title="Тема">☀</button></div></header>
 <main>
 
 <section class="view on" id="v-form">
@@ -371,9 +405,7 @@ details.card[open]>summary::after{transform:rotate(90deg)}
 
   <div class="sticky">
    <div class="card">
-    <div class="row" style="justify-content:space-between">
-     <h2 style="margin:0">Бланк</h2><span class="save-state" id="saveState"></span>
-    </div>
+    <div class="ptools"><span class="save-state" id="saveState"></span><button class="ghost" id="fmtToggle" aria-label="Шрифт">Aa</button><button id="zBtn">⤢ Увеличить</button></div>
     <div class="row" style="margin:12px 0">
      <button class="pri" id="saveBtn">Сохранить</button>
      <button id="pdfBtn">PDF / Отправить</button>
@@ -388,7 +420,7 @@ details.card[open]>summary::after{transform:rotate(90deg)}
      <div class="clr"><button id="stColor" aria-label="Цвет текста" title="Цвет текста"><span>A</span><i id="stBar"></i></button><span class="caret" id="stCaret">▾</span>
       <div class="pal" id="pal"></div></div>
     </div>
-    <div class="paper zoomable" id="prevWrap" title="Нажмите, чтобы увеличить"><canvas id="prev"></canvas></div>
+    <div class="paper zoomable" id="prevWrap" title="Нажмите на строку бланка, чтобы заполнить её"><canvas id="prev"></canvas><div class="fhl" id="fhl" hidden></div></div>
     <p class="hint">Нажмите на бланк, чтобы открыть его на весь экран и увеличить. «PDF / Отправить» на телефоне открывает меню «Поделиться» — оттуда WhatsApp, почта, Telegram. На компьютере PDF скачивается.</p>
    </div>
   </div>
@@ -574,7 +606,7 @@ const FI={
 'Распишитесь пальцем':'Allekirjoita sormella','Стереть подпись':'Pyyhi allekirjoitus',
 'Фото к документу':'Valokuvat','Добавятся в PDF отдельными страницами.':'Lisätään PDF:ään omille sivuilleen.',
 '+ Фото / снимок':'+ Kuva / kamera',
-'Сохранить':'Tallenna','PDF / Отправить':'PDF / Lähetä','Новый':'Uusi',
+'Сохранить':'Tallenna','⤢ Увеличить':'⤢ Suurenna','Тема':'Teema','Шрифт':'Fontti','Нажмите на строку бланка, чтобы заполнить её':'Napauta lomakkeen riviä täyttääksesi sen','PDF / Отправить':'PDF / Lähetä','Новый':'Uusi',
 'Шрифт':'Fontti','Жирный':'Lihavointi','Курсив':'Kursiivi','Подчёркнутый':'Alleviivaus','Цвет текста':'Tekstin väri',
 'Ж':'B','К':'I','Ч':'U',
 'Нажмите, чтобы увеличить':'Napauta suurentaaksesi',
@@ -656,10 +688,10 @@ function trNode(n){ // swaps every known Russian text in a subtree; remembers th
  if(n.nodeType===3){const p=n.parentElement;if(!p||p.closest('textarea,script,style,[data-noi18n]'))return;
   const raw=n.__ru??n.nodeValue,k=raw.trim();if(!k||(FI[k]==null&&n.__ru==null))return;
   n.__ru=raw;const v=LANG==='fi'&&FI[k]!=null?raw.replace(k,FI[k]):raw;if(n.nodeValue!==v)n.nodeValue=v;return}
- if(n.nodeType!==1||n.matches('script,style,textarea,[data-noi18n]'))return;
+ if(n.nodeType!==1||n.matches('script,style,[data-noi18n]'))return;
  for(const a of I18N_ATTRS){if(!n.hasAttribute(a))continue;const key='__ru_'+a,raw=n[key]??n.getAttribute(a);
   if(FI[raw.trim()]==null&&n[key]==null)continue;n[key]=raw;const v=t(raw.trim());if(n.getAttribute(a)!==v)n.setAttribute(a,v)}
- for(const c of n.childNodes)trNode(c)}
+ if(n.matches('textarea'))return;for(const c of n.childNodes)trNode(c)}
 new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)trNode(n)}).observe(document.body,{childList:true,subtree:true});
 
 document.documentElement.lang=LANG;trNode(document.body);
@@ -1610,8 +1642,8 @@ const WIZ=[['Шапка',()=>doc.kohde||doc.tilaaja||doc.tyonro],['Работы'
 const wideQ=matchMedia('(min-width:960px)');
 let step=1;
 {const cards=[...document.querySelectorAll('#v-form .grid>div:first-child>.card')],map=[1,1,1,2,3,4,5,5,6,7];
- cards.forEach((c,i)=>c.dataset.step=map[i]||1);document.querySelector('#v-form .sticky').dataset.step=8}
-const lastStep=()=>wideQ.matches?7:8; // on a wide screen the blank is always visible on the right
+ cards.forEach((c,i)=>c.dataset.step=map[i]||1)}
+const lastStep=()=>7; // on a wide screen the blank is always visible on the right
 function wizDraw(){$('wiz').innerHTML=WIZ.slice(0,lastStep()).map(([l],i)=>`<button role="tab" data-go="${i+1}">${i+1}. ${esc(t(l))}</button>`).join('');wizMarks()}
 function wizMarks(){if(!doc)return;$('wiz').querySelectorAll('[data-go]').forEach(b=>{const n=+b.dataset.go;b.classList.toggle('on',n===step);b.setAttribute('aria-selected',n===step);b.classList.toggle('done',n!==step&&!!WIZ[n-1][1]())})}
 function go(n){step=Math.min(Math.max(1,n),lastStep());
@@ -1624,6 +1656,27 @@ $('wiz').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b
 $('wPrev').onclick=()=>go(step-1);$('wNext').onclick=()=>go(step+1);$('wHome').onclick=()=>go(1);
 wideQ.addEventListener('change',()=>{wizDraw();go(step)});
 wizDraw();go(1);
+
+/* ---------- C: tap the blank to fill that part; theme Työmaa ---------- */
+{const hact=$('hact');['newBtn','saveBtn','pdfBtn'].forEach(id=>hact.insertBefore($(id),$('skinBtn')));
+ const REG={1:[14,88,911,124],2:[14,214,911,722],3:[14,934,911,62],4:[512,988,403,262],5:[14,1072,498,183],6:[14,1106,282,108],7:null};
+ const fhl=$('fhl');
+ function mark(n){const r=REG[n];if(!r){fhl.hidden=true;return}fhl.hidden=false;
+  const cv=$('prev'),wr=$('prevWrap'),ox=cv.offsetLeft,oy=cv.offsetTop,kx=cv.clientWidth/W,ky=cv.clientHeight/H;
+  Object.assign(fhl.style,{left:ox+r[0]*kx+'px',top:oy+r[1]*ky+'px',width:r[2]*kx+'px',height:r[3]*ky+'px'})}
+ const go0=go;go=n=>{go0(n);requestAnimationFrame(()=>mark(step))};
+ function hit(x,y){if(y<214)return 1;if(y<934)return 2;if(y<988)return 3;if(x>=512)return 4;if(y>=1106&&x<296)return 6;return 5}
+ $('prevWrap').onclick=e=>{const cv=$('prev'),b=cv.getBoundingClientRect();if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)return;
+  const n=hit((e.clientX-b.left)/b.width*W,(e.clientY-b.top)/b.height*H);go(n);
+  if(!wideQ.matches)requestAnimationFrame(()=>{const el=document.querySelector('#v-form [data-step]:not(.off) input:not([hidden]):not([type=checkbox]),#v-form [data-step]:not(.off) textarea');if(el)el.focus({preventScroll:true})})};
+ $('zBtn').onclick=()=>zOpen();
+ $('fmtToggle').onclick=()=>$('prevWrap').closest('.card').classList.toggle('showfmt');
+ new ResizeObserver(()=>mark(step)).observe($('prev'));
+ const ai=document.querySelector('#v-form .ai');ai.classList.add('mini');ai.querySelector('h2').onclick=()=>ai.classList.toggle('mini');
+ let skin='tm';try{skin=localStorage.getItem('mt_skin')||'tm'}catch(e){}
+ const setSkin=v=>{skin=v;document.documentElement.classList.toggle('tm',v==='tm');$('skinBtn').textContent=v==='tm'?'☀':'☾';try{localStorage.setItem('mt_skin',v)}catch(e){}};
+ setSkin(skin);$('skinBtn').onclick=()=>setSkin(skin==='tm'?'day':'tm');
+ wizDraw();go(step)}
 
 /* ---------- boot ---------- */
 doc=newDoc();
