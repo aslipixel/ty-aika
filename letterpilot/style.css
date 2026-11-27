@@ -606,3 +606,22 @@ html, body {
 .chip-btn:disabled { opacity: .5; cursor: progress; }
 .code-share { display: flex; flex-wrap: wrap; gap: 8px; }
 .code-share .btn-whatsapp { flex: 1 1 100%; }
+
+/* Объяснение документа */
+.explain-card { border-color: var(--accent); }
+.explain-list { display: flex; flex-direction: column; gap: 12px; }
+.explain-row h3 { margin: 0 0 2px; font-size: 14px; font-weight: 600; color: var(--accent); }
+.explain-row p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--text); }
+.terms-list { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.terms-list dt { font-weight: 700; color: var(--text); margin-top: 10px; overflow-wrap: anywhere; }
+.terms-list dt:first-child { margin-top: 0; }
+.terms-list dd { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+/* Сохранённые документы */
+#btnSaveDoc.is-saved { color: var(--accent); border-color: var(--accent); }
+.saved-item { display: flex; flex-direction: column; gap: 8px; cursor: default; }
+.saved-main { cursor: pointer; }
+.saved-main span { display: block; }
+.saved-sum { margin-top: 2px; }
+.saved-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.saved-rename { width: 100%; margin-bottom: 4px; }
+[dir="rtl"] .nuance-item, [dir="rtl"] .check-item { text-align: right; }

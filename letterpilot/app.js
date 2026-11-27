@@ -5,6 +5,9 @@
 
 const STORAGE_HIST = "docai_v2_history";
 const STORAGE_CONFIG = "letterpilot_v2_config";
+const STORAGE_SAVED = "letterpilot_saved_docs";
+const STORAGE_LANG = "letterpilot_target_lang";
+const RTL_LANGS = ["العربية", "فارسی", "دری", "کوردی (سۆرانی)", "اردو"];
 
 const state = {
   config: {
@@ -20,7 +23,9 @@ const state = {
   currentAnalysis: null,
   selectedIntent: "Согласиться и подтвердить",
   chatHistory: [], // { role: 'user'|'model', parts: [{text}] }
-  history: []
+  history: [],
+  saved: [],
+  currentSavedId: null
 };
 
 // DOM helper
@@ -37,6 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
   loadConfig();
   checkAdmin();
   loadHistory();
+  loadSaved();
+  restoreLang();
   bindEvents();
 });
 
@@ -95,6 +102,133 @@ function loadHistory() {
   }
 }
 
+// --- Language ---
+function restoreLang() {
+  try {
+    const v = localStorage.getItem(STORAGE_LANG);
+    if (v && [...$("targetLang").options].some(o => o.value === v)) $("targetLang").value = v;
+  } catch (e) {}
+  state.targetLang = $("targetLang").value;
+}
+function applyDir(lang) {
+  const dir = RTL_LANGS.includes(lang) ? "rtl" : "ltr";
+  ["analysisContent", "actionsContent"].forEach(id => { const el = $(id); if (el) el.dir = dir; });
+}
+
+// --- Saved documents ---
+function loadSaved() {
+  try { state.saved = JSON.parse(localStorage.getItem(STORAGE_SAVED) || "[]"); }
+  catch (e) { state.saved = []; }
+}
+function persistSaved() {
+  try { localStorage.setItem(STORAGE_SAVED, JSON.stringify(state.saved)); return true; }
+  catch (e) { showToast("Память устройства заполнена — удалите старые документы"); return false; }
+}
+function updateSaveButton() {
+  const btn = $("btnSaveDoc");
+  const saved = state.currentSavedId && state.saved.some(d => d.id === state.currentSavedId);
+  btn.textContent = saved ? "✓ Сохранено — открыть список" : "Сохранить документ";
+  btn.classList.toggle("is-saved", !!saved);
+}
+function saveCurrentDoc() {
+  if (!state.currentAnalysis) return;
+  if (state.currentSavedId && state.saved.some(d => d.id === state.currentSavedId)) { openSaved(); return; }
+  const a = state.currentAnalysis;
+  const doc = {
+    id: Date.now(),
+    savedAt: new Date().toISOString(),
+    title: a.doc_type || "Документ",
+    doc_type: a.doc_type || "Документ",
+    lang: state.targetLang,
+    summary: a.summary || "",
+    analysis: a,
+    rawText: state.rawInputText || ""
+  };
+  state.saved.unshift(doc);
+  if (!persistSaved()) { state.saved.shift(); return; }
+  state.currentSavedId = doc.id;
+  updateSaveButton();
+  showToast("Документ сохранён");
+}
+function openSaved() {
+  $("savedSearch").value = "";
+  renderSaved();
+  openModal("savedModal");
+}
+function showDocument(analysis, rawText, savedId = null) {
+  state.currentAnalysis = analysis;
+  state.rawInputText = rawText || "";
+  state.currentSavedId = savedId;
+  renderAnalysis(analysis);
+  renderActions(analysis);
+  enableReplyTab();
+  renderChatReset(analysis);
+  switchTab("viewAnalysis");
+}
+function renderSaved() {
+  const list = $("savedList");
+  const q = $("savedSearch").value.trim().toLowerCase();
+  list.innerHTML = "";
+  const items = state.saved.filter(d => !q || [d.title, d.doc_type, d.summary, d.analysis?.full_translation].join(" ").toLowerCase().includes(q));
+  if (!state.saved.length) {
+    list.innerHTML = `<p class="muted-sm">Пока пусто. После разбора нажмите «Сохранить документ», и он появится здесь.</p>`;
+    return;
+  }
+  if (!items.length) { list.innerHTML = `<p class="muted-sm">Ничего не найдено.</p>`; return; }
+  items.forEach((d) => {
+    const date = new Date(d.savedAt).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const div = document.createElement("div");
+    div.className = "history-item saved-item";
+    div.innerHTML = `
+      <div class="saved-main" role="button" tabindex="0">
+        <strong></strong>
+        <span>${escapeHtml(date)} · ${escapeHtml(d.doc_type)}${d.lang ? " · " + escapeHtml(d.lang) : ""}</span>
+        <span class="saved-sum">${escapeHtml((d.summary || "").slice(0, 110))}${(d.summary || "").length > 110 ? "…" : ""}</span>
+      </div>
+      <div class="saved-actions">
+        <button class="chip-btn" data-act="rename" type="button">Переименовать</button>
+        <button class="chip-btn danger" data-act="delete" type="button">Удалить</button>
+      </div>`;
+    div.querySelector("strong").textContent = d.title;
+    const open = () => { closeModal("savedModal"); showDocument(d.analysis, d.rawText, d.id); };
+    const main = div.querySelector(".saved-main");
+    main.addEventListener("click", open);
+    main.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
+    div.querySelector('[data-act="rename"]').addEventListener("click", () => {
+      const strong = div.querySelector("strong");
+      const input = document.createElement("input");
+      input.className = "input-text saved-rename";
+      input.value = d.title;
+      strong.replaceWith(input);
+      input.focus();
+      input.select();
+      const done = () => {
+        const v = input.value.trim();
+        if (v) { d.title = v; persistSaved(); }
+        renderSaved();
+      };
+      input.addEventListener("click", (e) => e.stopPropagation());
+      input.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") input.blur(); if (e.key === "Escape") { input.value = d.title; input.blur(); } });
+      input.addEventListener("blur", done);
+    });
+    const del = div.querySelector('[data-act="delete"]');
+    del.addEventListener("click", () => {
+      if (!del.classList.contains("armed")) {
+        del.classList.add("armed");
+        del.textContent = "Точно удалить?";
+        setTimeout(() => { if (del.isConnected) { del.classList.remove("armed"); del.textContent = "Удалить"; } }, 3000);
+        return;
+      }
+      state.saved = state.saved.filter(x => x.id !== d.id);
+      persistSaved();
+      if (state.currentSavedId === d.id) { state.currentSavedId = null; updateSaveButton(); }
+      renderSaved();
+      showToast("Документ удалён");
+    });
+    list.appendChild(div);
+  });
+}
+
 function saveToHistory(entry) {
   state.history.unshift(entry);
   if (state.history.length > 15) state.history.pop();
@@ -118,6 +252,13 @@ function bindEvents() {
     $("docTextInput").focus();
   });
   $("btnSettings").addEventListener("click", () => openModal("settingsModal"));
+  $("btnSaved").addEventListener("click", openSaved);
+  $("btnSaveDoc").addEventListener("click", saveCurrentDoc);
+  $("savedSearch").addEventListener("input", renderSaved);
+  $("targetLang").addEventListener("change", () => {
+    state.targetLang = $("targetLang").value;
+    try { localStorage.setItem(STORAGE_LANG, state.targetLang); } catch (e) {}
+  });
   $("btnHistory").addEventListener("click", () => {
     renderHistory();
     openModal("historyModal");
@@ -525,11 +666,22 @@ async function runAnalysis() {
 
   try {
     const parts = [];
-    const prompt = `Ты — профессиональный AI-ассистент по переводу и юридическо-бытовому разбору документов.
-Проанализируй прикреплённый документ (текст, изображение/скриншот или PDF) и верни СТРОГО валидный JSON на языке "${state.targetLang}" со следующей структурой:
+    const prompt = `Ты — опытный консультант, который объясняет любые документы простыми словами: письма и решения ведомств (Kela, Migri, налоговая, TE-palvelut, суд, полиция), договоры, счета, справки, выписки, бланки, расчётные листы, медицинские и школьные документы — в Финляндии и в других странах.
+Главная задача — чтобы человек, который видит такой документ впервые и плохо знает язык и местные правила, понял: что это за документ, зачем он существует, почему он пришёл именно ему и что из него следует. Объясняй так, как объяснил бы знающий друг: без канцелярита, короткими фразами, с конкретными датами, суммами и названиями из документа. Если в документе есть специальные термины, сокращения или названия ведомств — обязательно расшифруй их. Если документ похож на мошенничество (подозрительные ссылки, требования срочно заплатить на чужой счёт) — прямо скажи об этом.
+Проанализируй прикреплённый документ (текст, изображение/скриншот или PDF) и верни СТРОГО валидный JSON. Все значения пиши на языке "${state.targetLang}" (кроме поля term — его оставь как в оригинале):
 {
   "detected_language": "язык оригинала",
-  "doc_type": "тип документа (например: Счёт / Напоминание, Договор, Письмо из ведомства, Сообщение)",
+  "doc_type": "точное название вида документа (например: Решение Kela о жилищном пособии, Трудовой договор, Налоговая карточка, Счёт за электричество, Справка о зарплате)",
+  "explanation": {
+    "what_is_it": "что это за документ простыми словами и для чего такие документы вообще нужны (2-4 предложения)",
+    "who_sends": "кто его выдал или отправил и чем эта организация занимается",
+    "why_you": "почему человек, скорее всего, его получил — что могло стать поводом",
+    "consequences": "что этот документ значит для человека на практике: права, обязанности, деньги, что изменится",
+    "is_normal": "это обычный стандартный документ или нужно насторожиться; признаки мошенничества, если есть"
+  },
+  "terms": [
+    { "term": "термин, сокращение или название как в оригинале", "meaning": "что это значит простыми словами" }
+  ],
   "urgency": "high" | "medium" | "low",
   "urgency_label": "короткая метка срочности (например: Срочно до 02.12, Важно, Для сведения)",
   "summary": "краткая и понятная суть документа в 2-4 предложениях",
@@ -575,6 +727,7 @@ async function runAnalysis() {
 
     const parsed = parseJsonSafe(rawJson);
     state.currentAnalysis = parsed;
+    state.currentSavedId = null;
 
     // Reset chat with document context
     state.chatHistory = [];
@@ -618,6 +771,33 @@ function renderAnalysis(data) {
   urg.textContent = data.urgency_label || "Информация";
 
   $("resSummary").textContent = data.summary || "—";
+
+  const ex = data.explanation || {};
+  const exLabels = [["what_is_it", "Что это такое"], ["who_sends", "Кто прислал"], ["why_you", "Почему вы его получили"], ["consequences", "Что это значит для вас"], ["is_normal", "Нужно ли беспокоиться"]];
+  const exEl = $("resExplain");
+  exEl.innerHTML = "";
+  exLabels.forEach(([key, label]) => {
+    if (!ex[key]) return;
+    const row = document.createElement("div");
+    row.className = "explain-row";
+    row.innerHTML = `<h3></h3><p></p>`;
+    row.querySelector("h3").textContent = label;
+    row.querySelector("p").textContent = ex[key];
+    exEl.appendChild(row);
+  });
+  $("explainCard").classList.toggle("hidden", !exEl.children.length);
+
+  const terms = Array.isArray(data.terms) ? data.terms.filter(t => t && t.term) : [];
+  const tEl = $("resTerms");
+  tEl.innerHTML = "";
+  terms.forEach((t) => {
+    const dt = document.createElement("dt"); dt.textContent = t.term;
+    const dd = document.createElement("dd"); dd.textContent = t.meaning || "";
+    tEl.append(dt, dd);
+  });
+  $("termsCard").classList.toggle("hidden", !terms.length);
+  applyDir(state.targetLang);
+  updateSaveButton();
 
   const nuancesEl = $("resNuances");
   nuancesEl.innerHTML = "";
@@ -790,14 +970,9 @@ function renderHistory() {
       <span>${escapeHtml(entry.date)} — ${escapeHtml((entry.summary || "").slice(0, 75))}...</span>
     `;
     div.addEventListener("click", () => {
-      state.currentAnalysis = entry.analysis;
-      state.rawInputText = entry.rawText || "";
-      renderAnalysis(entry.analysis);
-      renderActions(entry.analysis);
-      enableReplyTab();
-      renderChatReset(entry.analysis);
       closeModal("historyModal");
-      switchTab("viewAnalysis");
+      const savedMatch = state.saved.find(d => d.analysis === entry.analysis);
+      showDocument(entry.analysis, entry.rawText, savedMatch ? savedMatch.id : null);
     });
     list.appendChild(div);
   });
