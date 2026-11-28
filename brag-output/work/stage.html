@@ -1,0 +1,77 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}html,body{margin:0;width:1920px;height:1080px;overflow:hidden;font-family:Inter,system-ui,sans-serif}
+#bg{position:absolute;inset:0;background:#f4f1ff;transition:none}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+#b1{width:900px;height:900px;background:#7c5cff;left:-250px;top:-300px}
+#b2{width:800px;height:800px;background:#ff6fb1;right:-200px;bottom:-320px}
+#b3{width:600px;height:600px;background:#ffb86b;right:500px;top:-350px;opacity:.35}
+.txt{position:absolute;color:#1d1b3a;font-weight:900;letter-spacing:-.03em}
+#hook{left:0;right:0;top:330px;text-align:center;font-size:132px;line-height:1.02}
+#hook .g,.g{background:linear-gradient(120deg,#7c5cff,#ff6fb1 70%,#ffb86b);-webkit-background-clip:text;background-clip:text;color:transparent}
+#cap{left:150px;top:380px;width:820px;font-size:92px;line-height:1.04}
+#cap small{display:block;font-size:34px;font-weight:600;color:#6f6c8f;letter-spacing:0;margin-top:28px}
+#phone{position:absolute;left:1130px;top:58px;width:430px;height:964px;border-radius:64px;background:#111;padding:18px;box-shadow:0 40px 90px rgba(60,30,140,.35)}
+#phone iframe{width:394px;height:928px;border:0;border-radius:48px;background:#fff;display:block}
+#cur{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(255,255,255,.55);border:4px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:none}
+#ring{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;border:5px solid #7c5cff;pointer-events:none}
+#out{left:0;right:0;top:250px;text-align:center}
+#out img{width:220px;height:220px;border-radius:50px;box-shadow:0 30px 70px rgba(124,92,255,.4)}
+#out h1{font-size:150px;margin:40px 0 0;line-height:1}
+#out p{font-size:46px;font-weight:600;color:#6f6c8f;letter-spacing:0;margin:22px 0 0}
+</style></head><body>
+<div id="bg"><div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div></div>
+<div class="txt" id="hook">Montako tuntia<br><span class="g">tällä viikolla?</span></div>
+<div class="txt" id="cap"></div>
+<div id="phone"><iframe id="app" src="/index.html"></iframe></div>
+<div id="ring"></div><div id="cur"></div>
+<div class="txt" id="out"><img src="/apple-touch-icon.png"><h1>⏱ <span class="g">Työaika</span></h1><p>Kirjaa tunnit. Ei muuta.</p></div>
+<script>
+const $=id=>document.getElementById(id);
+const cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>{x=cl(x);return 1-Math.pow(1-x,3)};
+const win=(t,a,b,fi=.35,fo=.3)=>Math.min(ease((t-a)/fi),ease((b-t)/fo));
+const CAPS=[[2,6,'Työajat.<br><span class="g">Puhelimessa.</span><small>Viikko kerrallaan, ilman taulukkoa.</small>'],
+ [6,12,'Kirjoita <span class="g">0700.</span><br>Valmis.<small>Alkaa, päättyy, tallenna. Päivän tunnit lasketaan itse.</small>'],
+ [12,16,'Koko viikko<br><span class="g">yhdellä silmäyksellä.</span><small>Tunnit päivittäin ja viikon summa.</small>'],
+ [16,18,'Vaalea.<br>Tumma.<br><span class="g">Neon.</span>']];
+let A,D,M;
+function iso(o){const d=new Date(M);d.setDate(d.getDate()+o);return D.dkey(d)}
+const TYPE=(s,n)=>{const d=s.slice(0,n);return d.length===3?d[0]+':'+d.slice(1):d.length===4?d.slice(0,2)+':'+d.slice(2):d};
+let last='';
+function appState(t){
+  let ents=[],open=null,f='',to='',mode='light',pal='violet';
+  const E=(i,a,b,s,n)=>({id:100+i,date:iso(i),from:a,to:b,secs:s,note:n,u:1});
+  if(t>=7.1&&t<9.8)open=iso(0);
+  if(t>=7.5)f=TYPE('0700',Math.floor(cl((t-7.5)/.8)*4+.001));
+  if(t>=8.5)to=TYPE('1530',Math.floor(cl((t-8.5)/.8)*4+.001));
+  if(t>=9.8)ents.push(E(0,'07:00','15:30',30600,'Asennus, työmaa A'));
+  const more=[[1,'07:00','15:00',28800,'Asennus, työmaa A'],[2,'08:00','16:00',28800,'Toimisto'],[3,'07:30','15:00',27000,'Huolto'],[4,'07:00','15:00',28800,'Asennus, työmaa B']];
+  more.forEach((m,i)=>{if(t>=12.5+i*.5)ents.push(E(...m))});
+  if(t>=16){mode='dark'} if(t>=17){pal='cyber'}
+  const key=JSON.stringify([ents.length,open,f,to,mode,pal]);
+  if(key!==last){last=key;
+    A.eval(`entries=${JSON.stringify(ents)};openDay=${JSON.stringify(open)};editId=null;render();`);
+    if(open){const a=D.getElementById('f_'+open),b=D.getElementById('t_'+open);a.value=f;b.value=to}
+    D.documentElement.dataset.theme=mode;D.documentElement.dataset.pal=pal;}
+}
+function pos(sel){const el=D.querySelector(sel);if(!el)return null;const r=el.getBoundingClientRect(),p=$('app').getBoundingClientRect();return [p.left+r.left+r.width/2,p.top+r.top+r.height/2]}
+function setT(t){
+  $('hook').style.opacity=win(t,-1,2);$('hook').style.transform=`translateY(${(1-ease(t/.5))*60}px) scale(${1+t*.02})`;
+  let c=CAPS.find(c=>t>=c[0]&&t<c[1]);$('cap').innerHTML=c?c[2]:'';
+  if(c){const o=win(t,c[0],c[1]);$('cap').style.opacity=o;$('cap').style.transform=`translateY(${(1-o)*40}px)`}
+  const pi=ease((t-2)/.7),po=ease((t-17.8)/.4);
+  $('phone').style.transform=`translateY(${(1-pi)*1100+po*1100}px) rotate(${(1-pi)*8}deg)`;
+  const ou=ease((t-18.1)/.5);$('out').style.opacity=ou;$('out').style.transform=`translateY(${(1-ou)*50}px)`;
+  appState(t);
+  // cursor taps
+  const taps=[[6.6,7.1,'[data-open]'],[7.2,7.5,'#f_'+iso(0)],[8.2,8.5,'#t_'+iso(0)],[9.4,9.8,'[data-save]'],[15.5,16,'#theme'],[16.6,17,'#theme']];
+  let cur=null,ring=0;
+  for(const [a,b,s] of taps){if(t>=a-.4&&t<b+.25){const p=pos(s);if(p){cur=p;if(t>=b-.05&&t<b+.25)ring=(t-b+.05)/.3}}}
+  $('cur').style.opacity=cur?1:0;$('ring').style.opacity=cur&&ring?1-ring:0;
+  if(cur){$('cur').style.left=cur[0]+'px';$('cur').style.top=cur[1]+'px';$('ring').style.left=cur[0]+'px';$('ring').style.top=cur[1]+'px';$('ring').style.transform=`scale(${1+ring*1.2})`;$('cur').style.transform=`scale(${ring&&ring<.5?.85:1})`}
+}
+window.ready=new Promise(r=>$('app').onload=()=>{A=$('app').contentWindow;D=A.document;M=A.eval("monday(0)");D.dkey=A.eval("dkey");
+  const s=D.createElement('style');s.textContent='.test-version{visibility:hidden}::-webkit-scrollbar{display:none}';D.head.appendChild(s);
+  A.saveAll=()=>{};D.fonts.ready.then(()=>document.fonts.ready).then(r)});
+D=null;
+</script></body></html>
