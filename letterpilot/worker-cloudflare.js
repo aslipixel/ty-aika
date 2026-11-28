@@ -124,6 +124,12 @@ function toBase64(bytes) {
   for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
   return btoa(binary);
 }
+// Голос должен читать текст дословно и на языке перевода, а не переводить его на английский.
+function ttsPrompt(lang) {
+  const name = String(lang || '').replace(/[^\p{L}\p{M} ()-]/gu, '').slice(0, 40);
+  return 'Read the following text aloud exactly as written, word for word' + (name ? ', in ' + name : ', in the language it is written in') +
+    '. Do NOT translate it into English or any other language, do not summarize, do not add anything. Calm, warm and clear voice.\n\n';
+}
 async function tts(request, env) {
   const code = bearer(request);
   if (!await role(code, env)) return reply({ error: 'Неверный код доступа' }, 401);
@@ -135,7 +141,7 @@ async function tts(request, env) {
   const voices = ['Sulafat', 'Achernar', 'Kore', 'Charon'];
   const voice = voices.includes(body.voice) ? body.voice : 'Sulafat';
   const payload = JSON.stringify({
-    contents: [{ parts: [{ text: 'Say in a calm, warm and clear voice: ' + words }] }],
+    contents: [{ parts: [{ text: ttsPrompt(body.lang) + words }] }],
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } }
   });
   const deadline = Date.now() + 55000, tried = [];
