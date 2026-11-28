@@ -8,7 +8,7 @@
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
   <script>try{var l=JSON.parse(localStorage.getItem("letterpilot_look")||"{}");var d=document.documentElement;if(l.theme==="light"||l.theme==="dark")d.dataset.theme=l.theme;d.dataset.accent=l.accent||"blue";}catch(e){document.documentElement.dataset.accent="blue";}</script>
-  <link rel="stylesheet" href="style.css?v=20261127-pages1" />
+  <link rel="stylesheet" href="style.css?v=20261127-lang1" />
   <link rel="stylesheet" href="theme.css?v=20261127-ios1" />
 </head>
 <body class="intro">
@@ -56,6 +56,12 @@
     <!-- Main Scrollable Content -->
     <main class="app-main" id="appMain">
       <div id="requestError" role="alert" class="notice-banner error hidden"></div>
+      <button class="lang-bar" id="btnLangBar" type="button" aria-label="Выбрать язык перевода">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        <span class="lang-bar-label">Язык перевода:</span>
+        <strong id="langBarValue">Русский</strong>
+        <span class="lang-bar-arrow" aria-hidden="true">▾</span>
+      </button>
 
       <!-- INPUT VIEW (shown initially or when adding a new document) -->
       <section class="view active" id="viewInput">
@@ -438,10 +444,22 @@
     </div>
   </div>
 
+  <div id="langModal" class="modal hidden">
+    <div class="modal-backdrop" data-close="langModal"></div>
+    <div class="modal-sheet">
+      <div class="row-between mb-12">
+        <h2>Язык перевода</h2>
+        <button class="icon-btn" data-close="langModal" aria-label="Закрыть">✕</button>
+      </div>
+      <input id="langSearch" class="input-text mb-12" type="search" placeholder="Найти язык…" autocomplete="off" />
+      <div id="langList" class="lang-list"></div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261127-pages1"></script>
+  <script src="app.js?v=20261127-lang1"></script>
 </body>
 </html>
 
