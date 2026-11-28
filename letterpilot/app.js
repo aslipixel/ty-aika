@@ -1470,6 +1470,18 @@ function splitSpeechText(text) {
   return chunks;
 }
 
+// Текст для голоса: только переводы страниц, без служебных подписей и пустых страниц.
+function speechText(a) {
+  if (!a) return "";
+  const parts = Array.isArray(a.pages) && a.pages.length
+    ? a.pages.map(p => p.translation || "")
+    : [a.full_translation || ""];
+  return parts
+    .map(t => t.replace(/^\s*—[^\n]*—\s*$/gm, "").trim())
+    .filter(t => t && !/^\(?\s*пустая страница\s*\)?\.?$/i.test(t) && (t.match(/\p{L}/gu) || []).length >= 3)
+    .join("\n\n");
+}
+
 async function toggleTranslationSpeech() {
   const button = $("btnSpeakTranslation");
   const player = $("translationAudio");
@@ -1489,8 +1501,8 @@ async function toggleTranslationSpeech() {
     speechIdle();
     return;
   }
-  const text = state.currentAnalysis?.full_translation?.trim();
-  if (!text) return showToast("Сначала разберите документ");
+  const text = speechText(state.currentAnalysis);
+  if (!text) return showToast(state.currentAnalysis ? "Перевод ещё не готов" : "Сначала разберите документ");
   if (wrongLanguage(text)) return showToast(`Перевод не на языке ${state.targetLang} (старый документ?). Выберите язык и переведите документ заново.`);
   if (!state.config.accessToken) return showToast("Сохраните код доступа в настройках");
   const chunks = splitSpeechText(text);
