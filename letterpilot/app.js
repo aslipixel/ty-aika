@@ -1491,6 +1491,7 @@ async function toggleTranslationSpeech() {
   }
   const text = state.currentAnalysis?.full_translation?.trim();
   if (!text) return showToast("Сначала разберите документ");
+  if (wrongLanguage(text)) return showToast(`Перевод не на языке ${state.targetLang} (старый документ?). Выберите язык и переведите документ заново.`);
   if (!state.config.accessToken) return showToast("Сохраните код доступа в настройках");
   const chunks = splitSpeechText(text);
   const voice = state.config.voice;
@@ -1516,7 +1517,7 @@ async function toggleTranslationSpeech() {
           method: "POST",
           signal: controller.signal,
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${encodeURIComponent(token)}` },
-          body: JSON.stringify({ text: chunks[part], voice })
+          body: JSON.stringify({ text: chunks[part], voice, lang: LANG_EN[state.targetLang] || state.targetLang })
         });
         const data = await res.json();
         if (!res.ok || !data.audio) throw new Error(data.error || "Голос недоступен");

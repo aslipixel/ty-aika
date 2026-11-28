@@ -8,7 +8,7 @@
   <title>LetterPilot — работа с документами</title>
   <link rel="icon" type="image/svg+xml" href="letterpilot-glass.svg" />
   <script>try{var l=JSON.parse(localStorage.getItem("letterpilot_look")||"{}");var d=document.documentElement;if(l.theme==="light"||l.theme==="dark")d.dataset.theme=l.theme;d.dataset.accent=l.accent||"blue";}catch(e){document.documentElement.dataset.accent="blue";}</script>
-  <link rel="stylesheet" href="style.css?v=20261127-lang1" />
+  <link rel="stylesheet" href="style.css?v=20261127-tts1" />
   <link rel="stylesheet" href="theme.css?v=20261127-ios1" />
 </head>
 <body class="intro">
@@ -66,11 +66,11 @@
       <!-- INPUT VIEW (shown initially or when adding a new document) -->
       <section class="view active" id="viewInput">
         <div class="card compact-card">
-          <div class="row-between mb-8">
-            <label class="label-sm" for="targetLang">Язык перевода и разбора</label>
+          <div class="row-between">
+            <span class="label-sm">Нет документа под рукой?</span>
             <button class="chip-btn accent" id="btnLoadSample">Пример документа</button>
           </div>
-          <select id="targetLang" class="input-select">
+          <select id="targetLang" class="input-select hidden" aria-hidden="true" tabindex="-1">
             <option value="Русский" selected>Русский</option>
             <option value="Suomi">Suomi — финский</option>
             <option value="English">English — английский</option>
@@ -459,7 +459,7 @@
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
 
-  <script src="app.js?v=20261127-lang1"></script>
+  <script src="app.js?v=20261127-tts1"></script>
 </body>
 </html>
 
