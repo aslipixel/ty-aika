@@ -424,6 +424,7 @@ Laskutusosasto / Billing Department`;
   });
   $("btnSpeakTranslation").addEventListener("click", toggleTranslationSpeech);
   $("btnClearSpeech").addEventListener("click", clearSpeech);
+  document.querySelectorAll("[data-speak]").forEach(b => b.addEventListener("click", () => toggleSectionSpeech(b)));
 
   // Reply intent chips
   $("replyIntentChips").addEventListener("click", (e) => {
@@ -1426,14 +1427,16 @@ function copyText(text) {
 
 let speechRun = 0;
 let speakingTranslation = false;
+let speechBtn = null;              // кнопка, которая сейчас читает
+let speechLabel = "Прослушать перевод";
 const speechControllers = new Set();
 let speechCache = { key: "", parts: [] };
 let speechNeedsTap = false;
 function speechIdle() {
-  const button = $("btnSpeakTranslation");
+  const button = speechBtn || $("btnSpeakTranslation");
   speakingTranslation = false;
   speechNeedsTap = false;
-  button.textContent = "Прослушать перевод";
+  button.textContent = speechLabel;
   button.setAttribute("aria-pressed", "false");
   $("btnClearSpeech").classList.toggle("hidden", !speechCache.parts.some(Boolean));
 }
@@ -1484,26 +1487,60 @@ function speechText(a) {
 
 async function toggleTranslationSpeech() {
   const button = $("btnSpeakTranslation");
+  if (speakingTranslation && speechBtn === button) return toggleSpeech(button, "", "Прослушать перевод");
+  const text = speechText(state.currentAnalysis);
+  if (!text) return showToast(state.currentAnalysis ? "Перевод ещё не готов" : "Сначала разберите документ");
+  if (wrongLanguage(text)) return showToast(`Перевод не на языке ${state.targetLang} (старый документ?). Выберите язык и переведите документ заново.`);
+  return toggleSpeech(button, text, "Прослушать перевод");
+}
+
+// Тексты разделов разбора для озвучки.
+function sectionSpeechText(key, a = state.currentAnalysis) {
+  if (!a) return "";
+  const e = a.explanation || {};
+  const join = arr => arr.filter(Boolean).join("\n");
+  switch (key) {
+    case "explain": return join([a.doc_type, e.what_is_it, e.who_sends, e.why_you, e.consequences, e.is_normal]);
+    case "summary": return a.summary || "";
+    case "nuances": return join((a.nuances || []).map(n => join([n.title, n.detail])));
+    case "terms": return join((a.terms || []).map(t => `${t.term} — ${t.meaning}`));
+    case "actions": return join((a.action_steps || []).map((s, i) => `Шаг ${i + 1}. ${join([s.title, s.detail])}`));
+  }
+  return "";
+}
+function toggleSectionSpeech(button) {
+  if (speakingTranslation && speechBtn === button) return toggleSpeech(button, "", "🔊 Прослушать");
+  const text = sectionSpeechText(button.dataset.speak).trim();
+  if (!text) return showToast("Здесь пока нечего читать");
+  return toggleSpeech(button, text, "🔊 Прослушать");
+}
+
+function stopSpeech() {
+  speechRun++;
+  for (const controller of speechControllers) controller.abort();
   const player = $("translationAudio");
-  if (speechNeedsTap) {
+  player.pause();
+  player.onended = null;
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  player.removeAttribute("src");
+  speechIdle();
+}
+
+async function toggleSpeech(button, text, label) {
+  const player = $("translationAudio");
+  if (speechNeedsTap && speechBtn === button) {
     speechNeedsTap = false;
     button.textContent = "■ Остановить чтение";
     player.play().catch(() => {});
     return;
   }
-  if (speakingTranslation) {
-    speechRun++;
-    for (const controller of speechControllers) controller.abort();
-    player.pause();
-    player.onended = null;
-    if ("speechSynthesis" in window) speechSynthesis.cancel();
-    player.removeAttribute("src");
-    speechIdle();
-    return;
+  if (speakingTranslation || speechNeedsTap) {
+    const same = speechBtn === button;
+    stopSpeech();
+    if (same) return;
   }
-  const text = speechText(state.currentAnalysis);
-  if (!text) return showToast(state.currentAnalysis ? "Перевод ещё не готов" : "Сначала разберите документ");
-  if (wrongLanguage(text)) return showToast(`Перевод не на языке ${state.targetLang} (старый документ?). Выберите язык и переведите документ заново.`);
+  speechBtn = button;
+  speechLabel = label;
   if (!state.config.accessToken) return showToast("Сохраните код доступа в настройках");
   const chunks = splitSpeechText(text);
   const voice = state.config.voice;
@@ -1577,7 +1614,7 @@ async function toggleTranslationSpeech() {
       console.warn("Gemini TTS failed:", e.message);
       if (!("speechSynthesis" in window)) {
         speakingTranslation = false;
-        button.textContent = "Прослушать перевод";
+        button.textContent = speechLabel;
         button.setAttribute("aria-pressed", "false");
         showToast(e.message);
         return;
