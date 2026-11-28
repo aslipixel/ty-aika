@@ -2,33 +2,41 @@
 *{box-sizing:border-box}html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#0d0f12;font-family:Inter,system-ui,sans-serif}
 .sc{position:absolute;inset:0;overflow:hidden;opacity:0}
 .sc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.sc::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,0) 55%,rgba(0,0,0,.8) 100%)}
-.t{position:absolute;left:80px;right:80px;z-index:2;color:#fff;font-weight:900;letter-spacing:-.02em;line-height:1.02;text-shadow:0 4px 30px rgba(0,0,0,.5)}
-.big{font-size:118px}.mid{font-size:88px}
-.t small{display:block;font-size:42px;font-weight:600;letter-spacing:0;margin-top:22px;color:#e8eef3}
+.sh{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,.15) 50%,rgba(0,0,0,.85) 100%)}
+.t{position:absolute;left:80px;right:80px;top:1380px;color:#fff;font-weight:900;font-size:110px;letter-spacing:-.02em;line-height:1.02;text-shadow:0 4px 30px rgba(0,0,0,.5)}
 .y{color:#ffd400}
-.bar{display:inline-block;width:120px;height:12px;background:#ffd400;margin-bottom:34px}
+svg.ic{position:absolute;left:80px;top:1080px;width:260px;height:260px;fill:none;stroke:#ffd400;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 6px 20px rgba(0,0,0,.5))}
 #out{position:absolute;inset:0;background:#0d0f12;opacity:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff}
-#out h1{font-size:150px;font-weight:900;margin:0;letter-spacing:-.03em}
-#out h2{font-size:56px;font-weight:700;margin:20px 0 0;color:#ffd400}
-#out p{font-size:46px;font-weight:600;margin:70px 0 0;padding:26px 60px;border:5px solid #fff;border-radius:80px}
+#out svg{width:300px;height:300px;fill:none;stroke:#ffd400;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+#out h1{font-size:150px;font-weight:900;margin:30px 0 0;letter-spacing:-.03em}
+#out h2{font-size:56px;font-weight:700;margin:16px 0 0;color:#ffd400}
+#out p{font-size:46px;font-weight:600;margin:60px 0 0;padding:26px 60px;border:5px solid #fff;border-radius:80px}
 </style></head><body>
-<div class="sc" id="s0"><img src="img/kaivo.jpg"><div class="t big" style="top:1180px"><span class="bar"></span><br>Katto<br><span class="y">vuotaa?</span></div></div>
-<div class="sc" id="s1"><img src="img/tiimi.jpg"><div class="t mid" style="top:1220px"><span class="bar"></span><br>Bitumikermi&shy;katot <span class="y">ammattitaidolla.</span></div></div>
-<div class="sc" id="s2"><img src="img/piha.jpg"><div class="t mid" style="top:1300px"><span class="bar"></span><br>Uudiskohteet<small>Pihakannet, vedeneristykset, kattoterassit</small></div></div>
-<div class="sc" id="s3"><img src="img/katto.jpg"><div class="t mid" style="top:1300px"><span class="bar"></span><br>Korjaukset ja <span class="y">saneeraukset</span></div></div>
-<div class="sc" id="s4"><img src="img/paikat.jpg"><div class="t mid" style="top:1300px"><span class="bar"></span><br>Huolellisesti <span class="y">jokainen yksityiskohta</span></div></div>
-<div class="sc" id="s5" style="--d:1"><div style="position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.75) 75%)"></div><img src="img/ilma.jpg"><div class="t big" style="top:1100px"><span class="bar"></span><br>Tiivis.<br>Kestävä.<br><span class="y">Valmis.</span></div></div>
-<div id="out"><span class="bar"></span><h1>Icopal Asl</h1><h2>Kattotyöt</h2><p>Pyydä tarjous</p></div>
+<div class="sc" id="s0"><img src="img/kaivo.jpg"><div class="sh"></div>
+ <svg class="ic" viewBox="0 0 100 100"><path class="d" d="M30 45a20 20 0 0 1 38-8a14 14 0 0 1 4 28H32a12 12 0 0 1-2-20z"/><path class="drop" d="M38 74v8"/><path class="drop" d="M52 74v8"/><path class="drop" d="M66 74v8"/></svg>
+ <div class="t">Katto<br><span class="y">vuotaa?</span></div></div>
+<div class="sc" id="s1"><img src="img/tiimi.jpg"><div class="sh"></div>
+ <svg class="ic" viewBox="0 0 100 100"><path class="d" d="M12 52L50 20l38 32"/><path class="d" d="M22 46v34h56V46"/><path class="d" d="M42 80V62h16v18"/></svg>
+ <div class="t">Bitumi&shy;kermikatot</div></div>
+<div class="sc" id="s2"><img src="img/paikat.jpg"><div class="sh"></div>
+ <svg class="ic" viewBox="0 0 100 100"><path class="d" d="M62 18a18 18 0 0 0-20 24L18 66a8 8 0 0 0 12 12l24-24a18 18 0 0 0 24-20l-12 12-10-2-2-10z"/></svg>
+ <div class="t">Uudet ja<br><span class="y">korjaukset</span></div></div>
+<div class="sc" id="s3"><img src="img/ilma.jpg"><div class="sh"></div>
+ <svg class="ic" viewBox="0 0 100 100"><path class="d" d="M50 12l32 12v24c0 20-14 34-32 40C32 82 18 68 18 48V24z"/><path class="d" d="M35 50l10 10 20-22"/></svg>
+ <div class="t">Tiivis.<br><span class="y">Kestävä.</span></div></div>
+<div id="out"><svg viewBox="0 0 100 100"><path class="d" d="M8 54L50 18l42 36"/><path class="d" d="M20 46v36h60V46"/><path class="d" d="M36 62l10 10 18-20"/></svg><h1>Icopal Asl</h1><h2>Kattotyöt</h2><p>Pyydä tarjous</p></div>
 <script>
 const $=id=>document.getElementById(id),cl=(x,a=0,b=1)=>Math.max(a,Math.min(b,x)),ease=x=>1-Math.pow(1-cl(x),3);
-const S=[[0,3],[3,6],[6,9],[9,12],[12,15],[15,18]];
+const L=2.5;
+document.querySelectorAll('.d').forEach(p=>{const l=p.getTotalLength();p.style.strokeDasharray=l;p.dataset.l=l});
+function draw(root,t0,t){root.querySelectorAll('.d').forEach((p,i)=>p.style.strokeDashoffset=p.dataset.l*(1-ease((t-t0-i*.12)/.6)))}
 function setT(t){
-  S.forEach(([a,b],i)=>{const el=$('s'+i);const o=Math.min(cl((t-a)/.25+ (i?0:4)),cl((b+.25-t)/.25));el.style.opacity=o;
-    const p=(t-a)/(b-a+.25),img=el.querySelector('img');img.style.transform=`scale(${1.08+p*.1}) translate(${(i%2?-1:1)*p*20}px,${-p*20}px)`;
-    const tx=el.querySelector('.t'),e=ease((t-a-.1)/.5);tx.style.opacity=e;tx.style.transform=`translateY(${(1-e)*60}px)`;
-    el.querySelector('.bar').style.width=(120*ease((t-a)/.4))+'px'});
-  const o=ease((t-18)/.4);$('out').style.opacity=o;$('out').style.transform=`scale(${1.05-o*.05})`;
+  for(let i=0;i<4;i++){const a=i*L,b=a+L,el=$('s'+i);el.style.opacity=Math.min(i?cl((t-a)/.2):1,cl((b+.2-t)/.2));
+    const p=(t-a)/L;el.querySelector('img').style.transform=`scale(${1.06+p*.08}) translate(${(i%2?-1:1)*p*20}px,${-p*15}px)`;
+    const tx=el.querySelector('.t'),e=ease((t-a-.15)/.4);tx.style.opacity=e;tx.style.transform=`translateY(${(1-e)*50}px)`;
+    draw(el,a,t);
+    el.querySelectorAll('.drop').forEach((d,k)=>{const q=((t-a-.6-k*.15)%0.6+0.6)%0.6/0.6;d.style.opacity=t-a>.6?1-q:0;d.style.transform=`translateY(${q*14}px)`});}
+  const o=ease((t-10)/.4);$('out').style.opacity=o;draw($('out'),10.2,t);
 }
 window.ready=Promise.all([...document.images].map(i=>i.decode())).then(()=>document.fonts.ready);
 </script></body></html>
