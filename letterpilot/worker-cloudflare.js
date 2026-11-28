@@ -127,8 +127,7 @@ function toBase64(bytes) {
 // Голос должен читать текст дословно и на языке перевода, а не переводить его на английский.
 function ttsPrompt(lang) {
   const name = String(lang || '').replace(/[^\p{L}\p{M} ()-]/gu, '').slice(0, 40);
-  return 'Read the following text aloud exactly as written, word for word' + (name ? ', in ' + name : ', in the language it is written in') +
-    '. Do NOT translate it into English or any other language, do not summarize, do not add anything. Calm, warm and clear voice.\n\n';
+  return 'Say in a calm, warm and clear voice' + (name ? ', in ' + name : '') + ': ';
 }
 async function tts(request, env) {
   const code = bearer(request);
