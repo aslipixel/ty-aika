@@ -152,6 +152,64 @@ function restoreLang() {
     if (v && [...$("targetLang").options].some(o => o.value === v)) $("targetLang").value = v;
   } catch (e) {}
   state.targetLang = $("targetLang").value;
+  updateLangBar();
+}
+const LANG_EN = { "Русский": "Russian", "Suomi": "Finnish", "English": "English", "Svenska": "Swedish", "Eesti": "Estonian", "Українська": "Ukrainian", "Беларуская": "Belarusian", "Қазақша": "Kazakh", "Oʻzbekcha": "Uzbek", "Кыргызча": "Kyrgyz", "Тоҷикӣ": "Tajik", "Azərbaycanca": "Azerbaijani", "Հայերեն": "Armenian", "ქართული": "Georgian", "Türkçe": "Turkish", "العربية": "Arabic", "فارسی": "Persian (Farsi)", "دری": "Dari", "کوردی (سۆرانی)": "Kurdish (Sorani)", "Kurdî (Kurmancî)": "Kurdish (Kurmanji)", "Soomaali": "Somali", "Tigrinya": "Tigrinya", "Amharic": "Amharic", "Kiswahili": "Swahili", "اردو": "Urdu", "हिन्दी": "Hindi", "বাংলা": "Bengali", "नेपाली": "Nepali", "中文": "Chinese (Simplified)", "Tiếng Việt": "Vietnamese", "ไทย": "Thai", "Tagalog": "Tagalog (Filipino)", "Polski": "Polish", "Română": "Romanian", "Български": "Bulgarian", "Deutsch": "German", "Français": "French", "Español": "Spanish", "Português": "Portuguese", "Italiano": "Italian" };
+const LANG_BCP = { "Русский": "ru-RU", "Suomi": "fi-FI", "English": "en-US", "Svenska": "sv-SE", "Eesti": "et-EE", "Українська": "uk-UA", "Беларуская": "be-BY", "Қазақша": "kk-KZ", "Oʻzbekcha": "uz-UZ", "Türkçe": "tr-TR", "العربية": "ar-SA", "فارسی": "fa-IR", "Azərbaycanca": "az-AZ", "Հայերեն": "hy-AM", "ქართული": "ka-GE", "Soomaali": "so-SO", "Kiswahili": "sw-KE", "اردو": "ur-PK", "हिन्दी": "hi-IN", "বাংলা": "bn-BD", "नेपाली": "ne-NP", "中文": "zh-CN", "Tiếng Việt": "vi-VN", "ไทย": "th-TH", "Tagalog": "fil-PH", "Polski": "pl-PL", "Română": "ro-RO", "Български": "bg-BG", "Deutsch": "de-DE", "Français": "fr-FR", "Español": "es-ES", "Português": "pt-PT", "Italiano": "it-IT" };
+// Название языка для ИИ: родное + английское, чтобы модель не путалась.
+function langName(v = state.targetLang) {
+  const en = LANG_EN[v];
+  return en && en !== v ? `${v} (${en})` : v;
+}
+// Жёсткое требование языка — добавляется в каждый запрос.
+function langRule(v = state.targetLang) {
+  const n = langName(v);
+  return `ОБЯЗАТЕЛЬНО пиши весь ответ ТОЛЬКО на языке: ${n}. Не используй английский язык${LANG_EN[v] === "English" ? "" : " (кроме имён, названий и цитат из оригинала)"}. Output language: ${LANG_EN[v] || v} only.`;
+}
+function setTargetLang(v, { ask = true } = {}) {
+  if (![...$("targetLang").options].some(o => o.value === v)) return;
+  const changed = v !== state.targetLang;
+  $("targetLang").value = v;
+  state.targetLang = v;
+  try { localStorage.setItem(STORAGE_LANG, v); } catch (e) {}
+  updateLangBar();
+  if (!changed || !ask || !state.currentAnalysis) return;
+  const hasInput = $("docTextInput").value.trim() || state.attachedFiles.length;
+  if (hasInput) {
+    if (confirm(`Перевести и разобрать этот документ заново на язык: ${v}?`)) runAnalysis();
+  } else if (state.currentAnalysis.pages?.some(p => p.original)) {
+    if (confirm(`Перевести текст документа заново на язык: ${v}? (Разбор останется на прежнем языке.)`)) {
+      const a = state.currentAnalysis;
+      a.pages.forEach(p => { p.translation = ""; });
+      translatePages(a, a.pages.map(p => ({ label: p.label, text: p.original })));
+    }
+  } else {
+    showToast("Новый язык будет у следующего документа. Для этого загрузите документ заново.");
+  }
+}
+function updateLangBar() {
+  const opt = $("targetLang").selectedOptions[0];
+  $("langBarValue").textContent = opt ? opt.textContent : state.targetLang;
+}
+function openLangPicker() {
+  $("langSearch").value = "";
+  renderLangList();
+  openModal("langModal");
+}
+function renderLangList() {
+  const q = $("langSearch").value.trim().toLowerCase();
+  const list = $("langList");
+  list.innerHTML = "";
+  [...$("targetLang").options].forEach(o => {
+    const hay = (o.textContent + " " + (LANG_EN[o.value] || "")).toLowerCase();
+    if (q && !hay.includes(q)) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "lang-item" + (o.value === state.targetLang ? " current" : "");
+    b.innerHTML = `<span>${escapeHtml(o.textContent)}</span>${o.value === state.targetLang ? "<span>✓</span>" : ""}`;
+    b.addEventListener("click", () => { closeModal("langModal"); setTargetLang(o.value); });
+    list.appendChild(b);
+  });
 }
 function applyDir(lang) {
   const dir = RTL_LANGS.includes(lang) ? "rtl" : "ltr";
@@ -300,10 +358,9 @@ function bindEvents() {
   document.querySelectorAll(".swatch").forEach(b => b.addEventListener("click", () => setLook({ accent: b.dataset.accent })));
   $("btnSaveDoc").addEventListener("click", saveCurrentDoc);
   $("savedSearch").addEventListener("input", renderSaved);
-  $("targetLang").addEventListener("change", () => {
-    state.targetLang = $("targetLang").value;
-    try { localStorage.setItem(STORAGE_LANG, state.targetLang); } catch (e) {}
-  });
+  $("targetLang").addEventListener("change", () => setTargetLang($("targetLang").value, { ask: false }));
+  $("btnLangBar").addEventListener("click", openLangPicker);
+  $("langSearch").addEventListener("input", renderLangList);
   $("btnHistory").addEventListener("click", () => {
     renderHistory();
     openModal("historyModal");
@@ -732,7 +789,7 @@ async function runAnalysis() {
     const parts = [];
     const prompt = `Ты — опытный консультант, который объясняет любые документы простыми словами: письма и решения ведомств (Kela, Migri, налоговая, TE-palvelut, суд, полиция), договоры, счета, справки, выписки, бланки, расчётные листы, медицинские и школьные документы — в Финляндии и в других странах.
 Главная задача — чтобы человек, который видит такой документ впервые и плохо знает язык и местные правила, понял: что это за документ, зачем он существует, почему он пришёл именно ему и что из него следует. Объясняй так, как объяснил бы знающий друг: без канцелярита, короткими фразами, с конкретными датами, суммами и названиями из документа. Если в документе есть специальные термины, сокращения или названия ведомств — обязательно расшифруй их. Если документ похож на мошенничество (подозрительные ссылки, требования срочно заплатить на чужой счёт) — прямо скажи об этом.
-Проанализируй прикреплённый документ (текст, изображение/скриншот или PDF) и верни СТРОГО валидный JSON. Все значения пиши на языке "${state.targetLang}" (кроме поля term — его оставь как в оригинале):
+Проанализируй прикреплённый документ (текст, изображение/скриншот или PDF) и верни СТРОГО валидный JSON. Все значения пиши на языке ${langName()} (кроме поля term — его оставь как в оригинале):
 {
   "detected_language": "язык оригинала",
   "doc_type": "точное название вида документа (например: Решение Kela о жилищном пособии, Трудовой договор, Налоговая карточка, Счёт за электричество, Справка о зарплате)",
@@ -775,6 +832,7 @@ async function runAnalysis() {
 
     const rawJson = await callGemini({
       contents: [{ role: "user", parts }],
+      systemInstruction: langRule(),
       jsonMode: true
     });
 
@@ -930,7 +988,7 @@ async function runReplyGenerator() {
 Суть документа: ${state.currentAnalysis.summary}
 Полный перевод документа: ${state.currentAnalysis.full_translation}
 Язык оригинала (на нём нужно написать ответ): ${origLang}
-Язык пользователя (для обратного перевода): ${state.targetLang}
+Язык пользователя (для обратного перевода): ${langName()}
 Цель ответа: ${state.selectedIntent}
 Тон: ${tone}
 Дополнительные пожелания пользователя: ${note || "нет"}
@@ -938,7 +996,7 @@ async function runReplyGenerator() {
 Верни СТРОГО валидный JSON:
 {
   "original_reply": "готовый текст ответа на языке оригинала (${origLang})",
-  "translated_reply": "точный перевод этого ответа на ${state.targetLang} для проверки пользователем"
+  "translated_reply": "точный перевод этого ответа на язык ${langName()} для проверки пользователем"
 }`;
 
     const raw = await callGemini({
@@ -981,7 +1039,7 @@ async function sendChatMessage(question) {
 Полный перевод: ${state.currentAnalysis.full_translation}`
     : "Документ ещё не загружен. Отвечай как полезный AI-переводчик и консультант.";
 
-  const systemInstruction = `Ты — помощник LetterPilot. Отвечай чётко, конкретно и по делу на языке "${state.targetLang}".
+  const systemInstruction = `Ты — помощник LetterPilot. Отвечай чётко, конкретно и по делу на языке ${langName()}. ${langRule()}
 ${contextSummary}`;
 
   state.chatHistory.push({ role: "user", parts: [{ text: question }] });
@@ -1157,15 +1215,33 @@ function analysisParts(pages) {
 }
 
 async function translateOne(page, i, total) {
-  const prompt = `Переведи на язык "${state.targetLang}" страницу ${i + 1} из ${total} документа.
+  const prompt = `Переведи на язык ${langName()} страницу ${i + 1} из ${total} документа.
 Переводи ПОЛНОСТЬЮ и точно, ничего не пропускай и не сокращай, не пересказывай. Сохраняй абзацы, списки, имена, номера, даты, суммы и реквизиты как в оригинале.
 Таблицы передавай строками вида «Столбец: значение». Если на странице нет текста, напиши «(пустая страница)».
 Верни ТОЛЬКО текст перевода, без пояснений и без markdown.`;
   const parts = [{ text: prompt }];
   if (page.text) parts.push({ text: `--- ТЕКСТ СТРАНИЦЫ ---\n${page.text}` });
   else if (page.inline) parts.push({ inlineData: page.inline });
-  const out = await callGemini({ contents: [{ role: "user", parts }] });
-  return out.replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+  const clean = t => t.replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+  let out = clean(await callGemini({ contents: [{ role: "user", parts }], systemInstruction: langRule() }));
+  if (wrongLanguage(out)) {
+    // ИИ вернул текст не на том языке (часто — оригинал на английском): просим ещё раз строже.
+    parts[0] = { text: `ВНИМАНИЕ: предыдущий ответ был не на нужном языке. ${prompt}\nЯзык ответа: ${langName()} — и никакой другой.` };
+    const again = clean(await callGemini({ contents: [{ role: "user", parts }], systemInstruction: langRule() }));
+    if (!wrongLanguage(again)) out = again;
+    else throw new Error(`ИИ вернул текст не на языке ${state.targetLang}. Нажмите «Повторить».`);
+  }
+  return out;
+}
+
+// Грубая проверка письменности: для языков на кириллице/арабском/и т.п. в переводе должны быть их буквы.
+const LANG_SCRIPT = { "Русский": /[\u0400-\u04FF]/g, "Українська": /[\u0400-\u04FF]/g, "Беларуская": /[\u0400-\u04FF]/g, "Қазақша": /[\u0400-\u04FF]/g, "Кыргызча": /[\u0400-\u04FF]/g, "Тоҷикӣ": /[\u0400-\u04FF]/g, "Български": /[\u0400-\u04FF]/g, "العربية": /[\u0600-\u06FF]/g, "فارسی": /[\u0600-\u06FF]/g, "دری": /[\u0600-\u06FF]/g, "کوردی (سۆرانی)": /[\u0600-\u06FF]/g, "اردو": /[\u0600-\u06FF]/g, "Հայերեն": /[\u0530-\u058F]/g, "ქართული": /[\u10A0-\u10FF]/g, "हिन्दी": /[\u0900-\u097F]/g, "नेपाली": /[\u0900-\u097F]/g, "বাংলা": /[\u0980-\u09FF]/g, "中文": /[\u4E00-\u9FFF]/g, "ไทย": /[\u0E00-\u0E7F]/g, "Amharic": /[\u1200-\u137F]/g, "Tigrinya": /[\u1200-\u137F]/g };
+function wrongLanguage(text, lang = state.targetLang) {
+  const re = LANG_SCRIPT[lang];
+  if (!re) return false;
+  const letters = (text.match(/\p{L}/gu) || []).length;
+  if (letters < 40) return false;
+  return (text.match(re) || []).length / letters < 0.3;
 }
 
 function refreshFullTranslation(a) {
@@ -1499,8 +1575,7 @@ async function toggleTranslationSpeech() {
       player.onended = null;
       player.classList.add("hidden");
       const fallback = new SpeechSynthesisUtterance(chunks.slice(part).join(" "));
-      const langs = { "Русский": "ru-RU", "Suomi": "fi-FI", "English": "en-US", "Deutsch": "de-DE", "Українська": "uk-UA", "Español": "es-ES", "Français": "fr-FR" };
-      fallback.lang = langs[state.targetLang] || "ru-RU";
+      fallback.lang = LANG_BCP[state.targetLang] || "ru-RU";
       fallback.onend = fallback.onerror = () => {
         if (run !== speechRun) return;
         speechIdle();

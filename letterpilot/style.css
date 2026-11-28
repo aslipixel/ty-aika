@@ -647,3 +647,14 @@ html, body {
 .page-sep:first-child { margin-top: 0; }
 #btnRetryPage { margin-top: 12px; }
 .single-page .page-strip, .single-page .page-nav, .single-page .seg-toggle { display: none; }
+
+/* Выбор языка перевода — всегда наверху */
+.lang-bar { display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; cursor: pointer; text-align: left; }
+.lang-bar svg { color: var(--accent); flex-shrink: 0; }
+.lang-bar-label { color: var(--muted); }
+.lang-bar strong { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lang-bar-arrow { margin-left: auto; color: var(--muted); }
+.lang-list { display: flex; flex-direction: column; gap: 4px; max-height: 60vh; overflow-y: auto; }
+.lang-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border: 0; border-radius: 12px; background: transparent; color: var(--text); font: inherit; font-size: 15px; text-align: left; cursor: pointer; }
+.lang-item:hover { background: var(--surface-2); }
+.lang-item.current { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
