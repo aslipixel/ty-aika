@@ -1222,8 +1222,26 @@ async function translateOne(page, i, total) {
   const parts = [{ text: prompt }];
   if (page.text) parts.push({ text: `--- ТЕКСТ СТРАНИЦЫ ---\n${page.text}` });
   else if (page.inline) parts.push({ inlineData: page.inline });
-  const out = await callGemini({ contents: [{ role: "user", parts }], systemInstruction: langRule() });
-  return out.replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+  const clean = t => t.replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+  let out = clean(await callGemini({ contents: [{ role: "user", parts }], systemInstruction: langRule() }));
+  if (wrongLanguage(out)) {
+    // ИИ вернул текст не на том языке (часто — оригинал на английском): просим ещё раз строже.
+    parts[0] = { text: `ВНИМАНИЕ: предыдущий ответ был не на нужном языке. ${prompt}\nЯзык ответа: ${langName()} — и никакой другой.` };
+    const again = clean(await callGemini({ contents: [{ role: "user", parts }], systemInstruction: langRule() }));
+    if (!wrongLanguage(again)) out = again;
+    else throw new Error(`ИИ вернул текст не на языке ${state.targetLang}. Нажмите «Повторить».`);
+  }
+  return out;
+}
+
+// Грубая проверка письменности: для языков на кириллице/арабском/и т.п. в переводе должны быть их буквы.
+const LANG_SCRIPT = { "Русский": /[\u0400-\u04FF]/g, "Українська": /[\u0400-\u04FF]/g, "Беларуская": /[\u0400-\u04FF]/g, "Қазақша": /[\u0400-\u04FF]/g, "Кыргызча": /[\u0400-\u04FF]/g, "Тоҷикӣ": /[\u0400-\u04FF]/g, "Български": /[\u0400-\u04FF]/g, "العربية": /[\u0600-\u06FF]/g, "فارسی": /[\u0600-\u06FF]/g, "دری": /[\u0600-\u06FF]/g, "کوردی (سۆرانی)": /[\u0600-\u06FF]/g, "اردو": /[\u0600-\u06FF]/g, "Հայերեն": /[\u0530-\u058F]/g, "ქართული": /[\u10A0-\u10FF]/g, "हिन्दी": /[\u0900-\u097F]/g, "नेपाली": /[\u0900-\u097F]/g, "বাংলা": /[\u0980-\u09FF]/g, "中文": /[\u4E00-\u9FFF]/g, "ไทย": /[\u0E00-\u0E7F]/g, "Amharic": /[\u1200-\u137F]/g, "Tigrinya": /[\u1200-\u137F]/g };
+function wrongLanguage(text, lang = state.targetLang) {
+  const re = LANG_SCRIPT[lang];
+  if (!re) return false;
+  const letters = (text.match(/\p{L}/gu) || []).length;
+  if (letters < 40) return false;
+  return (text.match(re) || []).length / letters < 0.3;
 }
 
 function refreshFullTranslation(a) {
